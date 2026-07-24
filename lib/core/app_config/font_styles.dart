@@ -9,53 +9,46 @@ class FontStyles {
   static TextStyle get displayLarge => TextStyle(
         fontSize: 32.sp,
         fontWeight: FontWeight.w800,
-        color: AppColors.textPrimary,
         letterSpacing: -1.0,
       );
 
   static TextStyle get titleLarge => TextStyle(
         fontSize: 24.sp,
         fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
         letterSpacing: -0.5,
       );
 
   static TextStyle get titleMedium => TextStyle(
         fontSize: 18.sp,
         fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
       );
 
   static TextStyle get bodyLarge => TextStyle(
         fontSize: 16.sp,
         fontWeight: FontWeight.w400,
-        color: AppColors.textPrimary,
         height: 1.5,
       );
 
   static TextStyle get bodyMedium => TextStyle(
         fontSize: 14.sp,
         fontWeight: FontWeight.w400,
-        color: AppColors.textSecondary,
         height: 1.4,
       );
 
   static TextStyle get bodySmall => TextStyle(
         fontSize: 12.sp,
         fontWeight: FontWeight.w400,
-        color: AppColors.textSecondary,
       );
 
   static TextStyle get headlineSmall => TextStyle(
         fontSize: 20.sp,
         fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
       );
 
   static TextStyle get labelLarge => TextStyle(
         fontSize: 14.sp,
         fontWeight: FontWeight.w600,
-        color: Colors.white,
+        color: Colors.white, // Keep this white as it's typically for primary buttons
         letterSpacing: 0.5,
       );
 }

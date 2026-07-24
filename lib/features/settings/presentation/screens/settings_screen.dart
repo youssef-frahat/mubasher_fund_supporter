@@ -59,42 +59,45 @@ class SettingsScreen extends StatelessWidget {
           SizedBox(height: 12.h),
 
           // Theme Selector
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(16.r),
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-            ),
-            child: BlocBuilder<ThemeCubit, ThemeMode>(
-              builder: (context, themeMode) {
-                return Column(
-                  children: [
-                    _buildThemeRadio(
-                      context,
-                      title: 'System Default',
-                      icon: Icons.brightness_auto,
-                      value: ThemeMode.system,
-                      groupValue: themeMode,
-                    ),
-                    const Divider(height: 1, indent: 56),
-                    _buildThemeRadio(
-                      context,
-                      title: 'Light Mode',
-                      icon: Icons.light_mode,
-                      value: ThemeMode.light,
-                      groupValue: themeMode,
-                    ),
-                    const Divider(height: 1, indent: 56),
-                    _buildThemeRadio(
-                      context,
-                      title: 'Dark Mode',
-                      icon: Icons.dark_mode,
-                      value: ThemeMode.dark,
-                      groupValue: themeMode,
-                    ),
-                  ],
-                );
-              },
+          Material(
+            color: Colors.transparent,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+              ),
+              child: BlocBuilder<ThemeCubit, ThemeMode>(
+                builder: (context, themeMode) {
+                  return Column(
+                    children: [
+                      _buildThemeRadio(
+                        context,
+                        title: 'System Default',
+                        icon: Icons.brightness_auto,
+                        value: ThemeMode.system,
+                        groupValue: themeMode,
+                      ),
+                      const Divider(height: 1, indent: 56),
+                      _buildThemeRadio(
+                        context,
+                        title: 'Light Mode',
+                        icon: Icons.light_mode,
+                        value: ThemeMode.light,
+                        groupValue: themeMode,
+                      ),
+                      const Divider(height: 1, indent: 56),
+                      _buildThemeRadio(
+                        context,
+                        title: 'Dark Mode',
+                        icon: Icons.dark_mode,
+                        value: ThemeMode.dark,
+                        groupValue: themeMode,
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ],
