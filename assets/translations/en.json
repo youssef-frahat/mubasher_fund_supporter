@@ -1,0 +1,6 @@
+{
+  "appName": "Mubasher Fund Supporter",
+  "appDescription": "Egyptian mutual funds intelligence platform for advisors, institutions, and retail investors.",
+  "phase1Delivered": "Phase 1 delivered",
+  "phase1Description": "The foundation now includes a scalable Flutter shell, a modular feature architecture, and a production-ready roadmap for database, backend, and AI systems."
+}

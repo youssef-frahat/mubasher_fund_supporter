@@ -1,0 +1,29 @@
+[
+  {
+    "name_ar": "صندوق استثمار بنك مصر الأول",
+    "name_en": "Banque Misr First Fund",
+    "fund_type": "Equity",
+    "manager": "Misr Capital",
+    "inception_date": "1995-01-01",
+    "description_ar": "صندوق يستثمر في الأسهم المصرية لتعظيم العائد.",
+    "description_en": "A fund investing in Egyptian equities to maximize returns."
+  },
+  {
+    "name_ar": "صندوق البنك الأهلي المصري (الرابع)",
+    "name_en": "NBE Fund (Fourth)",
+    "fund_type": "Money Market",
+    "manager": "Al Ahly Asset Management",
+    "inception_date": "2000-05-15",
+    "description_ar": "صندوق ذو عائد يومي تراكمي يتميز بسيولة عالية ومخاطر منخفضة.",
+    "description_en": "A daily cumulative return fund featuring high liquidity and low risk."
+  },
+  {
+    "name_ar": "صندوق فيصل الإسلامي للأسهم",
+    "name_en": "Faisal Islamic Equity Fund",
+    "fund_type": "Islamic Equity",
+    "manager": "Hermes",
+    "inception_date": "2006-10-20",
+    "description_ar": "صندوق يستثمر في أسهم الشركات المتوافقة مع الشريعة الإسلامية.",
+    "description_en": "A fund investing in Sharia-compliant company equities."
+  }
+]
