@@ -91,6 +91,21 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  // --- Password Reset ---
+  Future<void> resetPassword(String email) async {
+    emit(AuthLoading());
+    try {
+      final client = SupabaseService.client;
+      if (client == null) throw Exception('Supabase not initialized');
+      
+      await client.auth.resetPasswordForEmail(email);
+      emit(Unauthenticated()); // Back to unauthenticated, maybe show a success dialog
+    } catch (e) {
+      emit(AuthError('Failed to send reset email: $e'));
+      emit(Unauthenticated());
+    }
+  }
+
   Future<void> signOut() async {
     emit(AuthLoading());
     final client = SupabaseService.client;

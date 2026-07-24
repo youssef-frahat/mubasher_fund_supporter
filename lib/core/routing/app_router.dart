@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
+import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/admin/presentation/screens/admin_layout.dart';
 import '../../features/main_layout/presentation/screens/main_layout.dart';
@@ -13,8 +14,10 @@ import '../../features/portfolio/presentation/screens/portfolio_screen.dart';
 import 'routes.dart';
 import '../supabase/supabase_service.dart';
 import 'go_router_refresh_stream.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> _shellNavigatorSettingsKey = GlobalKey<NavigatorState>();
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -52,6 +55,11 @@ class AppRouter {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const SplashScreen(),
       ),
+      GoRoute(
+        path: Routes.forgotPassword,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return MainLayout(navigationShell: navigationShell);
@@ -82,14 +90,20 @@ class AppRouter {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: _shellNavigatorSettingsKey,
             routes: [
               GoRoute(
-                path: Routes.profile,
-                builder: (context, state) => const ProfileScreen(),
+                path: Routes.settings,
+                builder: (context, state) => const SettingsScreen(),
               ),
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: Routes.profile,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ProfileScreen(),
       ),
       GoRoute(
         path: Routes.login,

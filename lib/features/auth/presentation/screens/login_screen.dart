@@ -82,34 +82,59 @@ class _LoginScreenState extends State<LoginScreen> {
                             prefixIcon: const Icon(Icons.email_outlined, color: Colors.white70),
                           ),
                         ).animate().fadeIn(delay: 500.ms),
+                        SizedBox(height: 12.h),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => context.push(Routes.forgotPassword),
+                            child: Text(
+                              'Forgot Password?',
+                              style: FontStyles.bodySmall.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
                         SizedBox(height: 24.h),
                         ElevatedButton(
+                          onPressed: isLoading
+                              ? null
+                              : () {
+                                  final email = _emailController.text.trim();
+                                  if (email.isNotEmpty) {
+                                    context.read<AuthCubit>().sendOtp(email);
+                                  }
+                                },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: AppColors.primary,
                             padding: EdgeInsets.symmetric(vertical: 16.h),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16.r),
+                            ),
+                            backgroundColor: Theme.of(context).colorScheme.primary,
                           ),
-                          onPressed: isLoading ? null : () {
-                            if (_emailController.text.isNotEmpty) {
-                              context.read<AuthCubit>().sendOtp(_emailController.text.trim());
-                            }
-                          },
-                          child: isLoading 
-                              ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator())
-                              : Text('Continue with Email', style: FontStyles.titleMedium.copyWith(color: AppColors.primary)),
-                        ).animate().fadeIn(delay: 600.ms),
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              : Text(
+                                  'Continue with Email',
+                                  style: FontStyles.labelLarge.copyWith(color: Colors.white),
+                                ),
+                        ),
                         SizedBox(height: 24.h),
                         Row(
                           children: [
-                            Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.3))),
+                            const Expanded(child: Divider()),
                             Padding(
                               padding: EdgeInsets.symmetric(horizontal: 16.w),
-                              child: Text('OR', style: TextStyle(color: Colors.white.withValues(alpha: 0.7))),
+                              child: Text('OR', style: FontStyles.bodySmall.copyWith(color: Colors.grey)),
                             ),
-                            Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.3))),
+                            const Expanded(child: Divider()),
                           ],
-                        ).animate().fadeIn(delay: 700.ms),
+                        ),
                         SizedBox(height: 24.h),
                         SocialLoginButton(
                           label: 'Continue with Google',
