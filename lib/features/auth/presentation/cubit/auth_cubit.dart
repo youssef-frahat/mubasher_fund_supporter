@@ -66,11 +66,28 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> signInWithGoogle() async {
     emit(AuthLoading());
     try {
-      // TODO: Implement Google Sign In once Client IDs are configured
-      await Future.delayed(const Duration(seconds: 1));
-      throw Exception('Google Sign-In is not fully configured yet. Please configure Client IDs.');
+      // NOTE: WebClientId must be configured in Google Cloud & Supabase
+      const webClientId = '839907844431-hm1sj5q6sep7vi6bhii0v006d4rr2ci2.apps.googleusercontent.com'; 
+      final googleSignIn = google_auth.GoogleSignIn(
+        serverClientId: webClientId,
+      );
+      final googleUser = await googleSignIn.signIn();
+      final googleAuth = await googleUser?.authentication;
+      final accessToken = googleAuth?.accessToken;
+      final idToken = googleAuth?.idToken;
+
+      if (accessToken == null || idToken == null) {
+        throw Exception('Google Auth Failed: Tokens are null.');
+      }
+
+      final client = SupabaseService.client;
+      await client!.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
     } catch (e) {
-      emit(AuthError(e.toString()));
+      emit(AuthError('Google Sign-In failed: $e'));
       emit(Unauthenticated());
     }
   }
