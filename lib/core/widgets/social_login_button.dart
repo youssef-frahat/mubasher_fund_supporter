@@ -6,16 +6,18 @@ import '../app_config/app_colors.dart';
 
 class SocialLoginButton extends StatelessWidget {
   final String label;
-  final IconData icon;
-  final Color iconColor;
+  final IconData? icon;
+  final Color? iconColor;
+  final Widget? iconWidget;
   final VoidCallback onPressed;
   final bool isLoading;
 
   const SocialLoginButton({
     super.key,
     required this.label,
-    required this.icon,
-    required this.iconColor,
+    this.icon,
+    this.iconColor,
+    this.iconWidget,
     required this.onPressed,
     this.isLoading = false,
   });
@@ -26,7 +28,7 @@ class SocialLoginButton extends StatelessWidget {
       onPressed: isLoading ? null : onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: Colors.black87,
         elevation: 0,
         padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 24.w),
         shape: RoundedRectangleBorder(
@@ -43,9 +45,10 @@ class SocialLoginButton extends StatelessWidget {
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, color: iconColor, size: 28.sp),
+                if (iconWidget != null) iconWidget!
+                else if (icon != null) Icon(icon, color: iconColor, size: 28.sp),
                 SizedBox(width: 12.w),
-                Text(label, style: FontStyles.titleMedium),
+                Text(label, style: FontStyles.titleMedium.copyWith(color: Colors.black87)),
               ],
             ),
     ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0, curve: Curves.easeOutCubic);

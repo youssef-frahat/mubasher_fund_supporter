@@ -138,8 +138,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         SizedBox(height: 24.h),
                         SocialLoginButton(
                           label: 'Continue with Google',
-                          icon: Icons.g_mobiledata,
-                          iconColor: Colors.red,
+                          iconWidget: Text(
+                            'G',
+                            style: TextStyle(
+                              fontSize: 28.sp,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFFDB4437), // Google Red
+                            ),
+                          ),
                           isLoading: isLoading,
                           onPressed: () {
                             context.read<AuthCubit>().signInWithGoogle();
