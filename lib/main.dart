@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'features/auth/presentation/cubit/auth_cubit.dart';
+import 'features/portfolio/presentation/cubit/portfolio_cubit.dart';
 import 'core/theme/app_theme.dart';
 import 'core/di/service_locator.dart';
 import 'core/routing/app_router.dart';
@@ -36,8 +37,11 @@ class MubasherFundSupporterApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return BlocProvider(
-          create: (_) => sl<AuthCubit>(),
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => sl<AuthCubit>()),
+            BlocProvider(create: (_) => sl<PortfolioCubit>()),
+          ],
           child: MaterialApp.router(
             title: 'Mubasher Fund Supporter',
             debugShowCheckedModeBanner: false,

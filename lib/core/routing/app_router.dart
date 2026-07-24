@@ -9,6 +9,7 @@ import '../../features/home/data/models/platform_feature.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/profile_screen.dart';
+import '../../features/portfolio/presentation/screens/portfolio_screen.dart';
 import 'routes.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -44,7 +45,7 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: Routes.portfolio,
-                builder: (context, state) => const Scaffold(body: Center(child: Text('Portfolio Screen'))),
+                builder: (context, state) => const PortfolioScreen(),
               ),
             ],
           ),

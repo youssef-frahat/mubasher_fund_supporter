@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../home/data/models/platform_feature.dart';
+import '../../../portfolio/presentation/cubit/portfolio_cubit.dart';
 
 class FundDetailsScreen extends StatelessWidget {
   final PlatformFeature fund;
@@ -93,18 +95,66 @@ class FundDetailsScreen extends StatelessWidget {
                   padding: EdgeInsets.symmetric(vertical: 16.h),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
                 ),
-                onPressed: () {
-                  // TODO: Add to Portfolio logic
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Added to Portfolio!')),
-                  );
-                },
-                child: const Text('Add to Portfolio', style: TextStyle(color: Colors.white)),
+                onPressed: () => _showAddTransactionDialog(context, fund),
+                child: const Text('Simulate Purchase', style: TextStyle(color: Colors.white)),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showAddTransactionDialog(BuildContext context, PlatformFeature fund) {
+    final unitsController = TextEditingController();
+    final priceController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 16.w, right: 16.w, top: 16.h,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Simulate Purchase for ${fund.title}', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
+              SizedBox(height: 16.h),
+              TextField(
+                controller: unitsController,
+                decoration: const InputDecoration(labelText: 'Number of Units'),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              ),
+              SizedBox(height: 16.h),
+              TextField(
+                controller: priceController,
+                decoration: const InputDecoration(labelText: 'Purchase Price (per unit)'),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              ),
+              SizedBox(height: 24.h),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    final units = double.tryParse(unitsController.text) ?? 0;
+                    final price = double.tryParse(priceController.text) ?? 0;
+                    if (units > 0 && price > 0) {
+                      context.read<PortfolioCubit>().addTransaction(fund.id ?? '', units, price);
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaction Added!')));
+                    }
+                  },
+                  child: const Text('Add Transaction'),
+                ),
+              ),
+              SizedBox(height: 16.h),
+            ],
+          ),
+        );
+      },
     );
   }
 }
