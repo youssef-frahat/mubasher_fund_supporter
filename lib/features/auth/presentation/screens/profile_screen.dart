@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/routes.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
+import '../../../../core/services/permissions_service.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -33,6 +34,32 @@ class ProfileScreen extends StatelessWidget {
                   Text(
                     state.user.email ?? '',
                     style: TextStyle(fontSize: 16.sp, color: Colors.grey),
+                  ),
+                  SizedBox(height: 32.h),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final granted = await PermissionsService.requestNotificationPermission(context);
+                      if (granted && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Notifications Enabled!')),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.notifications),
+                    label: const Text('Enable Notifications'),
+                  ),
+                  SizedBox(height: 16.h),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final granted = await PermissionsService.requestPhotosPermission(context);
+                      if (granted && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Photo Access Granted!')),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.photo_library),
+                    label: const Text('Change Profile Picture'),
                   ),
                   SizedBox(height: 32.h),
                   ElevatedButton(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
+import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/admin/presentation/screens/admin_layout.dart';
 import '../../features/main_layout/presentation/screens/main_layout.dart';
@@ -19,16 +19,20 @@ final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 class AppRouter {
   static final GoRouter router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: Routes.home,
+    initialLocation: Routes.splash,
     debugLogDiagnostics: true,
     refreshListenable: GoRouterRefreshStream(SupabaseService.client!.auth.onAuthStateChange),
     redirect: (context, state) {
       final session = SupabaseService.client?.auth.currentSession;
       final isAuthenticated = session != null;
       
+      final isGoingToSplash = state.matchedLocation == Routes.splash;
       final isGoingToLogin = state.matchedLocation == Routes.login;
       final isGoingToOtp = state.matchedLocation == Routes.otp;
       final isAuthRoute = isGoingToLogin || isGoingToOtp;
+
+      // Allow splash screen to show regardless of auth state
+      if (isGoingToSplash) return null;
 
       // If user is not authenticated and not heading to an auth route, redirect to login
       if (!isAuthenticated && !isAuthRoute) {
@@ -43,6 +47,11 @@ class AppRouter {
       return null; // No redirect needed
     },
     routes: [
+      GoRoute(
+        path: Routes.splash,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SplashScreen(),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return MainLayout(navigationShell: navigationShell);

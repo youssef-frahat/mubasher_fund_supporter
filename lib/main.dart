@@ -9,10 +9,17 @@ import 'core/theme/app_theme.dart';
 import 'core/di/service_locator.dart';
 import 'core/routing/app_router.dart';
 import 'core/supabase/supabase_service.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'core/services/notification_service.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   await EasyLocalization.ensureInitialized();
+  
+  // Register background handler early
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   
   await SupabaseService.initialize();
   await initServiceLocator();
