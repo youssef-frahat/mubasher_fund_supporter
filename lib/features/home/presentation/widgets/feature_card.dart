@@ -43,15 +43,13 @@ class FeatureCard extends StatelessWidget {
                 style: FontStyles.titleMedium,
               ),
               SizedBox(height: 8.h),
-              Expanded(
-                child: Text(
-                  feature.subtitle,
-                  style: FontStyles.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                feature.subtitle,
+                style: FontStyles.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

@@ -113,18 +113,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         SizedBox(height: 24.h),
                         SocialLoginButton(
                           label: 'Continue with Google',
-                          icon: Icons.g_mobiledata, // Placeholder for Google Icon
+                          icon: Icons.g_mobiledata,
                           iconColor: Colors.red,
                           isLoading: isLoading,
-                          onPressed: () => context.read<AuthCubit>().signInWithGoogle(),
-                        ),
-                        SizedBox(height: 12.h),
-                        SocialLoginButton(
-                          label: 'Continue with Apple',
-                          icon: Icons.apple,
-                          iconColor: Colors.black,
-                          isLoading: isLoading,
-                          onPressed: () => context.read<AuthCubit>().signInWithApple(),
+                          onPressed: () {
+                            context.read<AuthCubit>().signInWithGoogle();
+                          },
                         ),
                       ],
                     ),

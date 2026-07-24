@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart' as google_auth;
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 import '../../../../core/supabase/supabase_service.dart';
 import 'auth_state.dart';
@@ -92,20 +91,8 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  // --- Apple Auth ---
-  Future<void> signInWithApple() async {
-    emit(AuthLoading());
-    try {
-      // TODO: Implement Apple Sign In once Client IDs are configured
-      await Future.delayed(const Duration(seconds: 1));
-      throw Exception('Apple Sign-In is not fully configured yet. Please configure Apple Developer Account.');
-    } catch (e) {
-      emit(AuthError(e.toString()));
-      emit(Unauthenticated());
-    }
-  }
-
   Future<void> signOut() async {
+    emit(AuthLoading());
     final client = SupabaseService.client;
     if (client != null) {
       await client.auth.signOut();
