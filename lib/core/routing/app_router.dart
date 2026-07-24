@@ -11,6 +11,8 @@ import '../../features/auth/presentation/screens/profile_screen.dart';
 import '../../features/auth/presentation/screens/otp_screen.dart';
 import '../../features/portfolio/presentation/screens/portfolio_screen.dart';
 import 'routes.dart';
+import '../supabase/supabase_service.dart';
+import 'go_router_refresh_stream.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -19,6 +21,27 @@ class AppRouter {
     navigatorKey: _rootNavigatorKey,
     initialLocation: Routes.home,
     debugLogDiagnostics: true,
+    refreshListenable: GoRouterRefreshStream(SupabaseService.client!.auth.onAuthStateChange),
+    redirect: (context, state) {
+      final session = SupabaseService.client?.auth.currentSession;
+      final isAuthenticated = session != null;
+      
+      final isGoingToLogin = state.matchedLocation == Routes.login;
+      final isGoingToOtp = state.matchedLocation == Routes.otp;
+      final isAuthRoute = isGoingToLogin || isGoingToOtp;
+
+      // If user is not authenticated and not heading to an auth route, redirect to login
+      if (!isAuthenticated && !isAuthRoute) {
+        return Routes.login;
+      }
+
+      // If user is authenticated and heading to an auth route, redirect to home
+      if (isAuthenticated && isAuthRoute) {
+        return Routes.home;
+      }
+
+      return null; // No redirect needed
+    },
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
