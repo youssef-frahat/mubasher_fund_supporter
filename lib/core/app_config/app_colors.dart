@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color primary = Color(0xFF6750A4);
-  static const Color primaryContainer = Color(0xFFEADDFF);
-  static const Color onPrimaryContainer = Color(0xFF21005D);
+  static const Color primary = Color(0xFF0F62FE); // Deep IBM Blue
+  static const Color secondary = Color(0xFF8A3FFC); // Vibrant Purple
+  static const Color background = Color(0xFFF4F7FB); // Very light greyish blue
+  static const Color surface = Colors.white;
+  static const Color textPrimary = Color(0xFF161616);
+  static const Color textSecondary = Color(0xFF525252);
   
-  static const Color secondary = Color(0xFF625B71);
-  static const Color secondaryContainer = Color(0xFFE8DEF8);
-  static const Color onSecondaryContainer = Color(0xFF1D192B);
+  static const Color success = Color(0xFF24A148);
+  static const Color error = Color(0xFFDA1E28);
+  static const Color warning = Color(0xFFF1C21B);
 
-  static const Color background = Color(0xFFFFFBFE);
-  static const Color onBackground = Color(0xFF1C1B1F);
-  
-  static const Color surface = Color(0xFFFFFBFE);
-  static const Color onSurfaceVariant = Color(0xFF49454F);
-  static const Color outlineVariant = Color(0xFFCAC4D0);
+  // Gradients for premium look
+  static const LinearGradient primaryGradient = LinearGradient(
+    colors: [Color(0xFF0F62FE), Color(0xFF8A3FFC)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
-  // Dark Mode Colors
-  static const Color darkBackground = Color(0xFF1C1B1F);
-  static const Color darkSurface = Color(0xFF1C1B1F);
-  static const Color darkPrimaryContainer = Color(0xFF4F378B);
-  static const Color darkSecondaryContainer = Color(0xFF4A4458);
+  static const LinearGradient glassGradient = LinearGradient(
+    colors: [
+      Color(0x99FFFFFF), // 60% White
+      Color(0x33FFFFFF), // 20% White
+    ],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 }

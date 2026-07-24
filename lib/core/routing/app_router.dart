@@ -7,8 +7,8 @@ import '../../features/main_layout/presentation/screens/main_layout.dart';
 import '../../features/funds/presentation/screens/fund_details_screen.dart';
 import '../../features/home/data/models/platform_feature.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
-import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/profile_screen.dart';
+import '../../features/auth/presentation/screens/otp_screen.dart';
 import '../../features/portfolio/presentation/screens/portfolio_screen.dart';
 import 'routes.dart';
 
@@ -65,9 +65,12 @@ class AppRouter {
         builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
-        path: Routes.register,
+        path: Routes.otp,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const RegisterScreen(),
+        builder: (context, state) {
+          final email = state.extra as String;
+          return OtpScreen(email: email);
+        },
       ),
       GoRoute(
         path: Routes.fundDetails,

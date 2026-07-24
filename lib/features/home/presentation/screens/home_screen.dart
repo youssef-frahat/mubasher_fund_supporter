@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/app_config/font_styles.dart';
@@ -104,18 +105,14 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                     SliverPadding(
-                      padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
-                      sliver: SliverGrid.builder(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      sliver: SliverList.builder(
                         itemCount: state.features.length,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 16.h,
-                          crossAxisSpacing: 16.w,
-                          childAspectRatio: 1.0,
-                        ),
                         itemBuilder: (context, index) {
-                          final feature = state.features[index];
-                          return FeatureCard(feature: feature);
+                          return Padding(
+                            padding: EdgeInsets.only(bottom: 16.h),
+                            child: FeatureCard(feature: state.features[index]),
+                          ).animate().fadeIn(delay: (100 * index).ms).slideY(begin: 0.2, end: 0, duration: 400.ms, curve: Curves.easeOutQuart);
                         },
                       ),
                     ),

@@ -12,6 +12,11 @@ class Authenticated extends AuthState {
 
 class Unauthenticated extends AuthState {}
 
+class OtpSent extends AuthState {
+  final String email;
+  OtpSent(this.email);
+}
+
 class AuthError extends AuthState {
   final String message;
   AuthError(this.message);
