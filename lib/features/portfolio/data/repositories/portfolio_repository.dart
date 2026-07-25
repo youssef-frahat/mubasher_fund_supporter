@@ -1,17 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/portfolio_item_model.dart';
 import '../models/portfolio_model.dart';
 
 class PortfolioRepository {
   static const String _portfoliosKey = 'multi_portfolios_v2';
   static const String _activeIdKey = 'active_portfolio_id_v2';
-  final SupabaseClient? _supabaseClient;
-
-  PortfolioRepository({SupabaseClient? supabaseClient})
-      : _supabaseClient = supabaseClient;
+// Removed unused Supabase client (not needed)
 
   Future<List<PortfolioModel>> getAllPortfolios() async {
     final prefs = await SharedPreferences.getInstance();

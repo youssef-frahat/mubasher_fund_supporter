@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class DatabaseRepository {
   final SupabaseClient _client;
 
-  DatabaseRepository({required SupabaseClient client}) : _client = client;
+  DatabaseRepository(this._client);
 
   // --- Wishlist (Favorite Funds) ---
 

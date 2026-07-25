@@ -65,6 +65,27 @@ class AppTranslation {
       'cancel': 'إلغاء',
       'delete': 'حذف',
       'units': 'عدد الوثائق',
+      'welcomeBack': 'أهلاً بك في وثيقة 👋',
+      'smartAdvisorInsight': 'تحليل المستشار الذكي 💡',
+      'aiRecommendation': 'توصيات التوزيع الاستثماري بناءً على أداء السوق اليوم',
+      'categories': 'فئات الصناديق الاستثمارية',
+      'moneyMarket': 'نقدية وسيولة',
+      'gold': 'صناديق الذهب',
+      'equity': 'أسهم ومحافظ',
+      'islamic': 'شريعة إسلامية',
+      'treasuryBills': 'أذون خزانة',
+      'login': 'تسجيل الدخول',
+      'register': 'إنشاء حساب جديد',
+      'email': 'البريد الإلكتروني',
+      'password': 'كلمة المرور',
+      'fullName': 'الاسم بالكامل',
+      'phone': 'رقم الهاتف',
+      'rememberMe': 'تذكرني',
+      'forgotPassword': 'نسيت كلمة المرور؟',
+      'optionalPhoto': 'إضافة صورة شخصية (اختياري 📸)',
+      'lastNavUpdate': 'آخر تحديث للوثيقة: اليوم 25 يوليو 📅',
+      'buyNowBroker': 'تداول واستثمر عبر المدير الرسمي 🔗',
+      'simulatedReturn': 'العائد التقديري المتوقع',
     },
     'en': {
       'appName': 'Watheqa',
@@ -103,6 +124,27 @@ class AppTranslation {
       'cancel': 'Cancel',
       'delete': 'Delete',
       'units': 'Units Count',
+      'welcomeBack': 'Welcome to Watheqa 👋',
+      'smartAdvisorInsight': 'Smart Advisor Insights 💡',
+      'aiRecommendation': 'Portfolio allocation recommendations based on today market performance',
+      'categories': 'Fund Categories',
+      'moneyMarket': 'Money Market & Liquidity',
+      'gold': 'Gold Funds',
+      'equity': 'Equities & Stocks',
+      'islamic': 'Sharia Compliant',
+      'treasuryBills': 'Treasury Bills',
+      'login': 'Sign In',
+      'register': 'Create Account',
+      'email': 'Email Address',
+      'password': 'Password',
+      'fullName': 'Full Name',
+      'phone': 'Phone Number',
+      'rememberMe': 'Remember Me',
+      'forgotPassword': 'Forgot Password?',
+      'optionalPhoto': 'Add Profile Photo (Optional 📸)',
+      'lastNavUpdate': 'Last Unit Value Update: Today 25 July 📅',
+      'buyNowBroker': 'Trade via Official Manager 🔗',
+      'simulatedReturn': 'Estimated Expected Return',
     },
   };
 
@@ -113,7 +155,7 @@ class AppTranslation {
 
 extension TranslationExtension on BuildContext {
   String tr(String key) {
-    final locale = read<LanguageCubit>().state;
+    final locale = watch<LanguageCubit>().state;
     return AppTranslation.translate(key, locale.languageCode);
   }
 

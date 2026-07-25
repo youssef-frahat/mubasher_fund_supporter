@@ -17,15 +17,15 @@ class AuthCubit extends Cubit<AuthState> {
     }
     
     final session = client.auth.currentSession;
-    if (session != null && session.user != null) {
-      emit(Authenticated(session.user!));
+    if (session?.user != null) {
+      emit(Authenticated(session!.user));
     } else {
       emit(Unauthenticated());
     }
 
     client.auth.onAuthStateChange.listen((data) {
-      if (data.session != null && data.session!.user != null) {
-        emit(Authenticated(data.session!.user!));
+      if (data.session != null) {
+        emit(Authenticated(data.session!.user));
       } else {
         emit(Unauthenticated());
       }

@@ -9,6 +9,7 @@ import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/widgets/social_login_button.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
+import '../../../../core/language/language_cubit.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -90,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(height: 6.h),
 
                       Text(
-                        'وثيقة (Watheqa) - منصتك الذكية لصناديق الاستثمار في مصر',
+                        context.tr('appSubtitle'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: textSecondary,
@@ -115,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               keyboardType: TextInputType.emailAddress,
                               style: TextStyle(color: textPrimary),
                               decoration: InputDecoration(
-                                labelText: 'البريد الإلكتروني',
+                                labelText: context.tr('email'),
                                 labelStyle: TextStyle(color: textSecondary),
                                 prefixIcon: Icon(Icons.email_outlined, color: textSecondary),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
@@ -130,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               obscureText: _isPasswordObscured,
                               style: TextStyle(color: textPrimary),
                               decoration: InputDecoration(
-                                labelText: 'كلمة المرور',
+                                labelText: context.tr('password'),
                                 labelStyle: TextStyle(color: textSecondary),
                                 prefixIcon: Icon(Icons.lock_outline, color: textSecondary),
                                 suffixIcon: IconButton(
@@ -153,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: TextButton(
                                 onPressed: () => context.push(Routes.forgotPassword),
                                 child: Text(
-                                  'نسيت كلمة المرور؟',
+                                  context.tr('forgotPassword'),
                                   style: TextStyle(
                                     color: AppColors.primary,
                                     fontSize: 12.sp,
@@ -195,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: const CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
                               )
                             : Text(
-                                'تسجيل الدخول بالبريد الإلكتروني',
+                                context.tr('login'),
                                 style: TextStyle(
                                   color: Colors.black,
                                   fontSize: 15.sp,
@@ -239,7 +240,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           GestureDetector(
                             onTap: () => context.push(Routes.register),
                             child: Text(
-                              'إنشاء حساب جديد (سجل الآن)',
+                              context.tr('register'),
                               style: TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.bold,

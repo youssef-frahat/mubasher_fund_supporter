@@ -5,7 +5,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/app_config/app_colors.dart';
-import '../../../../core/services/permissions_service.dart';
 import '../../../../core/services/avatar_picker_service.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';

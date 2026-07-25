@@ -10,6 +10,7 @@ import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/widgets/app_loading_indicator.dart';
 import '../../../../core/widgets/watheqa_top_app_bar.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
 import '../widgets/feature_card.dart';
@@ -58,7 +59,7 @@ class HomeScreen extends StatelessWidget {
                                 Icon(Icons.search, color: AppColors.primary, size: 20.r),
                                 SizedBox(width: 10.w),
                                 Text(
-                                  'ابحث في دليل الصناديق، البنوك، الذهب والأذون...',
+                                  context.tr('searchPlaceholder'),
                                   style: TextStyle(
                                     color: textSecondary,
                                     fontSize: 12.sp,
@@ -156,7 +157,7 @@ class HomeScreen extends StatelessWidget {
                                 GestureDetector(
                                   onTap: () => context.push(Routes.allFunds),
                                   child: Text(
-                                    'عرض الكل ➔',
+                                    context.tr('seeAll'),
                                     style: TextStyle(
                                       color: AppColors.primary,
                                       fontSize: 11.sp,
@@ -196,7 +197,7 @@ class HomeScreen extends StatelessWidget {
                                 GestureDetector(
                                   onTap: () => context.push(Routes.allFunds),
                                   child: Text(
-                                    'عرض الكل ➔',
+                                    context.tr('seeAll'),
                                     style: TextStyle(
                                       color: AppColors.primary,
                                       fontSize: 11.sp,
@@ -233,7 +234,7 @@ class HomeScreen extends StatelessWidget {
                             GestureDetector(
                               onTap: () => context.push(Routes.allFunds),
                               child: Text(
-                                'عرض الكل ➔',
+                                context.tr('seeAll'),
                                 style: TextStyle(
                                   color: AppColors.primary,
                                   fontSize: 11.sp,

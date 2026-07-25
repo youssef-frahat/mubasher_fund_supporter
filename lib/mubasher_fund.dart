@@ -48,7 +48,7 @@ class MubasherFund extends StatelessWidget {
                     routerConfig: AppRouter.router,
                     builder: (context, child) {
                       return Directionality(
-                        textDirection: ui.TextDirection.rtl,
+                        textDirection: ui.TextDirection.ltr,
                         child: child ?? const SizedBox.shrink(),
                       );
                     },

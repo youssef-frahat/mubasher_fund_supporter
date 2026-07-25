@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/routing/routes.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../../../home/data/models/platform_feature.dart';
 
 class AllFundsScreen extends StatefulWidget {
@@ -102,7 +103,7 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'مستكشف دليل كل الصناديق',
+          context.tr('exploreFunds'),
           style: TextStyle(
             color: textPrimary,
             fontWeight: FontWeight.bold,
@@ -120,7 +121,7 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
               onChanged: (val) => setState(() => _searchQuery = val.trim()),
               style: TextStyle(color: textPrimary),
               decoration: InputDecoration(
-                hintText: 'ابحث باسم الصندوق، المدير، أو الفئة...',
+                hintText: context.tr('searchPlaceholder'),
                 hintStyle: TextStyle(color: textSecondary, fontSize: 13.sp),
                 prefixIcon: Icon(Icons.search, color: AppColors.primary),
                 suffixIcon: _searchQuery.isNotEmpty

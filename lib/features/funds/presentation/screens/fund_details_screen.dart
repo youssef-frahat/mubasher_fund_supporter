@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/app_config/app_colors.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../../../home/data/models/platform_feature.dart';
 import '../../../portfolio/data/models/portfolio_item_model.dart';
 import '../../../portfolio/presentation/cubit/portfolio_cubit.dart';
@@ -96,8 +97,11 @@ class FundDetailsScreen extends StatelessWidget {
                   SizedBox(height: 8.h),
 
                   // NAV Last Updated Date Badge (Product Manager Requirement)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8.w,
+                    runSpacing: 8.h,
                     children: [
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
@@ -112,7 +116,7 @@ class FundDetailsScreen extends StatelessWidget {
                             FaIcon(FontAwesomeIcons.clock, color: AppColors.primary, size: 12.r),
                             SizedBox(width: 6.w),
                             Text(
-                              'آخر تحديث للوثيقة: اليوم 25 يوليو',
+                              context.tr('lastNavUpdate'),
                               style: TextStyle(
                                 color: AppColors.primary,
                                 fontSize: 10.sp,

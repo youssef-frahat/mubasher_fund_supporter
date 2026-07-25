@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/app_config/font_styles.dart';
+// import '../../../../core/app_config/font_styles.dart'; // removed unused import
 import 'admin_funds_screen.dart';
 
 class AdminLayout extends StatefulWidget {

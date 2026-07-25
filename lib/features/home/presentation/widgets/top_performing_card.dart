@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/app_config/font_styles.dart';
+import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../../../core/app_config/app_colors.dart';
+import '../../../../core/routing/routes.dart';
 import '../../data/models/fund_model.dart';
 
 class TopPerformingCard extends StatelessWidget {
@@ -10,84 +13,281 @@ class TopPerformingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-      padding: EdgeInsets.all(20.r),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primaryContainer,
-            Theme.of(context).colorScheme.secondaryContainer,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20.r),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: () => context.push(Routes.fundDetails, extra: fund.toPlatformFeature()),
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24.r),
+          gradient: LinearGradient(
+            colors: isDark
+                ? const [Color(0xFF0D1B2A), Color(0xFF1B2838), Color(0xFF0D1B2A)]
+                : const [Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F3460)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF00E676).withValues(alpha: 0.15),
+              blurRadius: 30,
+              offset: const Offset(0, 12),
+              spreadRadius: -4,
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Subtle glow accent top-right
+            Positioned(
+              top: -30,
+              right: -30,
+              child: Container(
+                width: 120.r,
+                height: 120.r,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFF00E676).withValues(alpha: 0.12),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Subtle glow accent bottom-left
+            Positioned(
+              bottom: -20,
+              left: -20,
+              child: Container(
+                width: 80.r,
+                height: 80.r,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFFF59E0B).withValues(alpha: 0.08),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Main content
+            Padding(
+              padding: EdgeInsets.all(20.r),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top row: #1 Badge + Crown + Category
+                  Row(
+                    children: [
+                      // Premium #1 Badge
+                      Container(
+                        width: 44.r,
+                        height: 44.r,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFFD700), Color(0xFFF59E0B), Color(0xFFD97706)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFFD700).withValues(alpha: 0.4),
+                              blurRadius: 12,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              FaIcon(FontAwesomeIcons.crown, size: 12.r, color: const Color(0xFF1A1A2E)),
+                              Text(
+                                '#1',
+                                style: TextStyle(
+                                  color: const Color(0xFF1A1A2E),
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 13.sp,
+                                  height: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'الأعلى تحقيقاً للأرباح',
+                              style: TextStyle(
+                                color: const Color(0xFFFFD700),
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14.sp,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              fund.category,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.45),
+                                fontSize: 11.sp,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Arrow indicator
+                      Container(
+                        width: 36.r,
+                        height: 36.r,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.08),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.arrow_forward_ios,
+                          size: 14.r,
+                          color: Colors.white.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 18.h),
+
+                  // Fund Name
+                  Text(
+                    fund.name,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18.sp,
+                      height: 1.3,
+                      letterSpacing: -0.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    fund.managerName,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.4),
+                      fontSize: 11.sp,
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // Divider line
+                  Container(
+                    height: 1,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          Colors.white.withValues(alpha: 0.1),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // Bottom stats row
+                  Row(
+                    children: [
+                      // YTD Return
+                      _buildStat(
+                        label: 'العائد السنوي',
+                        value: '+${fund.ytdReturn}%',
+                        valueColor: AppColors.primary,
+                        icon: FontAwesomeIcons.arrowTrendUp,
+                      ),
+                      SizedBox(width: 16.w),
+                      // NAV Price
+                      _buildStat(
+                        label: 'سعر الوثيقة',
+                        value: '${fund.currentNav} ج.م',
+                        valueColor: Colors.white,
+                        icon: FontAwesomeIcons.coins,
+                      ),
+                      SizedBox(width: 16.w),
+                      // Risk Level
+                      _buildStat(
+                        label: 'مستوى المخاطرة',
+                        value: fund.riskLevel == 'Low' ? 'منخفض' : fund.riskLevel == 'Medium' ? 'متوسط' : 'مرتفع',
+                        valueColor: fund.riskLevel == 'Low'
+                            ? AppColors.primary
+                            : fund.riskLevel == 'Medium'
+                                ? AppColors.gold
+                                : AppColors.error,
+                        icon: FontAwesomeIcons.shieldHalved,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildStat({
+    required String label,
+    required String value,
+    required Color valueColor,
+    required dynamic icon,
+  }) {
+    return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.emoji_events, color: Colors.amber, size: 28.sp),
-              SizedBox(width: 8.w),
-              Text(
-                "Top Performing Fund",
-                style: FontStyles.titleSmall.copyWith(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
+              icon is IconData ? Icon(icon, size: 10.r, color: Colors.white.withValues(alpha: 0.35)) : FaIcon(icon, size: 10.r, color: Colors.white.withValues(alpha: 0.35)),
+              SizedBox(width: 4.w),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 9.sp,
+                    letterSpacing: 0.3,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 16.h),
+          SizedBox(height: 4.h),
           Text(
-            fund.name,
-            style: FontStyles.titleLarge.copyWith(fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 12.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "YTD Return",
-                    style: FontStyles.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    "+${fund.ytdReturn}%",
-                    style: FontStyles.headlineMedium.copyWith(
-                      color: Colors.greenAccent[400],
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                ),
-                child: const Text("Invest"),
-              ),
-            ],
+            value,
+            style: TextStyle(
+              color: valueColor,
+              fontWeight: FontWeight.w800,
+              fontSize: 13.sp,
+            ),
           ),
         ],
       ),

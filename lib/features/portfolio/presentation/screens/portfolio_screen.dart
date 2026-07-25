@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/app_config/app_colors.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../cubit/portfolio_cubit.dart';
 import '../cubit/portfolio_state.dart';
 import '../../data/models/portfolio_item_model.dart';
@@ -44,7 +45,7 @@ class _PortfolioContentView extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'محفظتي الاستثمارية (المحاكاة)',
+          context.tr('portfolio'),
           style: TextStyle(
             color: textPrimary,
             fontWeight: FontWeight.bold,

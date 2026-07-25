@@ -3,10 +3,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/risk_profile_model.dart';
 
 class CalculatorRepository {
+  // ignore: unused_field
   final SupabaseClient? _supabaseClient;
 
-  CalculatorRepository({SupabaseClient? supabaseClient})
-      : _supabaseClient = supabaseClient;
+  CalculatorRepository({SupabaseClient? supabaseClient}) : _supabaseClient = supabaseClient;
 
   RiskAssessmentResult calculateRiskProfile({
     required InvestmentGoal goal,
