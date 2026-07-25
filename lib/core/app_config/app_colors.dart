@@ -1,30 +1,44 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color primary = Color(0xFF9D00FF); // Vibrant Neon Purple
-  static const Color secondary = Color(0xFF180A32); // Deep Splash Purple
-  static const Color background = Color(0xFF0D051A); // Deeper background for dark theme
-  static const Color surface = Color(0xFF180A32);
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFFB3B3B3);
-  
-  static const Color success = Color(0xFF24A148);
-  static const Color error = Color(0xFFDA1E28);
-  static const Color warning = Color(0xFFF1C21B);
+  // Brand Main Colors (Fintech Emerald & Midnight Slate)
+  static const Color primary = Color(0xFF00E676);      // Electric Emerald (Growth & Wealth)
+  static const Color primaryDark = Color(0xFF00B0FF);  // Deep Cyan Accent
+  static const Color secondary = Color(0xFF1E293B);    // Slate Surface Container
+  static const Color background = Color(0xFF0F172A);   // Midnight Navy Background
+  static const Color surface = Color(0xFF1E293B);      // Surface Cards
 
-  // Gradients for premium look
+  // Text & Border Colors
+  static const Color textPrimary = Color(0xFFF8FAFC);  // Crisp White Text
+  static const Color textSecondary = Color(0xFF94A3B8);// Cool Muted Slate
+  static const Color border = Color(0xFF334155);       // Subtle Divider Line
+  static const Color gold = Color(0xFFF59E0B);         // Gold Funds Accent
+
+  // Status Indicators
+  static const Color success = Color(0xFF10B981);      // Profit Green
+  static const Color error = Color(0xFFEF4444);        // Loss Red
+  static const Color warning = Color(0xFFF59E0B);      // Warning Yellow
+
+  // Gradients for Premium Fintech UI
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF9D00FF), Color(0xFF5B00FF)],
+    colors: [Color(0xFF00E676), Color(0xFF00B0FF)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient cardGradient = LinearGradient(
+    colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient glassGradient = LinearGradient(
     colors: [
-      Color(0x99FFFFFF), // 60% White
-      Color(0x33FFFFFF), // 20% White
+      Color(0x1AFFFFFF), // 10% White Glass
+      Color(0x05FFFFFF), // 2% White Glass
     ],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 }
+

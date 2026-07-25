@@ -10,6 +10,10 @@ import '../../../../core/localization/app_strings.dart';
 import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
 import '../widgets/feature_card.dart';
+import '../widgets/ai_insight_banner.dart';
+import '../widgets/top_performing_card.dart';
+import '../widgets/recommended_funds_list.dart';
+import '../widgets/fund_list_tile.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -104,6 +108,69 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                    // AI Insight Banner
+                    SliverToBoxAdapter(
+                      child: AiInsightBanner(insight: state.aiInsight)
+                          .animate()
+                          .fadeIn(delay: 100.ms)
+                          .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuart),
+                    ),
+
+                    // Top Performing Fund
+                    SliverToBoxAdapter(
+                      child: TopPerformingCard(fund: state.topPerformingFund)
+                          .animate()
+                          .fadeIn(delay: 200.ms)
+                          .scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1), duration: 400.ms, curve: Curves.easeOutQuart),
+                    ),
+
+                    // Recommended Funds
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16.h),
+                        child: RecommendedFundsList(funds: state.recommendedFunds)
+                            .animate()
+                            .fadeIn(delay: 300.ms)
+                            .slideX(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuart),
+                      ),
+                    ),
+
+                    // Ranked Funds Header
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(24.w, 16.h, 24.w, 12.h),
+                        child: Text(
+                          "Funds Ranked by Yield",
+                          style: FontStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+
+                    // Ranked Funds List
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.w),
+                      sliver: SliverList.builder(
+                        itemCount: state.rankedFunds.length,
+                        itemBuilder: (context, index) {
+                          return FundListTile(
+                            fund: state.rankedFunds[index],
+                            rank: index + 1,
+                          ).animate().fadeIn(delay: (400 + (100 * index)).ms).slideY(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOutQuart);
+                        },
+                      ),
+                    ),
+                    
+                    // Keep the old features for now if needed, or remove them. 
+                    // We'll keep them at the bottom as "Other Features"
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(24.w, 32.h, 24.w, 12.h),
+                        child: Text(
+                          "Platform Features",
+                          style: FontStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
                     SliverPadding(
                       padding: EdgeInsets.symmetric(horizontal: 16.w),
                       sliver: SliverList.builder(
@@ -112,39 +179,8 @@ class HomeScreen extends StatelessWidget {
                           return Padding(
                             padding: EdgeInsets.only(bottom: 16.h),
                             child: FeatureCard(feature: state.features[index]),
-                          ).animate().fadeIn(delay: (100 * index).ms).slideY(begin: 0.2, end: 0, duration: 400.ms, curve: Curves.easeOutQuart);
+                          );
                         },
-                      ),
-                    ),
-                    SliverPadding(
-                      padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 32.h),
-                      sliver: SliverToBoxAdapter(
-                        child: Container(
-                          padding: EdgeInsets.all(20.r),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(24.r),
-                            gradient: LinearGradient(
-                              colors: [
-                                Theme.of(context).colorScheme.primaryContainer,
-                                Theme.of(context).colorScheme.secondaryContainer,
-                              ],
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                AppStrings.phase1Delivered.tr(),
-                                style: FontStyles.titleMedium,
-                              ),
-                              SizedBox(height: 8.h),
-                              Text(
-                                AppStrings.phase1Description.tr(),
-                                style: FontStyles.bodyMedium,
-                              ),
-                            ],
-                          ),
-                        ),
                       ),
                     ),
                   ],
