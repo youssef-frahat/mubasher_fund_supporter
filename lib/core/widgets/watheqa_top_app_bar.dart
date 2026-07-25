@@ -35,6 +35,16 @@ class WatheqaTopAppBar extends StatelessWidget implements PreferredSizeWidget {
           : null,
       title: const WatheqaAnimatedTitle(),
       actions: [
+        // Wishlist Saved Funds Icon
+        IconButton(
+          tooltip: 'الصناديق المفضلة',
+          icon: FaIcon(
+            FontAwesomeIcons.bookmark,
+            color: AppColors.gold,
+            size: 18.r,
+          ),
+          onPressed: () => context.push(Routes.wishlist),
+        ),
         // All Funds Directory Explorer Icon
         IconButton(
           tooltip: 'مستكشف كل الصناديق',

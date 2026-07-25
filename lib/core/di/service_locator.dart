@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 
 import '../../features/home/data/repositories/funds_repository.dart';
 import '../../features/portfolio/data/repositories/portfolio_repository.dart';
+import '../services/wishlist_service.dart';
 import '../../features/home/presentation/cubit/home_cubit.dart';
 import '../../features/admin/presentation/cubit/admin_cubit.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
@@ -13,6 +14,7 @@ Future<void> initServiceLocator() async {
   // Setup Repositories and Data Sources here
   sl.registerLazySingleton<FundsRepository>(() => SupabaseFundsRepository());
   sl.registerLazySingleton<PortfolioRepository>(() => PortfolioRepository());
+  sl.registerLazySingleton<WishlistService>(() => WishlistService());
 
   // Setup Blocs/Cubits here
   sl.registerFactory(() => HomeCubit(sl()));

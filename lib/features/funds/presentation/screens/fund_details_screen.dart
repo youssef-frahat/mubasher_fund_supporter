@@ -6,6 +6,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/language/language_cubit.dart';
+import '../../../../core/di/service_locator.dart';
+import '../../../../core/services/wishlist_service.dart';
 import '../../../home/data/models/platform_feature.dart';
 import '../../../portfolio/data/models/portfolio_item_model.dart';
 import '../../../portfolio/presentation/cubit/portfolio_cubit.dart';
@@ -41,6 +43,37 @@ class FundDetailsScreen extends StatelessWidget {
             fontSize: 16.sp,
           ),
         ),
+        actions: [
+          ValueListenableBuilder<Set<String>>(
+            valueListenable: sl<WishlistService>().savedFundIds,
+            builder: (context, savedIds, _) {
+              final fundId = fund.id ?? '';
+              final isSaved = savedIds.contains(fundId);
+              return IconButton(
+                tooltip: 'إضافة للمفضلة',
+                icon: FaIcon(
+                  isSaved ? FontAwesomeIcons.solidBookmark : FontAwesomeIcons.bookmark,
+                  color: isSaved ? AppColors.gold : textPrimary,
+                  size: 18.r,
+                ),
+                onPressed: () async {
+                  final added = await sl<WishlistService>().toggleWishlist(fundId);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      duration: const Duration(seconds: 2),
+                      content: Text(
+                        added ? 'تمت إضافة "${fund.title}" للمفضلة ⭐️' : 'تم مسح "${fund.title}" من المفضلة',
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+          SizedBox(width: 8.w),
+        ],
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.r),

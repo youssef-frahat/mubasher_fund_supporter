@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/app_config/font_styles.dart';
+import '../../../../core/di/service_locator.dart';
 import '../../../../core/routing/routes.dart';
+import '../../../../core/services/wishlist_service.dart';
 import '../../data/models/fund_model.dart';
 
 class RecommendedFundsList extends StatelessWidget {
@@ -12,17 +17,11 @@ class RecommendedFundsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final wishlistService = sl<WishlistService>();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: Text(
-            "Recommended For You",
-            style: FontStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
-          ),
-        ),
-        SizedBox(height: 12.h),
         SizedBox(
           height: 140.h,
           child: ListView.builder(
@@ -63,7 +62,35 @@ class RecommendedFundsList extends StatelessWidget {
                               ),
                             ),
                           ),
-                          Icon(Icons.arrow_forward_ios, size: 14.sp, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          ValueListenableBuilder<Set<String>>(
+                            valueListenable: wishlistService.savedFundIds,
+                            builder: (context, savedIds, _) {
+                              final isSaved = savedIds.contains(fund.id);
+                              return GestureDetector(
+                                onTap: () async {
+                                  final added = await wishlistService.toggleWishlist(fund.id);
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      duration: const Duration(seconds: 2),
+                                      content: Text(
+                                        added ? 'تمت إضافة "${fund.name}" للمفضلة ⭐️' : 'تم مسح "${fund.name}" من المفضلة',
+                                      ),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                },
+                                child: Padding(
+                                  padding: EdgeInsets.all(4.r),
+                                  child: FaIcon(
+                                    isSaved ? FontAwesomeIcons.solidBookmark : FontAwesomeIcons.bookmark,
+                                    size: 16.r,
+                                    color: isSaved ? AppColors.gold : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ],
                       ),
                       const Spacer(),
@@ -101,4 +128,3 @@ class RecommendedFundsList extends StatelessWidget {
     );
   }
 }
-

@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/app_config/font_styles.dart';
+import '../../../../core/di/service_locator.dart';
 import '../../../../core/routing/routes.dart';
+import '../../../../core/services/wishlist_service.dart';
 import '../../data/models/fund_model.dart';
 
 class FundListTile extends StatelessWidget {
@@ -13,11 +18,13 @@ class FundListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final wishlistService = sl<WishlistService>();
+
     return GestureDetector(
       onTap: () => context.push(Routes.fundDetails, extra: fund.toPlatformFeature()),
       child: Container(
         margin: EdgeInsets.only(bottom: 12.h),
-        padding: EdgeInsets.all(16.r),
+        padding: EdgeInsets.all(14.r),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16.r),
@@ -45,7 +52,7 @@ class FundListTile extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(width: 16.w),
+            SizedBox(width: 12.w),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,6 +73,7 @@ class FundListTile extends StatelessWidget {
                 ],
               ),
             ),
+            SizedBox(width: 8.w),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -90,10 +98,39 @@ class FundListTile extends StatelessWidget {
                 ),
               ],
             ),
+            SizedBox(width: 4.w),
+            // Bookmark Toggle Button
+            ValueListenableBuilder<Set<String>>(
+              valueListenable: wishlistService.savedFundIds,
+              builder: (context, savedIds, _) {
+                final isSaved = savedIds.contains(fund.id);
+                return IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: FaIcon(
+                    isSaved ? FontAwesomeIcons.solidBookmark : FontAwesomeIcons.bookmark,
+                    size: 16.r,
+                    color: isSaved ? AppColors.gold : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                  ),
+                  onPressed: () async {
+                    final added = await wishlistService.toggleWishlist(fund.id);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        duration: const Duration(seconds: 2),
+                        content: Text(
+                          added ? 'تمت إضافة "${fund.name}" للمفضلة ⭐️' : 'تم مسح "${fund.name}" من المفضلة',
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ],
         ),
       ),
     );
   }
 }
-
