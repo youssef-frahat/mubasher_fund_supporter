@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class MainLayout extends StatelessWidget {
@@ -20,24 +21,24 @@ class MainLayout extends StatelessWidget {
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: FaIcon(FontAwesomeIcons.house),
+            selectedIcon: FaIcon(FontAwesomeIcons.house),
+            label: 'الرئيسية',
           ),
           NavigationDestination(
-            icon: Icon(Icons.compare_arrows_outlined),
-            selectedIcon: Icon(Icons.compare_arrows),
-            label: 'Compare',
+            icon: FaIcon(FontAwesomeIcons.robot),
+            selectedIcon: FaIcon(FontAwesomeIcons.robot),
+            label: 'المستشار الذكي',
           ),
           NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Portfolio',
+            icon: FaIcon(FontAwesomeIcons.wallet),
+            selectedIcon: FaIcon(FontAwesomeIcons.wallet),
+            label: 'محفظتي',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: FaIcon(FontAwesomeIcons.gear),
+            selectedIcon: FaIcon(FontAwesomeIcons.gear),
+            label: 'الإعدادات',
           ),
         ],
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../data/repositories/calculator_repository.dart';
 import '../cubit/calculator_cubit.dart';
@@ -27,16 +28,22 @@ class _InvestmentCalculatorContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bg = AppColors.getBackground(context);
+    final surface = AppColors.getSurface(context);
+    final textPrimary = AppColors.getTextPrimary(context);
+    final textSecondary = AppColors.getTextSecondary(context);
+    final border = AppColors.getBorder(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: bg,
         elevation: 0,
         centerTitle: true,
         title: Text(
           'حاسبة ومستشار الاستثمار الذكي',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18.sp,
           ),
@@ -63,16 +70,16 @@ class _InvestmentCalculatorContent extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.all(16.r),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: surface,
                     borderRadius: BorderRadius.circular(16.r),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: border),
                   ),
                   child: Row(
                     children: [
                       CircleAvatar(
                         radius: 24.r,
                         backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                        child: Icon(Icons.calculate, color: AppColors.primary, size: 28.r),
+                        child: FaIcon(FontAwesomeIcons.calculator, color: AppColors.primary, size: 22.r),
                       ),
                       SizedBox(width: 12.w),
                       Expanded(
@@ -82,7 +89,7 @@ class _InvestmentCalculatorContent extends StatelessWidget {
                             Text(
                               'قارن استثمارك بذكاء',
                               style: TextStyle(
-                                color: AppColors.textPrimary,
+                                color: textPrimary,
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -91,7 +98,7 @@ class _InvestmentCalculatorContent extends StatelessWidget {
                             Text(
                               'حدد هدفك وسنحدد لك الخيار الأفضل عائداً مع المقارنة الفورية بالشهادات البنكية والذهب.',
                               style: TextStyle(
-                                color: AppColors.textSecondary,
+                                color: textSecondary,
                                 fontSize: 11.sp,
                               ),
                             ),
@@ -116,7 +123,7 @@ class _InvestmentCalculatorContent extends StatelessWidget {
                 Text(
                   '3. ما هو المبلغ المخطط استثماره؟',
                   style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: textPrimary,
                     fontSize: 15.sp,
                     fontWeight: FontWeight.bold,
                   ),
@@ -125,9 +132,9 @@ class _InvestmentCalculatorContent extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.all(16.r),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: surface,
                     borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: border),
                   ),
                   child: Column(
                     children: [
@@ -137,7 +144,7 @@ class _InvestmentCalculatorContent extends StatelessWidget {
                           Text(
                             'المبلغ الاستثماري:',
                             style: TextStyle(
-                              color: AppColors.textSecondary,
+                              color: textSecondary,
                               fontSize: 13.sp,
                             ),
                           ),
@@ -157,7 +164,7 @@ class _InvestmentCalculatorContent extends StatelessWidget {
                         max: 1000000,
                         divisions: 99,
                         activeColor: AppColors.primary,
-                        inactiveColor: AppColors.border,
+                        inactiveColor: border,
                         onChanged: (value) => cubit.updateAmount(value),
                       ),
                     ],
@@ -170,7 +177,7 @@ class _InvestmentCalculatorContent extends StatelessWidget {
                   Text(
                     '📊 نتائج وتوصية الاستثمار:',
                     style: TextStyle(
-                      color: AppColors.textPrimary,
+                      color: textPrimary,
                       fontSize: 16.sp,
                       fontWeight: FontWeight.bold,
                     ),
@@ -180,7 +187,7 @@ class _InvestmentCalculatorContent extends StatelessWidget {
                   // Sponsored Match Card
                   SponsoredRecommendationCard(
                     riskResult: calculatedState.riskResult,
-                    sponsoredFund: calculatedState.sponsoredFund,
+                    totalAmount: calculatedState.amount,
                   ),
                   SizedBox(height: 16.h),
 
@@ -188,32 +195,35 @@ class _InvestmentCalculatorContent extends StatelessWidget {
                   Text(
                     'مقارنة العائد المتوقع بنهاية المدة:',
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: textSecondary,
                       fontSize: 13.sp,
                     ),
                   ),
                   SizedBox(height: 10.h),
 
                   _buildComparisonTile(
+                    context: context,
                     title: 'الصندوق الموصى به (${calculatedState.riskResult.expectedRoiPercentage}% سنويًا)',
                     amount: calculatedState.fundEstimatedReturn,
                     color: AppColors.primary,
-                    icon: Icons.trending_up,
+                    icon: FontAwesomeIcons.chartLine,
                     isBestOption: true,
                   ),
                   SizedBox(height: 8.h),
                   _buildComparisonTile(
+                    context: context,
                     title: 'شهادة بنكية تقليدية (23.5% سنويًا)',
                     amount: calculatedState.bankCertificateReturn,
                     color: Colors.blueAccent,
-                    icon: Icons.account_balance,
+                    icon: FontAwesomeIcons.landmark,
                   ),
                   SizedBox(height: 8.h),
                   _buildComparisonTile(
+                    context: context,
                     title: 'صناديق/أصول الذهب (28% سنويًا متوقع)',
                     amount: calculatedState.goldEstimatedReturn,
                     color: AppColors.gold,
-                    icon: Icons.workspace_premium,
+                    icon: FontAwesomeIcons.coins,
                   ),
                 ],
                 SizedBox(height: 30.h),
@@ -226,19 +236,25 @@ class _InvestmentCalculatorContent extends StatelessWidget {
   }
 
   Widget _buildComparisonTile({
+    required BuildContext context,
     required String title,
     required double amount,
     required Color color,
-    required IconData icon,
+    required dynamic icon,
     bool isBestOption = false,
   }) {
+    final surface = AppColors.getSurface(context);
+    final textPrimary = AppColors.getTextPrimary(context);
+    final textSecondary = AppColors.getTextSecondary(context);
+    final border = AppColors.getBorder(context);
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
       decoration: BoxDecoration(
-        color: isBestOption ? color.withValues(alpha: 0.12) : AppColors.surface,
+        color: isBestOption ? color.withValues(alpha: 0.12) : surface,
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: isBestOption ? color : AppColors.border,
+          color: isBestOption ? color : border,
           width: isBestOption ? 1.5 : 1,
         ),
       ),
@@ -247,7 +263,7 @@ class _InvestmentCalculatorContent extends StatelessWidget {
           CircleAvatar(
             radius: 18.r,
             backgroundColor: color.withValues(alpha: 0.2),
-            child: Icon(icon, color: color, size: 20.r),
+            child: FaIcon(icon, color: color, size: 16.r),
           ),
           SizedBox(width: 12.w),
           Expanded(
@@ -257,7 +273,7 @@ class _InvestmentCalculatorContent extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: textPrimary,
                     fontSize: 12.sp,
                     fontWeight: isBestOption ? FontWeight.bold : FontWeight.normal,
                   ),
@@ -266,7 +282,7 @@ class _InvestmentCalculatorContent extends StatelessWidget {
                 Text(
                   'المبلغ الإجمالي المتوقع',
                   style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: textSecondary,
                     fontSize: 10.sp,
                   ),
                 ),

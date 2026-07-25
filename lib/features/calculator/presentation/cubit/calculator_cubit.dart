@@ -35,10 +35,6 @@ class CalculatorCubit extends Cubit<CalculatorState> {
       duration: selectedDuration,
     );
 
-    final sponsoredFund = await repository.getSponsoredPlacement(
-      riskResult.recommendedCategory,
-    );
-
     // Compound ROI Calculations
     double years = selectedDuration == InvestmentDuration.shortTerm
         ? 1.0
@@ -48,12 +44,12 @@ class CalculatorCubit extends Cubit<CalculatorState> {
     double bankRate = 0.235;
     double bankCertReturn = selectedAmount * (1 + (bankRate * years));
 
-    // Recommended Fund rate
+    // Recommended Multi-Fund Portfolio Mix Rate
     double fundRate = riskResult.expectedRoiPercentage / 100.0;
     double fundReturn = selectedAmount * (1 + (fundRate * years));
 
-    // Gold estimated rate (e.g. 28% per annum)
-    double goldRate = 0.28;
+    // Gold estimated rate (e.g. 27.5% per annum)
+    double goldRate = 0.275;
     double goldReturn = selectedAmount * (1 + (goldRate * years));
 
     emit(
@@ -62,7 +58,6 @@ class CalculatorCubit extends Cubit<CalculatorState> {
         goal: selectedGoal,
         duration: selectedDuration,
         riskResult: riskResult,
-        sponsoredFund: sponsoredFund,
         bankCertificateReturn: bankCertReturn,
         fundEstimatedReturn: fundReturn,
         goldEstimatedReturn: goldReturn,

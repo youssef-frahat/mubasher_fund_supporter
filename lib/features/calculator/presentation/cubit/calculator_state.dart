@@ -1,5 +1,4 @@
 import '../../data/models/risk_profile_model.dart';
-import '../../data/models/sponsored_fund_model.dart';
 
 abstract class CalculatorState {}
 
@@ -12,9 +11,8 @@ class CalculatorCalculated extends CalculatorState {
   final InvestmentGoal goal;
   final InvestmentDuration duration;
   final RiskAssessmentResult riskResult;
-  final SponsoredFundModel? sponsoredFund;
   final double bankCertificateReturn; // ROI for bank cert
-  final double fundEstimatedReturn;   // ROI for recommended fund
+  final double fundEstimatedReturn;   // ROI for recommended multi-fund portfolio
   final double goldEstimatedReturn;   // ROI for gold
 
   CalculatorCalculated({
@@ -22,7 +20,6 @@ class CalculatorCalculated extends CalculatorState {
     required this.goal,
     required this.duration,
     required this.riskResult,
-    required this.sponsoredFund,
     required this.bankCertificateReturn,
     required this.fundEstimatedReturn,
     required this.goldEstimatedReturn,

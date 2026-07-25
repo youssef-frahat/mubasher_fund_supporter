@@ -1,9 +1,11 @@
+import 'package:flutter/material.dart';
+
 enum InvestmentGoal {
   capitalPreservation, // حفظ رأس المال ضد التضخم
-  balancedGrowth,      // نمو متوازن بعائد معقول
-  highYield,           // أقصى ربح ممكن (أسهم / مخاطرة)
-  islamicSharia,       // استثمار شريعة إسلامية 100%
-  goldHedging,         // التحوط بالذهب
+  balancedGrowth,      // نمو متوازن بعائد ممتاز
+  highYield,           // أقصى ربح وتنمية (أسهم)
+  islamicSharia,       // استثمار إسلامي 100%
+  goldHedging,         // التحوط بالذهب والفضة
 }
 
 enum InvestmentDuration {
@@ -12,16 +14,36 @@ enum InvestmentDuration {
   longTerm,  // أكثر من 3 سنوات
 }
 
+class PortfolioFundAllocation {
+  final String fundName;
+  final String categoryNameAr;
+  final double percentage; // e.g. 40.0 for 40%
+  final String badgeLabel;
+  final Color categoryColor;
+
+  PortfolioFundAllocation({
+    required this.fundName,
+    required this.categoryNameAr,
+    required this.percentage,
+    required this.badgeLabel,
+    required this.categoryColor,
+  });
+
+  double getAllocatedAmount(double totalInvestmentAmount) {
+    return (totalInvestmentAmount * percentage) / 100.0;
+  }
+}
+
 class RiskAssessmentResult {
-  final String riskCategory;        // منخفض المخاطرة، متوازن، نمو مرتفع، شريعة
-  final double expectedRoiPercentage; // نسبة العائد المتوقع (مثلاً 24.5%)
-  final String recommendedCategory;  // 'money_market', 'balanced', 'equity', 'islamic', 'gold'
+  final String riskCategory;          // منخفض المخاطرة، متوازن، نمو مرتفع، شريعة
+  final double expectedRoiPercentage;   // متوسط العائد السنوي المتوقع للمحفظة المقترحة
   final String description;
+  final List<PortfolioFundAllocation> recommendedPortfolioMix;
 
   RiskAssessmentResult({
     required this.riskCategory,
     required this.expectedRoiPercentage,
-    required this.recommendedCategory,
     required this.description,
+    required this.recommendedPortfolioMix,
   });
 }

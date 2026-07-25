@@ -17,6 +17,8 @@ import '../supabase/supabase_service.dart';
 import 'go_router_refresh_stream.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 
+import '../../features/auth/presentation/screens/register_screen.dart';
+
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorSettingsKey = GlobalKey<NavigatorState>();
 
@@ -32,8 +34,9 @@ class AppRouter {
       
       final isGoingToSplash = state.matchedLocation == Routes.splash;
       final isGoingToLogin = state.matchedLocation == Routes.login;
+      final isGoingToRegister = state.matchedLocation == Routes.register;
       final isGoingToOtp = state.matchedLocation == Routes.otp;
-      final isAuthRoute = isGoingToLogin || isGoingToOtp;
+      final isAuthRoute = isGoingToLogin || isGoingToRegister || isGoingToOtp;
 
       // Allow splash screen to show regardless of auth state
       if (isGoingToSplash) return null;
@@ -110,6 +113,11 @@ class AppRouter {
         path: Routes.login,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: Routes.register,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(
         path: Routes.otp,

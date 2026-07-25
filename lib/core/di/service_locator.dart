@@ -12,11 +12,11 @@ final sl = GetIt.instance;
 Future<void> initServiceLocator() async {
   // Setup Repositories and Data Sources here
   sl.registerLazySingleton<FundsRepository>(() => SupabaseFundsRepository());
-  sl.registerLazySingleton<PortfolioRepository>(() => SupabasePortfolioRepository());
+  sl.registerLazySingleton<PortfolioRepository>(() => PortfolioRepository());
 
   // Setup Blocs/Cubits here
   sl.registerFactory(() => HomeCubit(sl()));
   sl.registerFactory(() => AdminCubit(sl()));
-  sl.registerFactory(() => PortfolioCubit(sl()));
+  sl.registerFactory(() => PortfolioCubit(repository: sl()));
   sl.registerLazySingleton(() => AuthCubit());
 }

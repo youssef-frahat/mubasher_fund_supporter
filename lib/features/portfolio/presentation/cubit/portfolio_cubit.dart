@@ -1,58 +1,48 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/supabase/supabase_service.dart';
-import '../../data/models/portfolio_transaction.dart';
+import '../../data/models/portfolio_item_model.dart';
 import '../../data/repositories/portfolio_repository.dart';
 import 'portfolio_state.dart';
 
 class PortfolioCubit extends Cubit<PortfolioState> {
-  final PortfolioRepository _repository;
+  final PortfolioRepository repository;
 
-  PortfolioCubit(this._repository) : super(PortfolioInitial());
+  PortfolioCubit({required this.repository}) : super(PortfolioInitial());
 
-  Future<void> fetchPortfolio() async {
+  Future<void> loadPortfolio() async {
     emit(PortfolioLoading());
     try {
-      final user = SupabaseService.client?.auth.currentUser;
-      if (user == null) {
-        emit(PortfolioError('You must be logged in to view your portfolio.'));
-        return;
-      }
-
-      final transactions = await _repository.getTransactions(user.id);
-      
-      // Calculate Summaries
-      final Map<String, PortfolioSummary> summaries = {};
-      for (var tx in transactions) {
-        if (!summaries.containsKey(tx.fundId)) {
-          summaries[tx.fundId] = PortfolioSummary(tx.fundId, tx.fundNameEn ?? 'Unknown Fund');
-        }
-        summaries[tx.fundId]!.totalUnits += tx.units;
-        summaries[tx.fundId]!.totalCost += (tx.units * tx.purchasePrice);
-      }
-
-      emit(PortfolioLoaded(transactions, summaries));
+      final items = await repository.getPortfolioItems();
+      final health = repository.calculatePortfolioHealth(items);
+      emit(PortfolioLoaded(items: items, healthSummary: health));
     } catch (e) {
-      emit(PortfolioError(e.toString()));
+      emit(PortfolioError(message: 'تعذر تحميل المحفظة: ${e.toString()}'));
     }
   }
 
-  Future<void> addTransaction(String fundId, double units, double price) async {
-    try {
-      final user = SupabaseService.client?.auth.currentUser;
-      if (user == null) throw Exception('Not logged in');
+  Future<void> addTransaction({
+    required String fundName,
+    required FundCategory category,
+    required double units,
+    required double purchasePrice,
+    required double currentNav,
+  }) async {
+    final newItem = PortfolioItem(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      fundId: 'fund-${DateTime.now().millisecondsSinceEpoch}',
+      fundName: fundName,
+      category: category,
+      units: units,
+      purchasePrice: purchasePrice,
+      currentNav: currentNav,
+      purchaseDate: DateTime.now(),
+    );
 
-      final tx = PortfolioTransaction(
-        userId: user.id,
-        fundId: fundId,
-        units: units,
-        purchasePrice: price,
-        transactionDate: DateTime.now(),
-      );
+    await repository.addTransaction(newItem);
+    await loadPortfolio();
+  }
 
-      await _repository.addTransaction(tx);
-      await fetchPortfolio(); // Refresh
-    } catch (e) {
-      emit(PortfolioError(e.toString()));
-    }
+  Future<void> removeTransaction(String id) async {
+    await repository.removeTransaction(id);
+    await loadPortfolio();
   }
 }

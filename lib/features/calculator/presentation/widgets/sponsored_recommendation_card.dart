@@ -1,29 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/app_config/app_colors.dart';
-import '../../data/models/sponsored_fund_model.dart';
 import '../../data/models/risk_profile_model.dart';
 
 class SponsoredRecommendationCard extends StatelessWidget {
   final RiskAssessmentResult riskResult;
-  final SponsoredFundModel? sponsoredFund;
+  final double totalAmount;
 
   const SponsoredRecommendationCard({
     super.key,
     required this.riskResult,
-    this.sponsoredFund,
+    required this.totalAmount,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cardBg = AppColors.getSurface(context);
+    final textPrimary = AppColors.getTextPrimary(context);
+    final textSecondary = AppColors.getTextSecondary(context);
+    final border = AppColors.getBorder(context);
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
-        gradient: AppColors.cardGradient,
+        color: cardBg,
+        gradient: AppColors.getCardGradient(context),
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.5),
+          color: AppColors.primary.withValues(alpha: 0.6),
           width: 1.5,
         ),
         boxShadow: [
@@ -37,102 +43,188 @@ class SponsoredRecommendationCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Header Badge
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8.w,
+            runSpacing: 8.h,
             children: [
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.2),
+                  color: AppColors.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20.r),
                   border: Border.all(color: AppColors.primary),
                 ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FaIcon(FontAwesomeIcons.robot, color: AppColors.primary, size: 13.r),
+                    SizedBox(width: 6.w),
+                    Flexible(
+                      child: Text(
+                        'المستشار الذكي: ${riskResult.riskCategory}',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11.sp,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
                 child: Text(
-                  '🎯 ملفك الاستثماري: ${riskResult.riskCategory}',
+                  'متوسط العائد: ${riskResult.expectedRoiPercentage}% سنويًا',
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: AppColors.gold,
+                    fontSize: 10.sp,
                     fontWeight: FontWeight.bold,
-                    fontSize: 12.sp,
                   ),
                 ),
               ),
-              if (sponsoredFund != null)
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                  decoration: BoxDecoration(
-                    color: AppColors.gold.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20.r),
-                    border: Border.all(color: AppColors.gold),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.star, color: AppColors.gold, size: 12.r),
-                      SizedBox(width: 4.w),
-                      Text(
-                        sponsoredFund!.badgeLabel,
-                        style: TextStyle(
-                          color: AppColors.gold,
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
             ],
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 14.h),
+
           Text(
-            sponsoredFund?.sponsorName ?? 'صندوق الاستثمار الموصى به',
+            '🤖 المحفظة الاستثمارية المقترحة لك:',
             style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16.sp,
+              color: textPrimary,
+              fontSize: 15.sp,
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 6.h),
+          SizedBox(height: 4.h),
           Text(
             riskResult.description,
             style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12.sp,
+              color: textSecondary,
+              fontSize: 11.sp,
               height: 1.4,
             ),
           ),
-          SizedBox(height: 14.h),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'تم فتح تفاصيل ${sponsoredFund?.sponsorName}',
-                        ),
-                        backgroundColor: AppColors.primary,
+          SizedBox(height: 16.h),
+
+          // Stacked Horizontal Percentage Allocation Bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10.r),
+            child: SizedBox(
+              height: 10.h,
+              child: Row(
+                children: riskResult.recommendedPortfolioMix.map((alloc) {
+                  return Expanded(
+                    flex: alloc.percentage.toInt(),
+                    child: Container(color: alloc.categoryColor),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          SizedBox(height: 16.h),
+
+          // List of Allocated Funds with EGP Splits
+          ...riskResult.recommendedPortfolioMix.map((alloc) {
+            final allocatedEgp = alloc.getAllocatedAmount(totalAmount);
+            return Container(
+              margin: EdgeInsets.only(bottom: 8.h),
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+              decoration: BoxDecoration(
+                color: AppColors.getSurface(context),
+                borderRadius: BorderRadius.circular(10.r),
+                border: Border.all(color: border),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 14.r,
+                    backgroundColor: alloc.categoryColor.withValues(alpha: 0.2),
+                    child: Text(
+                      '${alloc.percentage.toInt()}%',
+                      style: TextStyle(
+                        color: alloc.categoryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10.sp,
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.arrow_forward, color: Colors.black),
-                  label: const Text(
-                    'استثمر الآن في هذا الصندوق',
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          alloc.fundName,
+                          style: TextStyle(
+                            color: textPrimary,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 2.h),
+                        Text(
+                          '${alloc.categoryNameAr} • ${alloc.badgeLabel}',
+                          style: TextStyle(
+                            color: textSecondary,
+                            fontSize: 10.sp,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '${allocatedEgp.toStringAsFixed(0)} ج.م',
                     style: TextStyle(
-                      color: Colors.black,
+                      color: alloc.categoryColor,
                       fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
                     ),
                   ),
-                  style: ElevatedButton.styleFrom(
+                ],
+              ),
+            );
+          }),
+
+          SizedBox(height: 14.h),
+
+          // Action Button to Save to Portfolio
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text(
+                      'تم اعتماد وتوزيع المحفظة الذكية بنجاح! 🚀',
+                    ),
                     backgroundColor: AppColors.primary,
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.r),
-                    ),
                   ),
+                );
+              },
+              icon: const FaIcon(FontAwesomeIcons.circlePlus, color: Colors.black, size: 14),
+              label: const Text(
+                'حفظ وتطبيق هذه المحفظة في حسابي',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ],
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+              ),
+            ),
           ),
         ],
       ),

@@ -40,5 +40,29 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  // Dynamic Theme Adaptive Helpers (Light & Dark Theme Support)
+  static Color getBackground(BuildContext context) => Theme.of(context).scaffoldBackgroundColor;
+  static Color getSurface(BuildContext context) => Theme.of(context).colorScheme.surface;
+  static Color getTextPrimary(BuildContext context) => Theme.of(context).colorScheme.onSurface;
+  static Color getTextSecondary(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF94A3B8)
+          : const Color(0xFF64748B);
+  static Color getBorder(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF334155)
+          : const Color(0xFFE2E8F0);
+  static LinearGradient getCardGradient(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return LinearGradient(
+      colors: isDark
+          ? const [Color(0xFF1E293B), Color(0xFF0F172A)]
+          : const [Color(0xFFFFFFFF), Color(0xFFF1F5F9)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+  }
 }
+
 

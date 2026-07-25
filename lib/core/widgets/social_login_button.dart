@@ -1,23 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../app_config/font_styles.dart';
-import '../app_config/app_colors.dart';
 
 class SocialLoginButton extends StatelessWidget {
   final String label;
-  final IconData? icon;
-  final Color? iconColor;
-  final Widget? iconWidget;
   final VoidCallback onPressed;
   final bool isLoading;
 
   const SocialLoginButton({
     super.key,
     required this.label,
-    this.icon,
-    this.iconColor,
-    this.iconWidget,
     required this.onPressed,
     this.isLoading = false,
   });
@@ -29,26 +23,47 @@ class SocialLoginButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
-        elevation: 0,
-        padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 24.w),
+        overlayColor: const Color(0xFF2563EB).withValues(alpha: 0.2), // Active Blue Ripple on Tap
+        elevation: 1,
+        padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 20.w),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16.r),
-          side: BorderSide(color: Colors.grey.shade300),
+          side: const BorderSide(color: Color(0xFFE2E8F0)),
         ),
       ),
       child: isLoading
           ? SizedBox(
-              height: 24.sp,
-              width: 24.sp,
-              child: const CircularProgressIndicator(strokeWidth: 2),
+              height: 22.r,
+              width: 22.r,
+              child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2563EB)),
             )
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (iconWidget != null) iconWidget!
-                else if (icon != null) Icon(icon, color: iconColor, size: 28.sp),
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [
+                      Color(0xFFEA4335), // Red
+                      Color(0xFFFBBC05), // Yellow
+                      Color(0xFF34A853), // Green
+                      Color(0xFF4285F4), // Blue
+                    ],
+                  ).createShader(bounds),
+                  child: FaIcon(
+                    FontAwesomeIcons.google,
+                    size: 20.r,
+                    color: Colors.white,
+                  ),
+                ),
                 SizedBox(width: 12.w),
-                Text(label, style: FontStyles.titleMedium.copyWith(color: Colors.black87)),
+                Text(
+                  label,
+                  style: FontStyles.titleMedium.copyWith(
+                    color: const Color(0xFF0F172A),
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
     ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0, curve: Curves.easeOutCubic);

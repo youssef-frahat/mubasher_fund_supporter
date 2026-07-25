@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../home/data/models/platform_feature.dart';
+import '../../../portfolio/data/models/portfolio_item_model.dart';
 import '../../../portfolio/presentation/cubit/portfolio_cubit.dart';
 
 class FundDetailsScreen extends StatelessWidget {
@@ -142,7 +143,13 @@ class FundDetailsScreen extends StatelessWidget {
                     final units = double.tryParse(unitsController.text) ?? 0;
                     final price = double.tryParse(priceController.text) ?? 0;
                     if (units > 0 && price > 0) {
-                      context.read<PortfolioCubit>().addTransaction(fund.id ?? '', units, price);
+                      context.read<PortfolioCubit>().addTransaction(
+                        fundName: fund.title,
+                        category: FundCategory.moneyMarket,
+                        units: units,
+                        purchasePrice: price,
+                        currentNav: price * 1.05,
+                      );
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaction Added!')));
                     }

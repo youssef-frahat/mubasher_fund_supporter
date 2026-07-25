@@ -1,123 +1,329 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import '../../../../core/di/service_locator.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../../../core/app_config/app_colors.dart';
 import '../cubit/portfolio_cubit.dart';
 import '../cubit/portfolio_state.dart';
+import '../../data/models/portfolio_item_model.dart';
+import '../../data/repositories/portfolio_repository.dart';
+import '../widgets/add_transaction_bottom_sheet.dart';
+import '../widgets/portfolio_health_score_widget.dart';
 
-class PortfolioScreen extends StatefulWidget {
+class PortfolioScreen extends StatelessWidget {
   const PortfolioScreen({super.key});
 
   @override
-  State<PortfolioScreen> createState() => _PortfolioScreenState();
-}
-
-class _PortfolioScreenState extends State<PortfolioScreen> {
-  @override
-  void initState() {
-    super.initState();
-    context.read<PortfolioCubit>().fetchPortfolio();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return const PortfolioView();
+    return BlocProvider(
+      create: (context) => PortfolioCubit(
+        repository: PortfolioRepository(),
+      )..loadPortfolio(),
+      child: const _PortfolioContentView(),
+    );
   }
 }
 
-class PortfolioView extends StatelessWidget {
-  const PortfolioView({super.key});
+class _PortfolioContentView extends StatelessWidget {
+  const _PortfolioContentView();
 
   @override
   Widget build(BuildContext context) {
+    final bg = AppColors.getBackground(context);
+    final surface = AppColors.getSurface(context);
+    final textPrimary = AppColors.getTextPrimary(context);
+    final textSecondary = AppColors.getTextSecondary(context);
+    final border = AppColors.getBorder(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Simulated Portfolio')),
+      backgroundColor: bg,
+      appBar: AppBar(
+        backgroundColor: bg,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'محفظتي الاستثمارية (المحاكاة)',
+          style: TextStyle(
+            color: textPrimary,
+            fontWeight: FontWeight.bold,
+            fontSize: 18.sp,
+          ),
+        ),
+      ),
       body: BlocBuilder<PortfolioCubit, PortfolioState>(
         builder: (context, state) {
           if (state is PortfolioLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
           } else if (state is PortfolioError) {
-            return Center(child: Text(state.message));
+            return Center(
+              child: Text(
+                state.message,
+                style: const TextStyle(color: AppColors.error),
+              ),
+            );
           } else if (state is PortfolioLoaded) {
-            final summaries = state.fundSummaries.values.toList();
-            if (summaries.isEmpty) {
-              return const Center(child: Text('Your portfolio is empty.'));
-            }
+            final health = state.healthSummary;
+            final items = state.items;
 
-            double totalPortfolioValue = 0;
-            double totalPortfolioCost = 0;
-            for (var s in summaries) {
-              totalPortfolioValue += s.currentValue;
-              totalPortfolioCost += s.totalCost;
-            }
-            final totalProfit = totalPortfolioValue - totalPortfolioCost;
+            return SingleChildScrollView(
+              padding: EdgeInsets.all(16.r),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Portfolio Total Value Header Card
+                  _buildTotalValueCard(context, health),
+                  SizedBox(height: 16.h),
 
-            return Column(
-              children: [
-                _buildDashboard(totalPortfolioValue, totalProfit),
-                Expanded(
-                  child: ListView.builder(
-                    padding: EdgeInsets.all(16.w),
-                    itemCount: summaries.length,
-                    itemBuilder: (context, index) {
-                      final summary = summaries[index];
-                      return Card(
-                        margin: EdgeInsets.only(bottom: 16.h),
-                        child: ListTile(
-                          title: Text(summary.fundName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('Units: ${summary.totalUnits.toStringAsFixed(2)} | Avg Cost: \$${summary.averageCost.toStringAsFixed(2)}'),
-                          trailing: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                  // Health Score Gauge Indicator (Red <50, Yellow 50-85, Green >85)
+                  PortfolioHealthScoreWidget(healthSummary: health),
+                  SizedBox(height: 24.h),
+
+                  // Holdings Header with Add Button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '💼 أصولي ووثائقي الحالية (${items.length})',
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => _openAddBottomSheet(context),
+                        icon: FaIcon(FontAwesomeIcons.circlePlus, color: AppColors.primary, size: 16.r),
+                        label: Text(
+                          'إضافة صفقة',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13.sp,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10.h),
+
+                  // Holdings List
+                  if (items.isEmpty)
+                    Container(
+                      padding: EdgeInsets.all(30.r),
+                      alignment: Alignment.center,
+                      child: Column(
+                        children: [
+                          FaIcon(FontAwesomeIcons.wallet, color: textSecondary, size: 42.r),
+                          SizedBox(height: 10.h),
+                          Text(
+                            'لم تقم بإضافة أي وثيقة في محفظتك حتى الآن.',
+                            style: TextStyle(color: textSecondary, fontSize: 13.sp),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        final item = items[index];
+                        final isProfit = item.profitLoss >= 0;
+
+                        return Container(
+                          margin: EdgeInsets.only(bottom: 12.h),
+                          padding: EdgeInsets.all(14.r),
+                          decoration: BoxDecoration(
+                            color: surface,
+                            borderRadius: BorderRadius.circular(14.r),
+                            border: Border.all(color: border),
+                          ),
+                          child: Row(
                             children: [
-                              Text('\$${summary.currentValue.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                              Text(
-                                '${summary.profitLoss >= 0 ? '+' : ''}${summary.profitLoss.toStringAsFixed(2)}',
-                                style: TextStyle(color: summary.profitLoss >= 0 ? Colors.green : Colors.red, fontSize: 12.sp),
+                              CircleAvatar(
+                                radius: 20.r,
+                                backgroundColor: item.category.color.withValues(alpha: 0.15),
+                                child: Icon(item.category.icon, color: item.category.color, size: 18.r),
+                              ),
+                              SizedBox(width: 12.w),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.fundName,
+                                      style: TextStyle(
+                                        color: textPrimary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13.sp,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4.h),
+                                    Text(
+                                      '${item.units.toStringAsFixed(0)} وثائق | بسعر ${item.purchasePrice.toStringAsFixed(1)} ج.م',
+                                      style: TextStyle(
+                                        color: textSecondary,
+                                        fontSize: 11.sp,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '${item.currentValue.toStringAsFixed(0)} ج.م',
+                                    style: TextStyle(
+                                      color: textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14.sp,
+                                    ),
+                                  ),
+                                  SizedBox(height: 2.h),
+                                  Text(
+                                    '${isProfit ? '+' : ''}${item.profitLoss.toStringAsFixed(0)} (${item.profitLossPercentage.toStringAsFixed(1)}%)',
+                                    style: TextStyle(
+                                      color: isProfit ? AppColors.success : AppColors.error,
+                                      fontSize: 11.sp,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              IconButton(
+                                icon: const FaIcon(FontAwesomeIcons.trashCan, color: AppColors.error, size: 16),
+                                onPressed: () {
+                                  context.read<PortfolioCubit>().removeTransaction(item.id);
+                                },
                               ),
                             ],
                           ),
-                        ),
-                      ).animate().fadeIn(delay: (100 * index).ms).slideX(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuart);
-                    },
-                  ),
-                ),
-              ],
+                        );
+                      },
+                    ),
+                  SizedBox(height: 30.h),
+                ],
+              ),
             );
           }
           return const SizedBox();
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Open Add Transaction Dialog
-          // For now, it will just show a snackbar. We will integrate this from FundDetailsScreen.
-          ScaffoldMessenger.of(context).showSnackBar(
-             const SnackBar(content: Text('Go to a Fund Details screen to simulate a purchase.'))
-          );
-        },
-        child: const Icon(Icons.add),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openAddBottomSheet(context),
+        backgroundColor: AppColors.primary,
+        icon: const FaIcon(FontAwesomeIcons.plus, color: Colors.black, size: 14),
+        label: const Text(
+          'إضافة وثيقة محاكاة',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
 
-  Widget _buildDashboard(double totalValue, double totalProfit) {
+  Widget _buildTotalValueCard(BuildContext context, PortfolioHealthSummary health) {
+    final isProfit = health.totalProfitLoss >= 0;
+    final textPrimary = AppColors.getTextPrimary(context);
+    final textSecondary = AppColors.getTextSecondary(context);
+    final border = AppColors.getBorder(context);
+
     return Container(
-      padding: EdgeInsets.all(24.w),
-      color: Colors.blue.withValues(alpha: 0.1),
+      width: double.infinity,
+      padding: EdgeInsets.all(20.r),
+      decoration: BoxDecoration(
+        gradient: AppColors.getCardGradient(context),
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: border),
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Total Value', style: TextStyle(color: Colors.grey)),
-          SizedBox(height: 8.h),
-          Text('\$${totalValue.toStringAsFixed(2)}', style: TextStyle(fontSize: 32.sp, fontWeight: FontWeight.bold)),
-          SizedBox(height: 8.h),
           Text(
-            '${totalProfit >= 0 ? '+' : ''}\$${totalProfit.toStringAsFixed(2)}',
-            style: TextStyle(color: totalProfit >= 0 ? Colors.green : Colors.red, fontWeight: FontWeight.bold),
+            'إجمالي قيمة المحفظة الحالية',
+            style: TextStyle(
+              color: textSecondary,
+              fontSize: 12.sp,
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            '${health.totalPortfolioValue.toStringAsFixed(0)} ج.م',
+            style: TextStyle(
+              color: textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 28.sp,
+            ),
+          ),
+          SizedBox(height: 10.h),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: (isProfit ? AppColors.success : AppColors.error).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Row(
+                  children: [
+                    FaIcon(
+                      isProfit ? FontAwesomeIcons.arrowTrendUp : FontAwesomeIcons.arrowTrendDown,
+                      color: isProfit ? AppColors.success : AppColors.error,
+                      size: 14.r,
+                    ),
+                    SizedBox(width: 6.w),
+                    Text(
+                      '${isProfit ? '+' : ''}${health.totalProfitLoss.toStringAsFixed(0)} ج.م (${health.totalProfitLossPercentage.toStringAsFixed(1)}%)',
+                      style: TextStyle(
+                        color: isProfit ? AppColors.success : AppColors.error,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12.sp,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                'صافي الأرباح/الخسائر',
+                style: TextStyle(
+                  color: textSecondary,
+                  fontSize: 11.sp,
+                ),
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  void _openAddBottomSheet(BuildContext context) {
+    final cubit = context.read<PortfolioCubit>();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return AddTransactionBottomSheet(
+          onAdd: ({
+            required String fundName,
+            required FundCategory category,
+            required double units,
+            required double purchasePrice,
+            required double currentNav,
+          }) {
+            cubit.addTransaction(
+              fundName: fundName,
+              category: category,
+              units: units,
+              purchasePrice: purchasePrice,
+              currentNav: currentNav,
+            );
+          },
+        );
+      },
     );
   }
 }

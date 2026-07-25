@@ -19,13 +19,15 @@ class QuizStepWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textPrimary = AppColors.getTextPrimary(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '1. ما هو هدفك الأساسي من الاستثمار؟',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: textPrimary,
             fontSize: 15.sp,
             fontWeight: FontWeight.bold,
           ),
@@ -36,22 +38,27 @@ class QuizStepWidget extends StatelessWidget {
           runSpacing: 8.h,
           children: [
             _buildGoalChip(
+              context: context,
               goal: InvestmentGoal.capitalPreservation,
               label: '🛡️ أمان وحفظ رأس المال',
             ),
             _buildGoalChip(
+              context: context,
               goal: InvestmentGoal.balancedGrowth,
               label: '⚖️ نمو متوازن بعائد ممتاز',
             ),
             _buildGoalChip(
+              context: context,
               goal: InvestmentGoal.highYield,
               label: '🚀 أقصى نمو وأرباح (أسهم)',
             ),
             _buildGoalChip(
+              context: context,
               goal: InvestmentGoal.islamicSharia,
               label: '🌙 استثمار إسلامي 100%',
             ),
             _buildGoalChip(
+              context: context,
               goal: InvestmentGoal.goldHedging,
               label: '🥇 تحوط وحماية ضد التضخم (ذهب)',
             ),
@@ -61,7 +68,7 @@ class QuizStepWidget extends StatelessWidget {
         Text(
           '2. ما هي المدة الزمنية المخططة للاستثمار؟',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: textPrimary,
             fontSize: 15.sp,
             fontWeight: FontWeight.bold,
           ),
@@ -71,6 +78,7 @@ class QuizStepWidget extends StatelessWidget {
           children: [
             Expanded(
               child: _buildDurationCard(
+                context: context,
                 duration: InvestmentDuration.shortTerm,
                 title: 'قصيرة الأجل',
                 subtitle: 'أقل من سنة',
@@ -79,6 +87,7 @@ class QuizStepWidget extends StatelessWidget {
             SizedBox(width: 8.w),
             Expanded(
               child: _buildDurationCard(
+                context: context,
                 duration: InvestmentDuration.mediumTerm,
                 title: 'متوسطة الأجل',
                 subtitle: '1 - 3 سنوات',
@@ -87,6 +96,7 @@ class QuizStepWidget extends StatelessWidget {
             SizedBox(width: 8.w),
             Expanded(
               child: _buildDurationCard(
+                context: context,
                 duration: InvestmentDuration.longTerm,
                 title: 'طويلة الأجل',
                 subtitle: 'أكثر من 3 سنوات',
@@ -98,31 +108,45 @@ class QuizStepWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildGoalChip({required InvestmentGoal goal, required String label}) {
+  Widget _buildGoalChip({
+    required BuildContext context,
+    required InvestmentGoal goal,
+    required String label,
+  }) {
     final isSelected = selectedGoal == goal;
+    final surface = AppColors.getSurface(context);
+    final textPrimary = AppColors.getTextPrimary(context);
+    final border = AppColors.getBorder(context);
+
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
       onSelected: (_) => onGoalChanged(goal),
       selectedColor: AppColors.primary,
-      backgroundColor: AppColors.surface,
+      backgroundColor: surface,
       labelStyle: TextStyle(
-        color: isSelected ? Colors.black : AppColors.textPrimary,
+        color: isSelected ? Colors.black : textPrimary,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         fontSize: 13.sp,
       ),
       side: BorderSide(
-        color: isSelected ? AppColors.primary : AppColors.border,
+        color: isSelected ? AppColors.primary : border,
       ),
     );
   }
 
   Widget _buildDurationCard({
+    required BuildContext context,
     required InvestmentDuration duration,
     required String title,
     required String subtitle,
   }) {
     final isSelected = selectedDuration == duration;
+    final surface = AppColors.getSurface(context);
+    final textPrimary = AppColors.getTextPrimary(context);
+    final textSecondary = AppColors.getTextSecondary(context);
+    final border = AppColors.getBorder(context);
+
     return GestureDetector(
       onTap: () => onDurationChanged(duration),
       child: AnimatedContainer(
@@ -131,10 +155,10 @@ class QuizStepWidget extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary.withValues(alpha: 0.15)
-              : AppColors.surface,
+              : surface,
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? AppColors.primary : border,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -143,7 +167,7 @@ class QuizStepWidget extends StatelessWidget {
             Text(
               title,
               style: TextStyle(
-                color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                color: isSelected ? AppColors.primary : textPrimary,
                 fontWeight: FontWeight.bold,
                 fontSize: 13.sp,
               ),
@@ -152,7 +176,7 @@ class QuizStepWidget extends StatelessWidget {
             Text(
               subtitle,
               style: TextStyle(
-                color: AppColors.textSecondary,
+                color: textSecondary,
                 fontSize: 11.sp,
               ),
             ),

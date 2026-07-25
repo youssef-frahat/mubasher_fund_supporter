@@ -10,21 +10,23 @@ import '../../../../core/widgets/social_login_button.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordObscured = true;
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -40,6 +42,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: bg,
+      appBar: AppBar(
+        backgroundColor: bg,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: textPrimary),
+          onPressed: () => context.pop(),
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -64,33 +74,29 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Brand Logo Header
+                      // Header Icon & Title
                       Center(
                         child: CircleAvatar(
-                          radius: 40.r,
+                          radius: 36.r,
                           backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-                          child: FaIcon(
-                            FontAwesomeIcons.vault,
-                            color: AppColors.primary,
-                            size: 36.r,
-                          ),
+                          child: FaIcon(FontAwesomeIcons.userPlus, color: AppColors.primary, size: 30.r),
                         ),
                       ).animate().scale(delay: 150.ms, duration: 400.ms, curve: Curves.easeOutBack),
-                      SizedBox(height: 18.h),
+                      SizedBox(height: 16.h),
 
                       Text(
-                        'مرحباً بك مجدداً',
+                        'إنشاء حساب جديد',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: textPrimary,
-                          fontSize: 26.sp,
+                          fontSize: 24.sp,
                           fontWeight: FontWeight.bold,
                         ),
-                      ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.1, end: 0),
+                      ).animate().fadeIn(delay: 250.ms),
                       SizedBox(height: 6.h),
 
                       Text(
-                        'سجل الدخول لإدارة ومتابعة محفظتك وصناديق الاستثمار',
+                        'انضم إلى مباشر للخدمات والاستشارات المالية الذكية',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: textSecondary,
@@ -109,7 +115,21 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: Column(
                           children: [
-                            // Email Input Field
+                            // Full Name Input
+                            TextFormField(
+                              controller: _nameController,
+                              style: TextStyle(color: textPrimary),
+                              decoration: InputDecoration(
+                                labelText: 'الاسم بالكامل',
+                                labelStyle: TextStyle(color: textSecondary),
+                                prefixIcon: Icon(Icons.person_outline, color: textSecondary),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                              ),
+                              validator: (val) => val == null || val.isEmpty ? 'يرجى إدخال الاسم' : null,
+                            ),
+                            SizedBox(height: 14.h),
+
+                            // Email Input
                             TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
@@ -124,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             SizedBox(height: 14.h),
 
-                            // Password Input Field
+                            // Password Input
                             TextFormField(
                               controller: _passwordController,
                               obscureText: _isPasswordObscured,
@@ -144,41 +164,24 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
-                            ),
-                            SizedBox(height: 8.h),
-
-                            // Forgot Password Link
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: TextButton(
-                                onPressed: () => context.push(Routes.forgotPassword),
-                                child: Text(
-                                  'نسيت كلمة المرور؟',
-                                  style: TextStyle(
-                                    color: AppColors.primary,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
+                              validator: (val) => (val?.length ?? 0) < 6 ? 'كلمة المرور 6 أحرف على الأقل' : null,
                             ),
                           ],
                         ),
                       ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0),
                       SizedBox(height: 20.h),
 
-                      // Main Login Button
+                      // Submit Register Button
                       ElevatedButton(
                         onPressed: isLoading
                             ? null
                             : () {
-                                final email = _emailController.text.trim();
-                                if (email.isNotEmpty) {
-                                  context.read<AuthCubit>().sendOtp(email);
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('يرجى كتابة البريد الإلكتروني')),
-                                  );
+                                if (_formKey.currentState!.validate()) {
+                                  context.read<AuthCubit>().signUpWithEmail(
+                                        _emailController.text.trim(),
+                                        _passwordController.text,
+                                        _nameController.text.trim(),
+                                      );
                                 }
                               },
                         style: ElevatedButton.styleFrom(
@@ -195,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: const CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
                               )
                             : Text(
-                                'تسجيل الدخول بالبريد الإلكتروني',
+                                'تسجيل حساب جديد',
                                 style: TextStyle(
                                   color: Colors.black,
                                   fontSize: 15.sp,
@@ -218,28 +221,28 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       SizedBox(height: 20.h),
 
-                      // Pure White Google Sign In Button with Multi-Colored Logo & Blue Ripple
+                      // Google Sign Up Button
                       SocialLoginButton(
-                        label: 'متابعة باستخدام Google',
+                        label: 'التسجيل باستخدام Google',
                         isLoading: isLoading,
                         onPressed: () {
                           context.read<AuthCubit>().signInWithGoogle();
                         },
                       ),
-                      SizedBox(height: 26.h),
+                      SizedBox(height: 24.h),
 
-                      // Register Link
+                      // Already have account login link
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'ليس لديك حساب حتى الآن؟ ',
+                            'لديك حساب بالفعل؟ ',
                             style: TextStyle(color: textSecondary, fontSize: 13.sp),
                           ),
                           GestureDetector(
-                            onTap: () => context.push(Routes.register),
+                            onTap: () => context.pop(),
                             child: Text(
-                              'إنشاء حساب جديد (سجل الآن)',
+                              'تسجيل الدخول',
                               style: TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.bold,
