@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class LanguageCubit extends Cubit<Locale> {
   final SharedPreferences prefs;
@@ -14,14 +15,24 @@ class LanguageCubit extends Cubit<Locale> {
 
   bool get isArabic => state.languageCode == 'ar';
 
-  Future<void> toggleLanguage() async {
+  Future<void> toggleLanguage([BuildContext? context]) async {
     final nextLocale = state.languageCode == 'ar' ? const Locale('en') : const Locale('ar');
     await prefs.setString('app_language', nextLocale.languageCode);
+    if (context != null && context.mounted) {
+      try {
+        await context.setLocale(nextLocale);
+      } catch (_) {}
+    }
     emit(nextLocale);
   }
 
-  Future<void> setLocale(Locale locale) async {
+  Future<void> setLocale(Locale locale, [BuildContext? context]) async {
     await prefs.setString('app_language', locale.languageCode);
+    if (context != null && context.mounted) {
+      try {
+        await context.setLocale(locale);
+      } catch (_) {}
+    }
     emit(locale);
   }
 }

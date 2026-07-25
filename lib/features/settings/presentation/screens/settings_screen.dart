@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/services/biometric_service.dart';
@@ -94,13 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () async {
-              await context.read<LanguageCubit>().toggleLanguage();
-              if (context.mounted) {
-                final code = context.read<LanguageCubit>().state.languageCode;
-                await context.setLocale(Locale(code));
-              }
-            },
+            onPressed: () => context.read<LanguageCubit>().toggleLanguage(context),
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
               decoration: BoxDecoration(
@@ -258,13 +251,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         style: TextStyle(color: AppColors.primary, fontSize: 11.sp, fontWeight: FontWeight.bold),
                       ),
                     ),
-                    onTap: () async {
-                      await context.read<LanguageCubit>().toggleLanguage();
-                      if (context.mounted) {
-                        final code = context.read<LanguageCubit>().state.languageCode;
-                        await context.setLocale(Locale(code));
-                      }
-                    },
+                    onTap: () => context.read<LanguageCubit>().toggleLanguage(context),
                   ),
                 ],
               ),

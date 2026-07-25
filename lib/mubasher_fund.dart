@@ -47,8 +47,9 @@ class MubasherFund extends StatelessWidget {
                     themeMode: themeMode,
                     routerConfig: AppRouter.router,
                     builder: (context, child) {
+                      final isAr = currentLocale.languageCode == 'ar';
                       return Directionality(
-                        textDirection: ui.TextDirection.ltr,
+                        textDirection: isAr ? ui.TextDirection.rtl : ui.TextDirection.ltr,
                         child: child ?? const SizedBox.shrink(),
                       );
                     },
