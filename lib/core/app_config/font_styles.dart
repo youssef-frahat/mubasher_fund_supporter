@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'app_colors.dart';
 
 class FontStyles {
   // We can assume Inter or Roboto is configured in pubspec.yaml.
@@ -45,10 +44,31 @@ class FontStyles {
         fontWeight: FontWeight.w700,
       );
 
+  static TextStyle get titleSmall => TextStyle(
+        fontSize: 14.sp,
+        fontWeight: FontWeight.w600,
+      );
+
+  static TextStyle get headlineMedium => TextStyle(
+        fontSize: 24.sp,
+        fontWeight: FontWeight.w700,
+      );
+
   static TextStyle get labelLarge => TextStyle(
         fontSize: 14.sp,
         fontWeight: FontWeight.w600,
         color: Colors.white, // Keep this white as it's typically for primary buttons
         letterSpacing: 0.5,
       );
+
+  static TextStyle get labelMedium => TextStyle(
+        fontSize: 12.sp,
+        fontWeight: FontWeight.w500,
+      );
+
+  static TextStyle get labelSmall => TextStyle(
+        fontSize: 10.sp,
+        fontWeight: FontWeight.w500,
+      );
 }
+

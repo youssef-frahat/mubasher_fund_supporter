@@ -11,6 +11,7 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/profile_screen.dart';
 import '../../features/auth/presentation/screens/otp_screen.dart';
 import '../../features/portfolio/presentation/screens/portfolio_screen.dart';
+import '../../features/calculator/presentation/screens/investment_calculator_screen.dart';
 import 'routes.dart';
 import '../supabase/supabase_service.dart';
 import 'go_router_refresh_stream.dart';
@@ -77,7 +78,7 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: Routes.compare,
-                builder: (context, state) => const Scaffold(body: Center(child: Text('Compare Screen'))),
+                builder: (context, state) => const InvestmentCalculatorScreen(),
               ),
             ],
           ),
