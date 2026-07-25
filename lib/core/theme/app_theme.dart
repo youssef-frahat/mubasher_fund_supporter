@@ -4,6 +4,7 @@ import '../app_config/app_colors.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
+    final baseTextTheme = ThemeData.light().textTheme;
     return ThemeData(
       useMaterial3: true,
       colorScheme: const ColorScheme.light(
@@ -17,11 +18,12 @@ class AppTheme {
         onError: Colors.white,
       ),
       scaffoldBackgroundColor: const Color(0xFFF4F7FB),
-      textTheme: GoogleFonts.interTextTheme(),
+      textTheme: GoogleFonts.cairoTextTheme(baseTextTheme),
     );
   }
 
   static ThemeData get darkTheme {
+    final baseTextTheme = ThemeData.dark().textTheme;
     return ThemeData(
       useMaterial3: true,
       colorScheme: const ColorScheme.dark(
@@ -35,7 +37,7 @@ class AppTheme {
         onError: Colors.white,
       ),
       scaffoldBackgroundColor: AppColors.background,
-      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+      textTheme: GoogleFonts.cairoTextTheme(baseTextTheme),
     );
   }
 }

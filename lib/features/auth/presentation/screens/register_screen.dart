@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/widgets/social_login_button.dart';
+import '../../../../core/services/avatar_picker_service.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
@@ -24,6 +26,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   bool _isPasswordObscured = true;
   bool _acceptedTerms = true;
+  File? _avatarFile;
 
   @override
   void dispose() {
@@ -75,15 +78,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Header Icon & Title
+                      // Header Avatar Picker (Optional)
                       Center(
-                        child: CircleAvatar(
-                          radius: 36.r,
-                          backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-                          child: FaIcon(FontAwesomeIcons.userPlus, color: AppColors.primary, size: 30.r),
+                        child: GestureDetector(
+                          onTap: () async {
+                            final file = await AvatarPickerService.pickAndCropAvatar(context);
+                            if (file != null && mounted) {
+                              setState(() => _avatarFile = file);
+                            }
+                          },
+                          child: Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              CircleAvatar(
+                                radius: 42.r,
+                                backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                                backgroundImage: _avatarFile != null ? FileImage(_avatarFile!) : null,
+                                child: _avatarFile == null
+                                    ? FaIcon(FontAwesomeIcons.userPlus, color: AppColors.primary, size: 30.r)
+                                    : null,
+                              ),
+                              CircleAvatar(
+                                radius: 14.r,
+                                backgroundColor: AppColors.primary,
+                                child: const Icon(Icons.camera_alt, color: Colors.black, size: 14),
+                              ),
+                            ],
+                          ),
                         ),
                       ).animate().scale(delay: 150.ms, duration: 400.ms, curve: Curves.easeOutBack),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 8.h),
+                      Text(
+                        _avatarFile == null ? 'إضافة صورة شخصية (اختياري 📸)' : 'تم اختيار الصورة وتعشيبها بنجاح ✨',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: _avatarFile == null ? textSecondary : AppColors.primary,
+                          fontSize: 11.sp,
+                          fontWeight: _avatarFile == null ? FontWeight.normal : FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 12.h),
 
                       Text(
                         'إنشاء حساب جديد',

@@ -224,38 +224,42 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
                     itemCount: filteredFunds.length,
                     itemBuilder: (context, index) {
                       final fund = filteredFunds[index];
-                      return Container(
-                        margin: EdgeInsets.only(bottom: 12.h),
-                        decoration: BoxDecoration(
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: 12.h),
+                        child: Material(
                           color: surface,
-                          borderRadius: BorderRadius.circular(14.r),
-                          border: Border.all(color: border),
-                        ),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            radius: 22.r,
-                            backgroundColor: fund.accentColor.withValues(alpha: 0.15),
-                            child: FaIcon(fund.icon, color: fund.accentColor, size: 18.r),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14.r),
+                            side: BorderSide(color: border),
                           ),
-                          title: Text(
-                            fund.title,
-                            style: TextStyle(
-                              color: textPrimary,
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.bold,
+                          clipBehavior: Clip.antiAlias,
+                          child: ListTile(
+                            tileColor: Colors.transparent,
+                            leading: CircleAvatar(
+                              radius: 22.r,
+                              backgroundColor: fund.accentColor.withValues(alpha: 0.15),
+                              child: FaIcon(fund.icon, color: fund.accentColor, size: 18.r),
                             ),
-                          ),
-                          subtitle: Text(
-                            fund.subtitle,
-                            style: TextStyle(
-                              color: textSecondary,
-                              fontSize: 11.sp,
+                            title: Text(
+                              fund.title,
+                              style: TextStyle(
+                                color: textPrimary,
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                            subtitle: Text(
+                              fund.subtitle,
+                              style: TextStyle(
+                                color: textSecondary,
+                                fontSize: 11.sp,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                            onTap: () => context.push(Routes.fundDetails, extra: fund),
                           ),
-                          trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                          onTap: () => context.push(Routes.fundDetails, extra: fund),
                         ),
                       );
                     },

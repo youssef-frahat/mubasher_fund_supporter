@@ -1,6 +1,22 @@
 {
-  "appName": "Mubasher Fund Supporter",
-  "appDescription": "Egyptian mutual funds intelligence platform for advisors, institutions, and retail investors.",
-  "phase1Delivered": "Phase 1 delivered",
-  "phase1Description": "The foundation now includes a scalable Flutter shell, a modular feature architecture, and a production-ready roadmap for database, backend, and AI systems."
+  "appName": "Watheqa",
+  "appSubtitle": "Egyptian Mutual Funds Simulator & Platform 📈",
+  "appDescription": "Egyptian Mutual Funds Analytics & Simulator Platform.",
+  "home": "Home",
+  "roboAdvisor": "Robo-Advisor",
+  "portfolio": "Portfolio",
+  "settings": "Settings",
+  "theme": "App Theme",
+  "language": "App Language",
+  "arabic": "Arabic",
+  "english": "English",
+  "switchedLanguage": "Language switched successfully 🌐",
+  "exploreFunds": "Explore All Funds",
+  "allFunds": "All Funds Directory",
+  "searchPlaceholder": "Search fund name, manager, or category...",
+  "topPerforming": "Top Performing Fund",
+  "seeAll": "See All ➔",
+  "securityEncryption": "256-bit Bank Grade Security",
+  "privacyPolicy": "Terms & Privacy Policy",
+  "faq": "FAQ"
 }

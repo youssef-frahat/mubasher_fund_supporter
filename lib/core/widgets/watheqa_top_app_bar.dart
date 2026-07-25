@@ -25,7 +25,7 @@ class WatheqaTopAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: bg,
       elevation: 0,
-      centerTitle: false,
+      centerTitle: true,
       automaticallyImplyLeading: false,
       leading: showBackButton
           ? IconButton(
@@ -45,41 +45,7 @@ class WatheqaTopAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
           onPressed: () => context.push(Routes.allFunds),
         ),
-
-        // Language Switcher Action (AR / ENG)
-        TextButton(
-          onPressed: () {
-            final currentLocale = Localizations.localeOf(context).languageCode;
-            final newLocale = currentLocale == 'ar' ? 'en' : 'ar';
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  newLocale == 'en' ? 'Switched to English 🌐' : 'تم التحويل إلى اللغة العربية 🌐',
-                ),
-                duration: const Duration(seconds: 1),
-                backgroundColor: AppColors.primary,
-              ),
-            );
-          },
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8.r),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
-            ),
-            child: Text(
-              Localizations.localeOf(context).languageCode.toUpperCase() == 'AR' ? 'ENG' : 'AR',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-                fontSize: 11.sp,
-              ),
-            ),
-          ),
-        ),
-        SizedBox(width: 8.w),
+        SizedBox(width: 4.w),
       ],
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/services/biometric_service.dart';
@@ -92,28 +93,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('تم تحويل مظهر اللغة بنجاح 🌐'),
-                  backgroundColor: AppColors.primary,
-                  duration: Duration(seconds: 1),
-                ),
-              );
+            onPressed: () async {
+              if (context.locale.languageCode == 'ar') {
+                await context.setLocale(const Locale('en'));
+              } else {
+                await context.setLocale(const Locale('ar'));
+              }
+              if (mounted) setState(() {});
             },
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8.r),
                 border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
               ),
               child: Text(
-                'ENG',
+                context.locale.languageCode == 'ar' ? 'ENG' : 'AR',
                 style: TextStyle(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
-                  fontSize: 11.sp,
+                  fontSize: 12.sp,
                 ),
               ),
             ),
@@ -129,12 +129,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // User Account Profile Card
             BlocBuilder<AuthCubit, AuthState>(
               builder: (context, state) {
-                final String userName = (state is Authenticated)
-                    ? (state.user.userMetadata?['full_name'] ?? 'مستثمر مباشر')
-                    : 'مستثمر مباشر';
-                final String userEmail = (state is Authenticated)
-                    ? (state.user.email ?? 'user@mubasher.eg')
-                    : 'قم بتسجيل الدخول';
+                String userName = 'المستثمر المحترف';
+                String userEmail = 'user@watheqa.eg';
+
+                if (state is Authenticated) {
+                  userName = state.user.userMetadata?['full_name'] ?? state.user.email?.split('@').first ?? 'المستثمر المحترف';
+                  userEmail = state.user.email ?? 'user@watheqa.eg';
+                }
 
                 return Container(
                   padding: EdgeInsets.all(16.r),
@@ -152,7 +153,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: FaIcon(
                           FontAwesomeIcons.userCheck,
                           color: AppColors.primary,
-                          size: 22.r,
+                          size: 24.r,
                         ),
                       ),
                       SizedBox(width: 14.w),
@@ -160,40 +161,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Text(
-                                  userName,
-                                  style: TextStyle(
-                                    color: textPrimary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15.sp,
-                                  ),
-                                ),
-                                SizedBox(width: 6.w),
-                                Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(6.r),
-                                  ),
-                                  child: Text(
-                                    'موثق 🛡️',
-                                    style: TextStyle(
-                                      color: AppColors.primary,
-                                      fontSize: 9.sp,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              userName,
+                              style: TextStyle(
+                                color: textPrimary,
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            SizedBox(height: 4.h),
+                            SizedBox(height: 2.h),
                             Text(
                               userEmail,
                               style: TextStyle(
                                 color: textSecondary,
-                                fontSize: 11.sp,
+                                fontSize: 12.sp,
                               ),
                             ),
                           ],
@@ -210,55 +191,97 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             SizedBox(height: 24.h),
 
-            // Category Title: Theme Setting (Single Tile)
-            _buildSectionHeader(context, '🎨 مظهر التطبيق والتصميم'),
+            // Category Title: Theme & Language Setting
+            _buildSectionHeader(context, '🎨 مظهر التطبيق واللغة'),
             SizedBox(height: 10.h),
-            BlocBuilder<ThemeCubit, ThemeMode>(
-              builder: (context, themeMode) {
-                String subtitleText = 'تلقائي (حسب نظام الجهاز)';
-                dynamic themeIcon = FontAwesomeIcons.sliders;
+            Material(
+              color: surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.r),
+                side: BorderSide(color: border),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                children: [
+                  // Theme Tile
+                  BlocBuilder<ThemeCubit, ThemeMode>(
+                    builder: (context, themeMode) {
+                      String subtitleText = 'تلقائي (حسب نظام الجهاز)';
+                      dynamic themeIcon = FontAwesomeIcons.sliders;
 
-                if (themeMode == ThemeMode.dark) {
-                  subtitleText = 'المظهر الداكن (Dark Mode)';
-                  themeIcon = FontAwesomeIcons.moon;
-                } else if (themeMode == ThemeMode.light) {
-                  subtitleText = 'المظهر الفاتح (Light Mode)';
-                  themeIcon = FontAwesomeIcons.sun;
-                }
+                      if (themeMode == ThemeMode.dark) {
+                        subtitleText = 'المظهر الداكن (Dark Mode)';
+                        themeIcon = FontAwesomeIcons.moon;
+                      } else if (themeMode == ThemeMode.light) {
+                        subtitleText = 'المظهر الفاتح (Light Mode)';
+                        themeIcon = FontAwesomeIcons.sun;
+                      }
 
-                return Container(
-                  decoration: BoxDecoration(
-                    color: surface,
-                    borderRadius: BorderRadius.circular(16.r),
-                    border: Border.all(color: border),
+                      return ListTile(
+                        tileColor: Colors.transparent,
+                        leading: FaIcon(themeIcon, color: AppColors.primary, size: 18.r),
+                        title: Text(
+                          'مظهر التطبيق (Theme)',
+                          style: TextStyle(color: textPrimary, fontSize: 13.sp, fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          subtitleText,
+                          style: TextStyle(color: textSecondary, fontSize: 11.sp),
+                        ),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                        onTap: () => _showThemeSelectorSheet(context, themeMode),
+                      );
+                    },
                   ),
-                  child: ListTile(
-                    leading: FaIcon(themeIcon, color: AppColors.primary, size: 18.r),
+                  Divider(height: 1, color: border),
+
+                  // Language Tile
+                  ListTile(
+                    tileColor: Colors.transparent,
+                    leading: FaIcon(FontAwesomeIcons.language, color: AppColors.primary, size: 18.r),
                     title: Text(
-                      'مظهر التطبيق (Theme)',
+                      'لغة التطبيق (Language)',
                       style: TextStyle(color: textPrimary, fontSize: 13.sp, fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
-                      subtitleText,
+                      context.locale.languageCode == 'ar' ? 'العربية (Arabic)' : 'English',
                       style: TextStyle(color: textSecondary, fontSize: 11.sp),
                     ),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                    onTap: () => _showThemeSelectorSheet(context, themeMode),
+                    trailing: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Text(
+                        context.locale.languageCode == 'ar' ? 'تغيير إلى English' : 'تغيير إلى العربية',
+                        style: TextStyle(color: AppColors.primary, fontSize: 11.sp, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    onTap: () async {
+                      if (context.locale.languageCode == 'ar') {
+                        await context.setLocale(const Locale('en'));
+                      } else {
+                        await context.setLocale(const Locale('ar'));
+                      }
+                      if (mounted) setState(() {});
+                    },
                   ),
-                );
-              },
+                ],
+              ),
             ),
             SizedBox(height: 24.h),
 
             // Category Title: Notifications & Alerts
             _buildSectionHeader(context, '🔔 التنبيهات وإشعارات المحفظة'),
             SizedBox(height: 10.h),
-            Container(
-              decoration: BoxDecoration(
-                color: surface,
+            Material(
+              color: surface,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: border),
+                side: BorderSide(color: border),
               ),
+              clipBehavior: Clip.antiAlias,
               child: SwitchListTile(
                 secondary: const FaIcon(FontAwesomeIcons.bell, color: AppColors.primary, size: 18),
                 title: Text(
@@ -279,12 +302,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Category Title: Security & Biometrics
             _buildSectionHeader(context, '🔒 الأمان والحماية'),
             SizedBox(height: 10.h),
-            Container(
-              decoration: BoxDecoration(
-                color: surface,
+            Material(
+              color: surface,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: border),
+                side: BorderSide(color: border),
               ),
+              clipBehavior: Clip.antiAlias,
               child: SwitchListTile(
                 secondary: const FaIcon(FontAwesomeIcons.fingerprint, color: AppColors.primary, size: 18),
                 title: Text(
@@ -305,12 +329,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Category Title: Support
             _buildSectionHeader(context, '💬 الدعم الفني والمساعدة'),
             SizedBox(height: 10.h),
-            Container(
-              decoration: BoxDecoration(
-                color: surface,
+            Material(
+              color: surface,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: border),
+                side: BorderSide(color: border),
               ),
+              clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
                   ListTile(

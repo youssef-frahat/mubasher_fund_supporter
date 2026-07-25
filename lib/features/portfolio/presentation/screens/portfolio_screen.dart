@@ -6,10 +6,10 @@ import '../../../../core/app_config/app_colors.dart';
 import '../cubit/portfolio_cubit.dart';
 import '../cubit/portfolio_state.dart';
 import '../../data/models/portfolio_item_model.dart';
+import '../../data/models/portfolio_model.dart';
 import '../../data/repositories/portfolio_repository.dart';
 import '../widgets/add_transaction_bottom_sheet.dart';
 import '../widgets/portfolio_health_score_widget.dart';
-
 import '../../../../core/widgets/app_loading_indicator.dart';
 
 class PortfolioScreen extends StatelessWidget {
@@ -66,60 +66,130 @@ class _PortfolioContentView extends StatelessWidget {
           } else if (state is PortfolioLoaded) {
             final health = state.healthSummary;
             final items = state.items;
+            final activePortfolio = state.activePortfolio;
+            final allPortfolios = state.allPortfolios;
 
             return SingleChildScrollView(
               padding: EdgeInsets.all(16.r),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Portfolio Switcher Pill Bar
+                  GestureDetector(
+                    onTap: () => _openPortfolioSwitcherSheet(context, allPortfolios, activePortfolio),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                      decoration: BoxDecoration(
+                        color: surface,
+                        borderRadius: BorderRadius.circular(14.r),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          FaIcon(FontAwesomeIcons.briefcase, color: AppColors.primary, size: 16.r),
+                          SizedBox(width: 10.w),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'المحفظة النشطة حالياً:',
+                                  style: TextStyle(color: textSecondary, fontSize: 10.sp),
+                                ),
+                                SizedBox(height: 2.h),
+                                Text(
+                                  activePortfolio.name,
+                                  style: TextStyle(
+                                    color: textPrimary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13.sp,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  'تبديل (${allPortfolios.length})',
+                                  style: TextStyle(color: AppColors.primary, fontSize: 11.sp, fontWeight: FontWeight.bold),
+                                ),
+                                SizedBox(width: 4.w),
+                                Icon(Icons.keyboard_arrow_down, color: AppColors.primary, size: 16.r),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 14.h),
+
                   // Portfolio Total Value Header Card
                   _buildTotalValueCard(context, health),
                   SizedBox(height: 16.h),
 
-                  // Health Score Gauge Indicator (Red <50, Yellow 50-85, Green >85)
+                  // Health Score Gauge Indicator
                   PortfolioHealthScoreWidget(healthSummary: health),
-                  SizedBox(height: 24.h),
+                  SizedBox(height: 20.h),
 
                   // Holdings Header with Add Button
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '💼 أصولي ووثائقي الحالية (${items.length})',
-                        style: TextStyle(
-                          color: textPrimary,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: Text(
+                          '💼 وثائق ${activePortfolio.name} (${items.length})',
+                          style: TextStyle(
+                            color: textPrimary,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      SizedBox(width: 8.w),
                       TextButton.icon(
                         onPressed: () => _openAddBottomSheet(context),
-                        icon: FaIcon(FontAwesomeIcons.circlePlus, color: AppColors.primary, size: 16.r),
+                        icon: FaIcon(FontAwesomeIcons.circlePlus, color: AppColors.primary, size: 15.r),
                         label: Text(
                           'إضافة صفقة',
                           style: TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
-                            fontSize: 13.sp,
+                            fontSize: 12.sp,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 10.h),
+                  SizedBox(height: 8.h),
 
                   // Holdings List
                   if (items.isEmpty)
                     Container(
-                      padding: EdgeInsets.all(30.r),
+                      padding: EdgeInsets.all(24.r),
                       alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: surface,
+                        borderRadius: BorderRadius.circular(14.r),
+                        border: Border.all(color: border),
+                      ),
                       child: Column(
                         children: [
-                          FaIcon(FontAwesomeIcons.wallet, color: textSecondary, size: 42.r),
+                          FaIcon(FontAwesomeIcons.wallet, color: textSecondary, size: 36.r),
                           SizedBox(height: 10.h),
                           Text(
-                            'لم تقم بإضافة أي وثيقة في محفظتك حتى الآن.',
-                            style: TextStyle(color: textSecondary, fontSize: 13.sp),
+                            'هذه المحفظة خالية، يمكنك إضافة وثائق إليها الآن.',
+                            style: TextStyle(color: textSecondary, fontSize: 12.sp),
                           ),
                         ],
                       ),
@@ -134,8 +204,8 @@ class _PortfolioContentView extends StatelessWidget {
                         final isProfit = item.profitLoss >= 0;
 
                         return Container(
-                          margin: EdgeInsets.only(bottom: 12.h),
-                          padding: EdgeInsets.all(14.r),
+                          margin: EdgeInsets.only(bottom: 10.h),
+                          padding: EdgeInsets.all(12.r),
                           decoration: BoxDecoration(
                             color: surface,
                             borderRadius: BorderRadius.circular(14.r),
@@ -144,11 +214,11 @@ class _PortfolioContentView extends StatelessWidget {
                           child: Row(
                             children: [
                               CircleAvatar(
-                                radius: 20.r,
+                                radius: 18.r,
                                 backgroundColor: item.category.color.withValues(alpha: 0.15),
-                                child: Icon(item.category.icon, color: item.category.color, size: 18.r),
+                                child: Icon(item.category.icon, color: item.category.color, size: 16.r),
                               ),
-                              SizedBox(width: 12.w),
+                              SizedBox(width: 10.w),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,15 +228,15 @@ class _PortfolioContentView extends StatelessWidget {
                                       style: TextStyle(
                                         color: textPrimary,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 13.sp,
+                                        fontSize: 12.sp,
                                       ),
                                     ),
-                                    SizedBox(height: 4.h),
+                                    SizedBox(height: 2.h),
                                     Text(
                                       '${item.units.toStringAsFixed(0)} وثائق | بسعر ${item.purchasePrice.toStringAsFixed(1)} ج.م',
                                       style: TextStyle(
                                         color: textSecondary,
-                                        fontSize: 11.sp,
+                                        fontSize: 10.sp,
                                       ),
                                     ),
                                   ],
@@ -180,7 +250,7 @@ class _PortfolioContentView extends StatelessWidget {
                                     style: TextStyle(
                                       color: textPrimary,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 14.sp,
+                                      fontSize: 13.sp,
                                     ),
                                   ),
                                   SizedBox(height: 2.h),
@@ -188,24 +258,37 @@ class _PortfolioContentView extends StatelessWidget {
                                     '${isProfit ? '+' : ''}${item.profitLoss.toStringAsFixed(0)} (${item.profitLossPercentage.toStringAsFixed(1)}%)',
                                     style: TextStyle(
                                       color: isProfit ? AppColors.success : AppColors.error,
-                                      fontSize: 11.sp,
+                                      fontSize: 10.sp,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ],
                               ),
-                              IconButton(
-                                icon: const FaIcon(FontAwesomeIcons.trashCan, color: AppColors.error, size: 16),
-                                onPressed: () {
-                                  context.read<PortfolioCubit>().removeTransaction(item.id);
-                                },
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Blue Edit Icon Button
+                                  IconButton(
+                                    tooltip: 'تعديل كمية الوثائق',
+                                    icon: const FaIcon(FontAwesomeIcons.penToSquare, color: Color(0xFF3B82F6), size: 15),
+                                    onPressed: () => _showEditUnitsDialog(context, item),
+                                  ),
+                                  // Delete Icon Button
+                                  IconButton(
+                                    tooltip: 'حذف الوثيقة',
+                                    icon: const FaIcon(FontAwesomeIcons.trashCan, color: AppColors.error, size: 15),
+                                    onPressed: () {
+                                      context.read<PortfolioCubit>().removeTransaction(item.id);
+                                    },
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         );
                       },
                     ),
-                  SizedBox(height: 30.h),
+                  SizedBox(height: 40.h),
                 ],
               ),
             );
@@ -213,12 +296,14 @@ class _PortfolioContentView extends StatelessWidget {
           return const SizedBox();
         },
       ),
+
+      // Bottom Button to Create a New Portfolio
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openAddBottomSheet(context),
+        onPressed: () => _showCreatePortfolioDialog(context),
         backgroundColor: AppColors.primary,
-        icon: const FaIcon(FontAwesomeIcons.plus, color: Colors.black, size: 14),
+        icon: const FaIcon(FontAwesomeIcons.folderPlus, color: Colors.black, size: 15),
         label: const Text(
-          'إضافة وثيقة محاكاة',
+          'إضافة محفظة محاكاة جديدة ➕',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
       ),
@@ -233,32 +318,32 @@ class _PortfolioContentView extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(20.r),
+      padding: EdgeInsets.all(18.r),
       decoration: BoxDecoration(
         gradient: AppColors.getCardGradient(context),
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(18.r),
         border: Border.all(color: border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'إجمالي قيمة المحفظة الحالية',
+            'إجمالي قيمة هذه المحفظة الحالية',
             style: TextStyle(
               color: textSecondary,
-              fontSize: 12.sp,
+              fontSize: 11.sp,
             ),
           ),
-          SizedBox(height: 6.h),
+          SizedBox(height: 4.h),
           Text(
             '${health.totalPortfolioValue.toStringAsFixed(0)} ج.م',
             style: TextStyle(
               color: textPrimary,
               fontWeight: FontWeight.bold,
-              fontSize: 28.sp,
+              fontSize: 26.sp,
             ),
           ),
-          SizedBox(height: 10.h),
+          SizedBox(height: 8.h),
           Row(
             children: [
               Container(
@@ -272,7 +357,7 @@ class _PortfolioContentView extends StatelessWidget {
                     FaIcon(
                       isProfit ? FontAwesomeIcons.arrowTrendUp : FontAwesomeIcons.arrowTrendDown,
                       color: isProfit ? AppColors.success : AppColors.error,
-                      size: 14.r,
+                      size: 13.r,
                     ),
                     SizedBox(width: 6.w),
                     Text(
@@ -280,7 +365,7 @@ class _PortfolioContentView extends StatelessWidget {
                       style: TextStyle(
                         color: isProfit ? AppColors.success : AppColors.error,
                         fontWeight: FontWeight.bold,
-                        fontSize: 12.sp,
+                        fontSize: 11.sp,
                       ),
                     ),
                   ],
@@ -298,6 +383,272 @@ class _PortfolioContentView extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _openPortfolioSwitcherSheet(
+    BuildContext context,
+    List<PortfolioModel> portfolios,
+    PortfolioModel activePortfolio,
+  ) {
+    final cubit = context.read<PortfolioCubit>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final surface = AppColors.getSurface(context);
+        final textPrimary = AppColors.getTextPrimary(context);
+        final textSecondary = AppColors.getTextSecondary(context);
+        final border = AppColors.getBorder(context);
+
+        return Container(
+          padding: EdgeInsets.fromLTRB(16.w, 18.h, 16.w, 24.h),
+          decoration: BoxDecoration(
+            color: surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+            border: Border.all(color: border),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '📁 منافذ المحافظ الاستثمارية الخاصّة بك',
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, color: textSecondary),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12.h),
+
+              ListView.builder(
+                shrinkWrap: true,
+                itemCount: portfolios.length,
+                itemBuilder: (context, index) {
+                  final p = portfolios[index];
+                  final isActive = p.id == activePortfolio.id;
+
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: 8.h),
+                    child: Material(
+                      color: isActive ? AppColors.primary.withValues(alpha: 0.12) : surface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        side: BorderSide(
+                          color: isActive ? AppColors.primary : border,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: ListTile(
+                        tileColor: Colors.transparent,
+                        leading: FaIcon(
+                          FontAwesomeIcons.briefcase,
+                          color: isActive ? AppColors.primary : textSecondary,
+                          size: 18.r,
+                        ),
+                        title: Text(
+                          p.name,
+                          style: TextStyle(
+                            color: textPrimary,
+                            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 13.sp,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '(${p.items.length}) صناديق مضافة',
+                          style: TextStyle(color: textSecondary, fontSize: 11.sp),
+                        ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isActive)
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(6.r),
+                              ),
+                              child: const Text(
+                                'نشطة الان',
+                                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 10),
+                              ),
+                            ),
+                          if (portfolios.length > 1)
+                            IconButton(
+                              icon: const FaIcon(FontAwesomeIcons.trashCan, color: AppColors.error, size: 14),
+                              onPressed: () {
+                                cubit.deletePortfolio(p.id);
+                                Navigator.pop(ctx);
+                              },
+                            ),
+                        ],
+                      ),
+                      onTap: () {
+                        cubit.switchPortfolio(p.id);
+                        Navigator.pop(ctx);
+                      },
+                      ),
+                    ),
+                  );
+                },
+              ),
+              SizedBox(height: 14.h),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showCreatePortfolioDialog(context);
+                  },
+                  icon: const FaIcon(FontAwesomeIcons.plus, color: Colors.black, size: 14),
+                  label: const Text(
+                    'إنشاء محفظة استثمارية جديدة',
+                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCreatePortfolioDialog(BuildContext context) {
+    final nameController = TextEditingController();
+    final cubit = context.read<PortfolioCubit>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final surface = AppColors.getSurface(context);
+        final textPrimary = AppColors.getTextPrimary(context);
+        final textSecondary = AppColors.getTextSecondary(context);
+        final border = AppColors.getBorder(context);
+
+        return Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20.h,
+            left: 20.w,
+            right: 20.w,
+            top: 20.h,
+          ),
+          decoration: BoxDecoration(
+            color: surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+            border: Border.all(color: border),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(8.r),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                        child: const FaIcon(FontAwesomeIcons.folderPlus, color: AppColors.primary, size: 16),
+                      ),
+                      SizedBox(width: 10.w),
+                      Text(
+                        'إضافة محفظة محاكاة جديدة',
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, color: textSecondary),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              SizedBox(height: 4.h),
+              Text(
+                'يمكنك تخصيص اسم للمحفظة وإضافة وثائق مستقلة بها (مثل: محفظة الذهب، محفظة التقاعد...)',
+                style: TextStyle(color: textSecondary, fontSize: 11.sp),
+              ),
+              SizedBox(height: 16.h),
+
+              TextFormField(
+                controller: nameController,
+                style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 14.sp),
+                decoration: InputDecoration(
+                  labelText: 'اسم المحفظة الجديدة',
+                  hintText: 'مثال: محفظة الطوارئ والذهب 2026',
+                  labelStyle: TextStyle(color: textSecondary, fontSize: 12.sp),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: BorderSide(color: border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: const BorderSide(color: AppColors.primary),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20.h),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: EdgeInsets.symmetric(vertical: 14.h),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                  ),
+                  onPressed: () {
+                    final name = nameController.text.trim();
+                    if (name.isNotEmpty) {
+                      cubit.createPortfolio(name);
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('تم إنشاء وتفعيل "$name" بنجاح! 🚀'),
+                          backgroundColor: AppColors.primary,
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text(
+                    'إنشاء وتفعيل المحفظة',
+                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -326,6 +677,216 @@ class _PortfolioContentView extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  void _showEditUnitsDialog(BuildContext context, PortfolioItem item) {
+    final cubit = context.read<PortfolioCubit>();
+    final unitsController = TextEditingController(text: item.units.toStringAsFixed(0));
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final surface = AppColors.getSurface(context);
+        final textPrimary = AppColors.getTextPrimary(context);
+        final textSecondary = AppColors.getTextSecondary(context);
+        final border = AppColors.getBorder(context);
+
+        return StatefulBuilder(
+          builder: (context, setStateModal) {
+            final double currentVal = double.tryParse(unitsController.text) ?? 0;
+            final double calculatedTotal = currentVal * item.currentNav;
+
+            return Container(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 20.h,
+                left: 20.w,
+                right: 20.w,
+                top: 20.h,
+              ),
+              decoration: BoxDecoration(
+                color: surface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+                border: Border.all(color: border),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(8.r),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3B82F6).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10.r),
+                            ),
+                            child: const FaIcon(FontAwesomeIcons.penToSquare, color: Color(0xFF3B82F6), size: 16),
+                          ),
+                          SizedBox(width: 10.w),
+                          Text(
+                            'تعديل عدد الوثائق',
+                            style: TextStyle(
+                              color: textPrimary,
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: textSecondary),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    item.fundName,
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 14.h),
+
+                  TextFormField(
+                    controller: unitsController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 16.sp),
+                    onChanged: (_) => setStateModal(() {}),
+                    decoration: InputDecoration(
+                      labelText: 'إجمالي عدد الوثائق المملوكة حالياً',
+                      labelStyle: TextStyle(color: textSecondary, fontSize: 12.sp),
+                      suffixText: 'وثيقة',
+                      suffixStyle: TextStyle(color: textSecondary, fontSize: 12.sp),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        borderSide: BorderSide(color: border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        borderSide: const BorderSide(color: Color(0xFF3B82F6)),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+
+                  // Quick Action Adjustment Chips
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildQuickAdjustChip('+10 شراء', 10, unitsController, setStateModal),
+                      _buildQuickAdjustChip('+50 شراء', 50, unitsController, setStateModal),
+                      _buildQuickAdjustChip('-10 بيع', -10, unitsController, setStateModal),
+                      _buildQuickAdjustChip('-50 بيع', -50, unitsController, setStateModal),
+                    ],
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // Summary Valuation Box
+                  Container(
+                    padding: EdgeInsets.all(12.r),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12.r),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'القيمة الإجمالية المعدلة:',
+                          style: TextStyle(color: textSecondary, fontSize: 12.sp),
+                        ),
+                        Text(
+                          '${calculatedTotal.toStringAsFixed(0)} ج.م',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20.h),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3B82F6),
+                        padding: EdgeInsets.symmetric(vertical: 14.h),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                      ),
+                      onPressed: () {
+                        final newUnits = double.tryParse(unitsController.text) ?? 0;
+                        cubit.updateTransactionUnits(itemId: item.id, newUnits: newUnits);
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('تم تحديث عدد الوثائق بالمحفظة بنجاح! 📈'),
+                            backgroundColor: Color(0xFF3B82F6),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'حفظ الكمية الجديدة',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildQuickAdjustChip(
+    String label,
+    double delta,
+    TextEditingController controller,
+    StateSetter setStateModal,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        double current = double.tryParse(controller.text) ?? 0;
+        double updated = (current + delta).clamp(0, 99999);
+        controller.text = updated.toStringAsFixed(0);
+        setStateModal(() {});
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          color: delta > 0
+              ? AppColors.success.withValues(alpha: 0.12)
+              : AppColors.error.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(8.r),
+          border: Border.all(
+            color: delta > 0
+                ? AppColors.success.withValues(alpha: 0.4)
+                : AppColors.error.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: delta > 0 ? AppColors.success : AppColors.error,
+            fontSize: 11.sp,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
     );
   }
 }

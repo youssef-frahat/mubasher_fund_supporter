@@ -3,54 +3,161 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/portfolio_item_model.dart';
+import '../models/portfolio_model.dart';
 
 class PortfolioRepository {
-  static const String _storageKey = 'simulated_portfolio_items_v1';
+  static const String _portfoliosKey = 'multi_portfolios_v2';
+  static const String _activeIdKey = 'active_portfolio_id_v2';
   final SupabaseClient? _supabaseClient;
 
   PortfolioRepository({SupabaseClient? supabaseClient})
       : _supabaseClient = supabaseClient;
 
-  Future<List<PortfolioItem>> getPortfolioItems() async {
+  Future<List<PortfolioModel>> getAllPortfolios() async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString(_storageKey);
+    final jsonString = prefs.getString(_portfoliosKey);
 
-    List<PortfolioItem> items = [];
+    List<PortfolioModel> portfolios = [];
 
     if (jsonString != null && jsonString.isNotEmpty) {
       try {
         final List<dynamic> decoded = jsonDecode(jsonString);
-        items = decoded.map((e) => PortfolioItem.fromJson(e)).toList();
+        portfolios = decoded.map((e) => PortfolioModel.fromJson(e)).toList();
       } catch (_) {
-        items = _getInitialDefaultItems();
+        portfolios = _getDefaultPortfolios();
       }
     } else {
-      items = _getInitialDefaultItems();
-      await savePortfolioItems(items);
+      portfolios = _getDefaultPortfolios();
+      await savePortfolios(portfolios);
     }
 
-    // Background sync attempt with Supabase if online
-    _syncToSupabase(items);
-
-    return items;
+    return portfolios;
   }
 
-  Future<void> savePortfolioItems(List<PortfolioItem> items) async {
+  Future<String> getActivePortfolioId() async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonList = items.map((e) => e.toJson()).toList();
-    await prefs.setString(_storageKey, jsonEncode(jsonList));
+    final id = prefs.getString(_activeIdKey);
+    final all = await getAllPortfolios();
+    if (id != null && all.any((p) => p.id == id)) {
+      return id;
+    }
+    final firstId = all.first.id;
+    await setActivePortfolioId(firstId);
+    return firstId;
   }
 
-  Future<void> addTransaction(PortfolioItem newItem) async {
-    final items = await getPortfolioItems();
-    items.add(newItem);
-    await savePortfolioItems(items);
+  Future<void> setActivePortfolioId(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_activeIdKey, id);
   }
 
-  Future<void> removeTransaction(String itemId) async {
-    final items = await getPortfolioItems();
-    items.removeWhere((e) => e.id == itemId);
-    await savePortfolioItems(items);
+  Future<void> savePortfolios(List<PortfolioModel> portfolios) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = portfolios.map((e) => e.toJson()).toList();
+    await prefs.setString(_portfoliosKey, jsonEncode(jsonList));
+  }
+
+  Future<PortfolioModel> createPortfolio(String name) async {
+    final portfolios = await getAllPortfolios();
+    final newPortfolio = PortfolioModel(
+      id: 'portfolio-${DateTime.now().millisecondsSinceEpoch}',
+      name: name,
+      items: [],
+      createdAt: DateTime.now(),
+    );
+    portfolios.add(newPortfolio);
+    await savePortfolios(portfolios);
+    await setActivePortfolioId(newPortfolio.id);
+    return newPortfolio;
+  }
+
+  Future<void> deletePortfolio(String portfolioId) async {
+    final portfolios = await getAllPortfolios();
+    if (portfolios.length <= 1) return; // Keep at least one portfolio
+
+    portfolios.removeWhere((p) => p.id == portfolioId);
+    await savePortfolios(portfolios);
+
+    final activeId = await getActivePortfolioId();
+    if (activeId == portfolioId) {
+      await setActivePortfolioId(portfolios.first.id);
+    }
+  }
+
+  Future<void> addTransactionToActive(PortfolioItem newItem) async {
+    final portfolios = await getAllPortfolios();
+    final activeId = await getActivePortfolioId();
+
+    final index = portfolios.indexWhere((p) => p.id == activeId);
+    if (index != -1) {
+      final current = portfolios[index];
+      final updatedItems = List<PortfolioItem>.from(current.items)..add(newItem);
+      portfolios[index] = PortfolioModel(
+        id: current.id,
+        name: current.name,
+        items: updatedItems,
+        createdAt: current.createdAt,
+      );
+      await savePortfolios(portfolios);
+    }
+  }
+
+  Future<void> updateTransactionUnitsInActive(String itemId, double newUnits) async {
+    final portfolios = await getAllPortfolios();
+    final activeId = await getActivePortfolioId();
+
+    final index = portfolios.indexWhere((p) => p.id == activeId);
+    if (index != -1) {
+      final current = portfolios[index];
+      final updatedItems = List<PortfolioItem>.from(current.items);
+      final itemIndex = updatedItems.indexWhere((i) => i.id == itemId);
+
+      if (itemIndex != -1) {
+        if (newUnits <= 0) {
+          updatedItems.removeAt(itemIndex);
+        } else {
+          final existing = updatedItems[itemIndex];
+          updatedItems[itemIndex] = PortfolioItem(
+            id: existing.id,
+            fundId: existing.fundId,
+            fundName: existing.fundName,
+            category: existing.category,
+            units: newUnits,
+            purchasePrice: existing.purchasePrice,
+            currentNav: existing.currentNav,
+            purchaseDate: existing.purchaseDate,
+          );
+        }
+
+        portfolios[index] = PortfolioModel(
+          id: current.id,
+          name: current.name,
+          items: updatedItems,
+          createdAt: current.createdAt,
+        );
+        await savePortfolios(portfolios);
+      }
+    }
+  }
+
+  Future<void> removeTransactionFromActive(String itemId) async {
+    final portfolios = await getAllPortfolios();
+    final activeId = await getActivePortfolioId();
+
+    final index = portfolios.indexWhere((p) => p.id == activeId);
+    if (index != -1) {
+      final current = portfolios[index];
+      final updatedItems = List<PortfolioItem>.from(current.items)
+        ..removeWhere((i) => i.id == itemId);
+
+      portfolios[index] = PortfolioModel(
+        id: current.id,
+        name: current.name,
+        items: updatedItems,
+        createdAt: current.createdAt,
+      );
+      await savePortfolios(portfolios);
+    }
   }
 
   PortfolioHealthSummary calculatePortfolioHealth(List<PortfolioItem> items) {
@@ -58,7 +165,7 @@ class PortfolioRepository {
       return PortfolioHealthSummary(
         score: 0,
         scoreColor: const Color(0xFFEF4444),
-        ratingText: 'لا توجد أصول في المحفظة حالياً',
+        ratingText: 'لا توجد أصول في هذه المحفظة حالياً',
         categoryPercentages: {},
         totalPortfolioValue: 0,
         totalProfitLoss: 0,
@@ -84,14 +191,12 @@ class PortfolioRepository {
     double totalProfitLoss = totalValue - totalCost;
     double totalProfitLossPercentage = totalCost > 0 ? (totalProfitLoss / totalCost) * 100 : 0;
 
-    // Calculate Risk Diversification Score (0 to 100)
     int categoriesCount = categoryPercentages.keys.length;
-    int score = 40; // Base score
+    int score = 40;
 
     if (categoriesCount >= 2) score += 20;
     if (categoriesCount >= 4) score += 20;
 
-    // Penalize if one category dominates > 75%
     bool isOverConcentrated = categoryPercentages.values.any((pct) => pct > 75.0);
     if (isOverConcentrated) {
       score -= 25;
@@ -99,20 +204,19 @@ class PortfolioRepository {
       score += 15;
     }
 
-    // Clamp score 0 to 100
     score = score.clamp(0, 100);
 
     Color scoreColor;
     String ratingText;
 
     if (score < 50) {
-      scoreColor = const Color(0xFFEF4444); // Red
+      scoreColor = const Color(0xFFEF4444);
       ratingText = 'محفظة غير متوازنة (مخاطرة عالية)';
     } else if (score <= 85) {
-      scoreColor = const Color(0xFFF59E0B); // Yellow
+      scoreColor = const Color(0xFFF59E0B);
       ratingText = 'توزيع متوسط (توازن مقبول)';
     } else {
-      scoreColor = const Color(0xFF10B981); // Green
+      scoreColor = const Color(0xFF10B981);
       ratingText = 'توزيع استثماري مثالي وسليم';
     }
 
@@ -127,46 +231,51 @@ class PortfolioRepository {
     );
   }
 
-  void _syncToSupabase(List<PortfolioItem> items) async {
-    try {
-      final client = _supabaseClient;
-      if (client != null && client.auth.currentUser != null) {
-        // Sync logic to Supabase if authenticated
-      }
-    } catch (_) {}
-  }
-
-  List<PortfolioItem> _getInitialDefaultItems() {
+  List<PortfolioModel> _getDefaultPortfolios() {
     return [
-      PortfolioItem(
-        id: '1',
-        fundId: 'fund-nbe-4',
-        fundName: 'صندوق البنك الأهلي الرابع اليومي',
-        category: FundCategory.moneyMarket,
-        units: 100,
-        purchasePrice: 240.0,
-        currentNav: 268.5,
-        purchaseDate: DateTime.now().subtract(const Duration(days: 90)),
+      PortfolioModel(
+        id: 'portfolio-default-1',
+        name: 'المحفظة الرئيسية (النمو والسيولة)',
+        createdAt: DateTime.now(),
+        items: [
+          PortfolioItem(
+            id: '1',
+            fundId: 'fund-nbe-4',
+            fundName: 'صندوق البنك الأهلي الرابع اليومي',
+            category: FundCategory.moneyMarket,
+            units: 100,
+            purchasePrice: 240.0,
+            currentNav: 268.5,
+            purchaseDate: DateTime.now().subtract(const Duration(days: 90)),
+          ),
+          PortfolioItem(
+            id: '2',
+            fundId: 'fund-azimut-gold',
+            fundName: 'صندوق أزموت الذهب (Azimut Gold)',
+            category: FundCategory.gold,
+            units: 50,
+            purchasePrice: 180.0,
+            currentNav: 215.0,
+            purchaseDate: DateTime.now().subtract(const Duration(days: 60)),
+          ),
+        ],
       ),
-      PortfolioItem(
-        id: '2',
-        fundId: 'fund-azimut-gold',
-        fundName: 'صندوق أزموت الذهب (Azimut Gold)',
-        category: FundCategory.gold,
-        units: 50,
-        purchasePrice: 180.0,
-        currentNav: 215.0,
-        purchaseDate: DateTime.now().subtract(const Duration(days: 60)),
-      ),
-      PortfolioItem(
-        id: '3',
-        fundId: 'fund-beltone-equity',
-        fundName: 'صندوق بلتون للأسهم المصرية',
-        category: FundCategory.equity,
-        units: 30,
-        purchasePrice: 310.0,
-        currentNav: 345.0,
-        purchaseDate: DateTime.now().subtract(const Duration(days: 30)),
+      PortfolioModel(
+        id: 'portfolio-default-2',
+        name: 'محفظة التحوط والأمان (ذهب وأذون)',
+        createdAt: DateTime.now(),
+        items: [
+          PortfolioItem(
+            id: '3',
+            fundId: 'fund-beltone-tbills',
+            fundName: 'صندوق أذون الخزانة المصرية',
+            category: FundCategory.treasuryBills,
+            units: 40,
+            purchasePrice: 1000.0,
+            currentNav: 1080.0,
+            purchaseDate: DateTime.now().subtract(const Duration(days: 45)),
+          ),
+        ],
       ),
     ];
   }

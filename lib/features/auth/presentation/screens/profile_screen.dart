@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -5,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/services/permissions_service.dart';
+import '../../../../core/services/avatar_picker_service.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
@@ -18,6 +20,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
+  File? _avatarFile;
 
   @override
   void initState() {
@@ -70,35 +73,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 children: [
                   // User Avatar Header with Camera Edit Button
-                  Stack(
-                    alignment: Alignment.bottomRight,
-                    children: [
-                      CircleAvatar(
-                        radius: 50.r,
-                        backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                        child: FaIcon(
-                          FontAwesomeIcons.userCheck,
-                          color: AppColors.primary,
-                          size: 45.r,
+                  GestureDetector(
+                    onTap: () async {
+                      final file = await AvatarPickerService.pickAndCropAvatar(context);
+                      if (file != null && mounted) {
+                        setState(() => _avatarFile = file);
+                      }
+                    },
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 50.r,
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                          backgroundImage: _avatarFile != null ? FileImage(_avatarFile!) : null,
+                          child: _avatarFile == null
+                              ? FaIcon(
+                                  FontAwesomeIcons.userCheck,
+                                  color: AppColors.primary,
+                                  size: 45.r,
+                                )
+                              : null,
                         ),
-                      ),
-                      CircleAvatar(
-                        radius: 16.r,
-                        backgroundColor: AppColors.primary,
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          icon: const Icon(Icons.camera_alt, color: Colors.black, size: 16),
-                          onPressed: () async {
-                            final granted = await PermissionsService.requestPhotosPermission(context);
-                            if (granted && context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('تم السماح بالتقاط الصورة الشخصية 📸')),
-                              );
-                            }
-                          },
+                        CircleAvatar(
+                          radius: 16.r,
+                          backgroundColor: AppColors.primary,
+                          child: const Icon(Icons.camera_alt, color: Colors.black, size: 16),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   SizedBox(height: 14.h),
 

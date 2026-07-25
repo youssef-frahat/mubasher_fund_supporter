@@ -11,12 +11,41 @@ class PortfolioCubit extends Cubit<PortfolioState> {
   Future<void> loadPortfolio() async {
     emit(PortfolioLoading());
     try {
-      final items = await repository.getPortfolioItems();
-      final health = repository.calculatePortfolioHealth(items);
-      emit(PortfolioLoaded(items: items, healthSummary: health));
+      final portfolios = await repository.getAllPortfolios();
+      final activeId = await repository.getActivePortfolioId();
+
+      final activePortfolio = portfolios.firstWhere(
+        (p) => p.id == activeId,
+        orElse: () => portfolios.first,
+      );
+
+      final health = repository.calculatePortfolioHealth(activePortfolio.items);
+
+      emit(PortfolioLoaded(
+        allPortfolios: portfolios,
+        activePortfolio: activePortfolio,
+        items: activePortfolio.items,
+        healthSummary: health,
+      ));
     } catch (e) {
       emit(PortfolioError(message: 'تعذر تحميل المحفظة: ${e.toString()}'));
     }
+  }
+
+  Future<void> createPortfolio(String name) async {
+    if (name.trim().isEmpty) return;
+    await repository.createPortfolio(name.trim());
+    await loadPortfolio();
+  }
+
+  Future<void> switchPortfolio(String portfolioId) async {
+    await repository.setActivePortfolioId(portfolioId);
+    await loadPortfolio();
+  }
+
+  Future<void> deletePortfolio(String portfolioId) async {
+    await repository.deletePortfolio(portfolioId);
+    await loadPortfolio();
   }
 
   Future<void> addTransaction({
@@ -37,12 +66,20 @@ class PortfolioCubit extends Cubit<PortfolioState> {
       purchaseDate: DateTime.now(),
     );
 
-    await repository.addTransaction(newItem);
+    await repository.addTransactionToActive(newItem);
     await loadPortfolio();
   }
 
   Future<void> removeTransaction(String id) async {
-    await repository.removeTransaction(id);
+    await repository.removeTransactionFromActive(id);
+    await loadPortfolio();
+  }
+
+  Future<void> updateTransactionUnits({
+    required String itemId,
+    required double newUnits,
+  }) async {
+    await repository.updateTransactionUnitsInActive(itemId, newUnits);
     await loadPortfolio();
   }
 }
