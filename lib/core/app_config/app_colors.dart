@@ -6,7 +6,9 @@ class AppColors {
   static const Color primaryDark = Color(0xFF00B0FF);  // Deep Cyan Accent
   static const Color secondary = Color(0xFF1E293B);    // Slate Surface Container
   static const Color background = Color(0xFF0F172A);   // Midnight Navy Background
+  static const Color midnightNavy = Color(0xFF0F172A); // Midnight Navy Background Alias
   static const Color surface = Color(0xFF1E293B);      // Surface Cards
+  static const Color slateCard = Color(0xFF1E293B);    // Slate Surface Container Alias
 
   // Text & Border Colors
   static const Color textPrimary = Color(0xFFF8FAFC);  // Crisp White Text

@@ -10,6 +10,8 @@ import '../../data/repositories/portfolio_repository.dart';
 import '../widgets/add_transaction_bottom_sheet.dart';
 import '../widgets/portfolio_health_score_widget.dart';
 
+import '../../../../core/widgets/app_loading_indicator.dart';
+
 class PortfolioScreen extends StatelessWidget {
   const PortfolioScreen({super.key});
 
@@ -53,7 +55,7 @@ class _PortfolioContentView extends StatelessWidget {
       body: BlocBuilder<PortfolioCubit, PortfolioState>(
         builder: (context, state) {
           if (state is PortfolioLoading) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            return const AppLoadingIndicator(message: 'جاري حساب أداء وتحليل المحفظة...');
           } else if (state is PortfolioError) {
             return Center(
               child: Text(

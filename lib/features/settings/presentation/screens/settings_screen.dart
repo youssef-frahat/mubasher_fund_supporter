@@ -186,7 +186,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             BlocBuilder<ThemeCubit, ThemeMode>(
               builder: (context, themeMode) {
                 String subtitleText = 'تلقائي (حسب نظام الجهاز)';
-                IconData themeIcon = FontAwesomeIcons.sliders;
+                dynamic themeIcon = FontAwesomeIcons.sliders;
 
                 if (themeMode == ThemeMode.dark) {
                   subtitleText = 'المظهر الداكن (Dark Mode)';
