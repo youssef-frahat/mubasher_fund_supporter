@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/language/language_cubit.dart';
 
 class MainLayout extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -19,26 +20,26 @@ class MainLayout extends StatelessWidget {
             initialLocation: index == navigationShell.currentIndex,
           );
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: FaIcon(FontAwesomeIcons.house),
-            selectedIcon: FaIcon(FontAwesomeIcons.house),
-            label: 'الرئيسية',
+            icon: const FaIcon(FontAwesomeIcons.house),
+            selectedIcon: const FaIcon(FontAwesomeIcons.house),
+            label: context.tr('home'),
           ),
           NavigationDestination(
-            icon: FaIcon(FontAwesomeIcons.robot),
-            selectedIcon: FaIcon(FontAwesomeIcons.robot),
-            label: 'المستشار الذكي',
+            icon: const FaIcon(FontAwesomeIcons.robot),
+            selectedIcon: const FaIcon(FontAwesomeIcons.robot),
+            label: context.tr('roboAdvisor'),
           ),
           NavigationDestination(
-            icon: FaIcon(FontAwesomeIcons.wallet),
-            selectedIcon: FaIcon(FontAwesomeIcons.wallet),
-            label: 'محفظتي',
+            icon: const FaIcon(FontAwesomeIcons.wallet),
+            selectedIcon: const FaIcon(FontAwesomeIcons.wallet),
+            label: context.tr('portfolio'),
           ),
           NavigationDestination(
-            icon: FaIcon(FontAwesomeIcons.gear),
-            selectedIcon: FaIcon(FontAwesomeIcons.gear),
-            label: 'الإعدادات',
+            icon: const FaIcon(FontAwesomeIcons.gear),
+            selectedIcon: const FaIcon(FontAwesomeIcons.gear),
+            label: context.tr('settings'),
           ),
         ],
       ),

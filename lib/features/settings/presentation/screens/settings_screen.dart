@@ -9,6 +9,7 @@ import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/services/biometric_service.dart';
 import '../../../../core/theme/theme_cubit.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 
@@ -94,12 +95,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () async {
-              if (context.locale.languageCode == 'ar') {
-                await context.setLocale(const Locale('en'));
-              } else {
-                await context.setLocale(const Locale('ar'));
+              await context.read<LanguageCubit>().toggleLanguage();
+              if (context.mounted) {
+                final code = context.read<LanguageCubit>().state.languageCode;
+                await context.setLocale(Locale(code));
               }
-              if (mounted) setState(() {});
             },
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
@@ -109,7 +109,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
               ),
               child: Text(
-                context.locale.languageCode == 'ar' ? 'ENG' : 'AR',
+                context.watch<LanguageCubit>().isArabic ? 'ENG' : 'AR',
                 style: TextStyle(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
@@ -244,7 +244,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: TextStyle(color: textPrimary, fontSize: 13.sp, fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
-                      context.locale.languageCode == 'ar' ? 'العربية (Arabic)' : 'English',
+                      context.watch<LanguageCubit>().isArabic ? 'العربية (Arabic)' : 'English',
                       style: TextStyle(color: textSecondary, fontSize: 11.sp),
                     ),
                     trailing: Container(
@@ -254,17 +254,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         borderRadius: BorderRadius.circular(8.r),
                       ),
                       child: Text(
-                        context.locale.languageCode == 'ar' ? 'تغيير إلى English' : 'تغيير إلى العربية',
+                        context.watch<LanguageCubit>().isArabic ? 'تغيير إلى English' : 'تغيير إلى العربية',
                         style: TextStyle(color: AppColors.primary, fontSize: 11.sp, fontWeight: FontWeight.bold),
                       ),
                     ),
                     onTap: () async {
-                      if (context.locale.languageCode == 'ar') {
-                        await context.setLocale(const Locale('en'));
-                      } else {
-                        await context.setLocale(const Locale('ar'));
+                      await context.read<LanguageCubit>().toggleLanguage();
+                      if (context.mounted) {
+                        final code = context.read<LanguageCubit>().state.languageCode;
+                        await context.setLocale(Locale(code));
                       }
-                      if (mounted) setState(() {});
                     },
                   ),
                 ],
