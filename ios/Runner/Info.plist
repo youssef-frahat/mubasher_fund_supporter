@@ -6,8 +6,10 @@
 		<true/>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
+		<key>NSFaceIDUsageDescription</key>
+		<string>نستخدم البصمة لتأمين حسابك ودخولك لمنصة وثيقة بشكل آمن.</string>
 		<key>CFBundleDisplayName</key>
-		<string>Mubasher Fund Supporter</string>
+		<string>Watheqa</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -15,7 +17,7 @@
 		<key>CFBundleInfoDictionaryVersion</key>
 		<string>6.0</string>
 		<key>CFBundleName</key>
-		<string>mubasher_fund_supporter</string>
+		<string>Watheqa</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>

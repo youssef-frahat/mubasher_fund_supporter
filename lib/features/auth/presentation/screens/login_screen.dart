@@ -4,9 +4,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/widgets/social_login_button.dart';
+import '../../../../core/services/biometric_service.dart';
+import '../../../../core/supabase/supabase_service.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import '../../../../core/language/language_cubit.dart';
@@ -23,6 +26,45 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordObscured = true;
+  bool _canUseBiometrics = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometrics();
+  }
+
+  Future<void> _checkBiometrics() async {
+    final prefs = await SharedPreferences.getInstance();
+    final biometricsEnabled = prefs.getBool('biometrics_enabled') ?? false;
+    final isAvailable = await BiometricService.isBiometricAvailable();
+    if (mounted) {
+      setState(() {
+        _canUseBiometrics = biometricsEnabled && isAvailable;
+      });
+    }
+  }
+
+  Future<void> _loginWithBiometrics() async {
+    final authenticated = await BiometricService.authenticateUser(
+      context,
+      localizedReason: 'يرجى استخدام البصمة لتسجيل الدخول السريع 🔒',
+    );
+    if (authenticated && mounted) {
+      final session = SupabaseService.client?.auth.currentSession;
+      if (session != null) {
+        context.go(Routes.home);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم التحقق من البصمة بنجاح! 🔓'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+        context.go(Routes.home);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -227,6 +269,28 @@ class _LoginScreenState extends State<LoginScreen> {
                           context.read<AuthCubit>().signInWithGoogle();
                         },
                       ),
+                      if (_canUseBiometrics) ...[
+                        SizedBox(height: 14.h),
+                        OutlinedButton.icon(
+                          onPressed: _loginWithBiometrics,
+                          icon: const FaIcon(FontAwesomeIcons.fingerprint, color: AppColors.primary),
+                          label: Text(
+                            'الدخول السريع باستخدام البصمة 👆',
+                            style: TextStyle(
+                              color: textPrimary,
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(vertical: 12.h),
+                            side: BorderSide(color: AppColors.primary.withValues(alpha: 0.6)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14.r),
+                            ),
+                          ),
+                        ),
+                      ],
                       SizedBox(height: 26.h),
 
                       // Register Link
