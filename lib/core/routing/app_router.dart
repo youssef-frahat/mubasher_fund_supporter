@@ -15,7 +15,10 @@ import '../../features/calculator/presentation/screens/investment_calculator_scr
 import 'routes.dart';
 import '../supabase/supabase_service.dart';
 import 'go_router_refresh_stream.dart';
+import '../../features/funds/presentation/screens/all_funds_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/settings/presentation/screens/terms_conditions_screen.dart';
+import '../../features/settings/presentation/screens/faq_screen.dart';
 
 import '../../features/auth/presentation/screens/register_screen.dart';
 
@@ -134,6 +137,22 @@ class AppRouter {
           final fund = state.extra as PlatformFeature;
           return FundDetailsScreen(fund: fund);
         },
+      ),
+      GoRoute(
+        path: Routes.allFunds,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AllFundsScreen(),
+      ),
+
+      GoRoute(
+        path: Routes.termsConditions,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const TermsConditionsScreen(),
+      ),
+      GoRoute(
+        path: Routes.faq,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const FaqScreen(),
       ),
       GoRoute(
         path: Routes.admin,

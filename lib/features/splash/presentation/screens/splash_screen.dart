@@ -96,10 +96,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
               // Brand Title
               Text(
-                'مباشر',
+                'وثيقة',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 32.sp,
+                  fontSize: 34.sp,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 2.w,
                 ),
@@ -108,7 +108,7 @@ class _SplashScreenState extends State<SplashScreen> {
               SizedBox(height: 6.h),
 
               Text(
-                'Mubasher Fund Supporter',
+                'Watheqa Financial Platform',
                 style: TextStyle(
                   color: AppColors.primary,
                   fontSize: 14.sp,

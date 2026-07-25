@@ -23,6 +23,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordObscured = true;
+  bool _acceptedTerms = true;
 
   @override
   void dispose() {
@@ -166,6 +167,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               validator: (val) => (val?.length ?? 0) < 6 ? 'كلمة المرور 6 أحرف على الأقل' : null,
                             ),
+                            SizedBox(height: 14.h),
+
+                            // Terms & Conditions Checkbox
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: _acceptedTerms,
+                                  activeColor: AppColors.primary,
+                                  onChanged: (val) => setState(() => _acceptedTerms = val ?? false),
+                                ),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => context.push(Routes.termsConditions),
+                                    child: RichText(
+                                      text: TextSpan(
+                                        style: TextStyle(color: textSecondary, fontSize: 11.sp),
+                                        children: [
+                                          const TextSpan(text: 'أوافق على '),
+                                          TextSpan(
+                                            text: 'الشروط والأحكام وسياسة الخصوصية',
+                                            style: TextStyle(
+                                              color: AppColors.primary,
+                                              fontWeight: FontWeight.bold,
+                                              decoration: TextDecoration.underline,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0),
@@ -176,6 +210,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         onPressed: isLoading
                             ? null
                             : () {
+                                if (!_acceptedTerms) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('يرجى الموافقة على الشروط والأحكام للمتابعة'),
+                                      backgroundColor: AppColors.error,
+                                    ),
+                                  );
+                                  return;
+                                }
                                 if (_formKey.currentState!.validate()) {
                                   context.read<AuthCubit>().signUpWithEmail(
                                         _emailController.text.trim(),

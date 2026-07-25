@@ -10,6 +10,9 @@ class Routes {
   static const String otp = '/otp';
   static const String register = '/register';
   static const String fundDetails = '/fund-details';
+  static const String allFunds = '/all-funds';
+  static const String termsConditions = '/terms-conditions';
+  static const String faq = '/faq';
   static const String admin = '/admin';
   static const String adminFunds = '/admin/funds';
 }

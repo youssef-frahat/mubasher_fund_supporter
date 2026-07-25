@@ -12,6 +12,6 @@ class PlatformFeature {
   final String? id;
   final String title;
   final String subtitle;
-  final IconData icon;
+  final dynamic icon;
   final Color accentColor;
 }

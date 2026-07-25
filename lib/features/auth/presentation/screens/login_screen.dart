@@ -90,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(height: 6.h),
 
                       Text(
-                        'سجل الدخول لإدارة ومتابعة محفظتك وصناديق الاستثمار',
+                        'وثيقة (Watheqa) - منصتك الذكية لصناديق الاستثمار في مصر',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: textSecondary,

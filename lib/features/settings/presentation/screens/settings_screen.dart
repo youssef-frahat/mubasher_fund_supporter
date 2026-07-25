@@ -90,6 +90,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
             fontSize: 18.sp,
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('تم تحويل مظهر اللغة بنجاح 🌐'),
+                  backgroundColor: AppColors.primary,
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
+              ),
+              child: Text(
+                'ENG',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11.sp,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 8.w),
+        ],
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -281,22 +311,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 borderRadius: BorderRadius.circular(16.r),
                 border: Border.all(color: border),
               ),
-              child: ListTile(
-                leading: const FaIcon(FontAwesomeIcons.headset, color: AppColors.primary, size: 18),
-                title: Text(
-                  'الدعم الفني والخدمة المباشرة',
-                  style: TextStyle(color: textPrimary, fontSize: 13.sp, fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  'تواصل مع مستشاري مباشر عبر واتساب',
-                  style: TextStyle(color: textSecondary, fontSize: 11.sp),
-                ),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('جاري فتح محادثة الدعم المباشر... 💬')),
-                  );
-                },
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const FaIcon(FontAwesomeIcons.circleQuestion, color: AppColors.primary, size: 18),
+                    title: Text(
+                      'الأسئلة الشائعة (FAQ)',
+                      style: TextStyle(color: textPrimary, fontSize: 13.sp, fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      'إجابات حول الصناديق والمحفظة والمستشار الذكي',
+                      style: TextStyle(color: textSecondary, fontSize: 11.sp),
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    onTap: () => context.push(Routes.faq),
+                  ),
+                  Divider(height: 1, color: border, indent: 48.w),
+                  ListTile(
+                    leading: const FaIcon(FontAwesomeIcons.fileContract, color: AppColors.primary, size: 18),
+                    title: Text(
+                      'الشروط والأحكام وسياسة الخصوصية',
+                      style: TextStyle(color: textPrimary, fontSize: 13.sp, fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      'اتفاقية الاستخدام وحماية البيانات لحفظ حقوقك',
+                      style: TextStyle(color: textSecondary, fontSize: 11.sp),
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    onTap: () => context.push(Routes.termsConditions),
+                  ),
+                  Divider(height: 1, color: border, indent: 48.w),
+                  ListTile(
+                    leading: const FaIcon(FontAwesomeIcons.headset, color: AppColors.primary, size: 18),
+                    title: Text(
+                      'الدعم الفني والخدمة المباشرة',
+                      style: TextStyle(color: textPrimary, fontSize: 13.sp, fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      'تواصل مع مستشاري وثيقة عبر واتساب',
+                      style: TextStyle(color: textSecondary, fontSize: 11.sp),
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('جاري فتح محادثة الدعم المباشر... 💬')),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
             SizedBox(height: 30.h),
