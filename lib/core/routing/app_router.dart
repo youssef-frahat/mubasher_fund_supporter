@@ -24,6 +24,7 @@ import '../../features/settings/presentation/screens/terms_conditions_screen.dar
 import '../../features/settings/presentation/screens/faq_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/funds/presentation/screens/top10_league_screen.dart';
+import '../../features/settings/presentation/screens/about_us_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorSettingsKey = GlobalKey<NavigatorState>();
@@ -181,6 +182,11 @@ class AppRouter {
         path: Routes.admin,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AdminLayout(),
+      ),
+      GoRoute(
+        path: Routes.aboutUs,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AboutUsScreen(),
       ),
     ],
   );

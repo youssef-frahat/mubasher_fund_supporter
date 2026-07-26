@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -10,13 +9,16 @@ import '../../../../core/di/service_locator.dart';
 import '../../../../core/services/wishlist_service.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../home/data/models/platform_feature.dart';
+import '../../../home/data/models/fund_model.dart';
 import '../../../portfolio/data/models/portfolio_item_model.dart';
 import '../../../portfolio/presentation/cubit/portfolio_cubit.dart';
+import '../widgets/nav_chart_widget.dart';
 
 class FundDetailsScreen extends StatelessWidget {
   final PlatformFeature fund;
+  final FundModel? fundModel;
 
-  const FundDetailsScreen({super.key, required this.fund});
+  const FundDetailsScreen({super.key, required this.fund, this.fundModel});
 
   @override
   Widget build(BuildContext context) {
@@ -184,58 +186,21 @@ class FundDetailsScreen extends StatelessWidget {
             ),
             SizedBox(height: 20.h),
 
-            // NAV Chart Timeline Header
-            Text(
-              context.tr('navTimeline'),
-              style: TextStyle(
-                color: textPrimary,
-                fontSize: 14.sp,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 12.h),
-
-            // Line Chart Container
-            Container(
-              height: 220.h,
-              padding: EdgeInsets.all(14.r),
-              decoration: BoxDecoration(
-                color: surface,
-                borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: border),
-              ),
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(
-                    show: true,
-                    getDrawingHorizontalLine: (value) => FlLine(color: border, strokeWidth: 0.5),
-                    getDrawingVerticalLine: (value) => FlLine(color: border, strokeWidth: 0.5),
-                  ),
-                  titlesData: const FlTitlesData(
-                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: const [
-                        FlSpot(0, 100),
-                        FlSpot(1, 108),
-                        FlSpot(2, 114),
-                        FlSpot(3, 120),
-                        FlSpot(4, 128),
-                        FlSpot(5, 135),
-                      ],
-                      isCurved: true,
-                      color: fund.accentColor,
-                      barWidth: 3,
-                      belowBarData: BarAreaData(
-                        show: true,
-                        color: fund.accentColor.withValues(alpha: 0.18),
-                      ),
-                    ),
-                  ],
-                ),
+            // NAV Chart — real data or fallback mock
+            NavChartWidget(
+              fund: fundModel ?? FundModel(
+                id: fund.id ?? 'unknown',
+                name: fund.title,
+                managerName: fund.subtitle.split('|').first.trim(),
+                currentNav: 135.0,
+                ytdReturn: 24.5,
+                weeklyReturn: 0.48,
+                fourWeeksReturn: 1.9,
+                last12mReturn: 22.8,
+                dailyChange: 0.07,
+                riskLevel: 'Low',
+                category: 'MoneyMarket',
+                initialValue: 100.0,
               ),
             ),
             SizedBox(height: 24.h),

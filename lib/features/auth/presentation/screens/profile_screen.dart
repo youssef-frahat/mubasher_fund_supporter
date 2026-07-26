@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/app_config/app_colors.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../../../../core/services/avatar_picker_service.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
@@ -54,7 +55,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'تعديل بيانات الحساب',
+          context.tr('editAccountTitle'),
           style: TextStyle(
             color: textPrimary,
             fontWeight: FontWeight.bold,
@@ -65,7 +66,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: BlocBuilder<AuthCubit, AuthState>(
         builder: (context, state) {
           if (state is Authenticated) {
-            _nameController.text = state.user.userMetadata?['full_name'] ?? 'مستثمر مباشر';
+            _nameController.text = state.user.userMetadata?['full_name'] ?? context.tr('proInvestor');
 
             return SingleChildScrollView(
               padding: EdgeInsets.all(20.r),
@@ -129,10 +130,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           controller: _nameController,
                           style: TextStyle(color: textPrimary),
                           decoration: InputDecoration(
-                            labelText: 'الاسم بالكامل',
+                            labelText: context.tr('fullNameLabel'),
                             labelStyle: TextStyle(color: textSecondary),
                             prefixIcon: Icon(Icons.person_outline, color: textSecondary),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                              borderSide: BorderSide(color: border),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                              borderSide: const BorderSide(color: AppColors.primary),
+                            ),
                           ),
                         ),
                         SizedBox(height: 16.h),
@@ -143,21 +152,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           keyboardType: TextInputType.phone,
                           style: TextStyle(color: textPrimary),
                           decoration: InputDecoration(
-                            labelText: 'رقم الهاتف (للتنبيهات)',
+                            labelText: context.tr('phoneLabel'),
                             labelStyle: TextStyle(color: textSecondary),
                             prefixIcon: Icon(Icons.phone_outlined, color: textSecondary),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                              borderSide: BorderSide(color: border),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                              borderSide: const BorderSide(color: AppColors.primary),
+                            ),
                           ),
                         ),
                         SizedBox(height: 16.h),
 
-                        // Risk Preference Selector
+                        // Investment Risk Profile Selector
                         Text(
-                          'الملف الاستثماري المفضل:',
+                          context.tr('investmentProfile'),
                           style: TextStyle(color: textSecondary, fontSize: 12.sp),
                         ),
                         SizedBox(height: 6.h),
                         Container(
+                          width: double.infinity,
                           padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withValues(alpha: 0.1),
@@ -168,12 +186,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: [
                               const FaIcon(FontAwesomeIcons.shieldHalved, color: AppColors.primary, size: 16),
                               SizedBox(width: 10.w),
-                              Text(
-                                'مستثمر متوازن (حفظ رأس المال والنمو)',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12.sp,
+                              Expanded(
+                                child: Text(
+                                  context.tr('balancedInvestor'),
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12.sp,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -190,17 +212,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: ElevatedButton.icon(
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('تم حفظ بيانات الحساب بنجاح! 💾'),
+                          SnackBar(
+                            content: Text(context.tr('profileSavedSuccess')),
                             backgroundColor: AppColors.primary,
                           ),
                         );
                         context.pop();
                       },
                       icon: const FaIcon(FontAwesomeIcons.floppyDisk, color: Colors.black, size: 16),
-                      label: const Text(
-                        'حفظ التغييرات',
-                        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                      label: Text(
+                        context.tr('save'),
+                        style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
@@ -217,7 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           } else {
             return Center(
               child: Text(
-                'يرجى تسجيل الدخول لتعديل بيانات حسابك.',
+                context.tr('loginRequired'),
                 style: TextStyle(color: textSecondary),
               ),
             );

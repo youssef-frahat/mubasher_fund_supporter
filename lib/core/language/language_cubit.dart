@@ -234,6 +234,17 @@ class AppTranslation {
       'signalReasonEn': '💡 Reason:',
       // Filter results
       'filterResults': 'نتائج التصفية',
+      // Profile screen
+      'editAccountTitle': 'تعديل بيانات الحساب',
+      'fullNameLabel': 'الاسم بالكامل',
+      'phoneLabel': 'رقم الهاتف (للتنبيهات)',
+      'investmentProfile': 'الملف الاستثماري المفضل:',
+      'balancedInvestor': 'مستثمر متوازن (حفظ رأس المال والنمو)',
+      'profileSavedSuccess': 'تم حفظ بيانات الحساب بنجاح! 💾',
+      'loginRequired': 'يرجى تسجيل الدخول لتعديل بيانات حسابك.',
+      'biometricActivated': 'تم تفعيل البصمة لتأمين التطبيق بنجاح! 🔒',
+      'biometricFailed': 'فشل تأكيد البصمة، لم يتم تفعيل الخاصية.',
+      'liveSupport': 'جاري فتح محادثة الدعم المباشر... 💬',
     },
     'en': {
       'appName': 'Watheqa',
@@ -430,6 +441,17 @@ class AppTranslation {
       'signalReasonEn': '💡 Reason:',
       // Filter results
       'filterResults': 'Filter Results',
+      // Profile screen
+      'editAccountTitle': 'Edit Account Details',
+      'fullNameLabel': 'Full Name',
+      'phoneLabel': 'Phone Number (for alerts)',
+      'investmentProfile': 'Preferred Investment Profile:',
+      'balancedInvestor': 'Balanced Investor (Capital Preservation & Growth)',
+      'profileSavedSuccess': 'Account details saved successfully! 💾',
+      'loginRequired': 'Please sign in to edit your account details.',
+      'biometricActivated': 'Biometric protection activated successfully! 🔒',
+      'biometricFailed': 'Biometric authentication failed, feature not activated.',
+      'liveSupport': 'Opening live support chat... 💬',
     },
   };
 

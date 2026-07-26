@@ -11,6 +11,7 @@ import '../../../../core/theme/theme_cubit.dart';
 import '../../../../core/language/language_cubit.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
+import '../../../../core/routing/routes.dart' show Routes;
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -45,8 +46,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() => _biometricsEnabled = true);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('تم تفعيل البصمة لتأمين التطبيق بنجاح! 🔒'),
+            SnackBar(
+              content: Text(context.tr('biometricActivated')),
               backgroundColor: AppColors.primary,
             ),
           );
@@ -54,8 +55,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('فشل تأكيد البصمة، لم يتم تفعيل الخاصية.'),
+            SnackBar(
+              content: Text(context.tr('biometricFailed')),
               backgroundColor: AppColors.error,
             ),
           );
@@ -364,9 +365,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     trailing: const Icon(Icons.arrow_forward_ios, size: 14),
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('جاري فتح محادثة الدعم المباشر... 💬')),
+                        SnackBar(content: Text(context.tr('liveSupport'))),
                       );
                     },
+                  ),
+                  Divider(height: 1, color: border, indent: 48.w),
+                  ListTile(
+                    leading: const FaIcon(FontAwesomeIcons.circleInfo, color: AppColors.primary, size: 18),
+                    title: Text(
+                      context.isArabic ? '🤝 من نحن' : '🤝 About Us',
+                      style: TextStyle(color: textPrimary, fontSize: 13.sp, fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      context.isArabic
+                          ? 'تعرف على وثيقة وفريق التطوير ورؤيتنا'
+                          : 'Learn about Watheqa, our team & vision',
+                      style: TextStyle(color: textSecondary, fontSize: 11.sp),
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    onTap: () => context.push(Routes.aboutUs),
                   ),
                 ],
               ),
