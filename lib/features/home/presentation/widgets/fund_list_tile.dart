@@ -71,7 +71,7 @@ class FundListTile extends StatelessWidget {
           onTap: () => context.push(Routes.fundDetails, extra: fund.toPlatformFeature()),
           child: Container(
             margin: EdgeInsets.only(bottom: 12.h),
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
             decoration: BoxDecoration(
               color: isSaved
                   ? AppColors.gold.withValues(alpha: 0.08)
@@ -121,16 +121,14 @@ class FundListTile extends StatelessWidget {
                       Row(
                         children: [
                           Expanded(
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerRight,
-                              child: Text(
-                                nameText,
-                                style: FontStyles.titleSmall.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13.5.sp,
-                                ),
+                            child: Text(
+                              nameText,
+                              style: FontStyles.titleSmall.copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5.sp,
                               ),
+                              maxLines: 2,
+                              overflow: TextOverflow.visible,
                             ),
                           ),
                           if (abbrText != null) ...[
@@ -162,8 +160,8 @@ class FundListTile extends StatelessWidget {
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 11.sp,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                        overflow: TextOverflow.visible,
                       ),
                       SizedBox(height: 2.h),
 

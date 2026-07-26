@@ -53,16 +53,18 @@ class PortfolioRepository {
     final jsonList = portfolios.map((e) => e.toJson()).toList();
     await prefs.setString(_portfoliosKey, jsonEncode(jsonList));
 
-    // Optional Supabase sync for user logged in
+    // Supabase sync for logged in user
     final client = SupabaseService.client;
     final userId = client?.auth.currentUser?.id;
     if (client != null && userId != null) {
       try {
         for (var p in portfolios) {
+          final isUuid = p.id.length == 36 && p.id.contains('-');
           await client.from('portfolios').upsert({
-            'id': p.id.contains('portfolio-') && p.id.length == 36 ? p.id : null,
+            if (isUuid) 'id': p.id,
             'user_id': userId,
             'name': p.name,
+            'updated_at': DateTime.now().toIso8601String(),
           });
         }
       } catch (e) {
@@ -134,6 +136,27 @@ class PortfolioRepository {
     await savePortfolios(portfolios);
     await setActivePortfolioId(newPortfolio.id);
 
+    // Save transactions to Supabase DB if user is logged in
+    final client = SupabaseService.client;
+    final userId = client?.auth.currentUser?.id;
+    if (client != null && userId != null) {
+      try {
+        for (var item in items) {
+          await client.from('transactions').insert({
+            'user_id': userId,
+            'fund_name': item.fundName,
+            'category': item.category.name,
+            'units': item.units,
+            'purchase_price': item.purchasePrice,
+            'current_nav': item.currentNav,
+            'created_at': DateTime.now().toIso8601String(),
+          });
+        }
+      } catch (e) {
+        debugPrint('Supabase recommended mix transactions insert notice: $e');
+      }
+    }
+
     return newPortfolio;
   }
 
@@ -165,6 +188,25 @@ class PortfolioRepository {
         createdAt: current.createdAt,
       );
       await savePortfolios(portfolios);
+    }
+
+    // Sync transaction insertion to Supabase DB
+    final client = SupabaseService.client;
+    final userId = client?.auth.currentUser?.id;
+    if (client != null && userId != null) {
+      try {
+        await client.from('transactions').insert({
+          'user_id': userId,
+          'fund_name': newItem.fundName,
+          'category': newItem.category.name,
+          'units': newItem.units,
+          'purchase_price': newItem.purchasePrice,
+          'current_nav': newItem.currentNav,
+          'created_at': newItem.purchaseDate.toIso8601String(),
+        });
+      } catch (e) {
+        debugPrint('Supabase transaction insert notice: $e');
+      }
     }
   }
 

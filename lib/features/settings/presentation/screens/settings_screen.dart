@@ -125,9 +125,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 String userName = context.tr('proInvestor');
                 String userEmail = 'user@watheqa.eg';
 
+                String? avatarUrl;
                 if (state is Authenticated) {
                   userName = state.user.userMetadata?['full_name'] ?? state.user.email?.split('@').first ?? context.tr('proInvestor');
-                  userEmail = state.user.email ?? 'user@watheqa.eg';
+                  avatarUrl = state.user.userMetadata?['avatar_url'];
+                  final email = state.user.email ?? 'user@watheqa.eg';
+                  if (email.contains('@')) {
+                    final domain = email.split('@').last.split('.').first;
+                    final companyName = domain.isNotEmpty ? domain[0].toUpperCase() + domain.substring(1) : '';
+                    userEmail = companyName.isNotEmpty ? '${context.tr('account')}: $companyName' : email;
+                  } else {
+                    userEmail = email;
+                  }
                 }
 
                 return Container(
@@ -143,11 +152,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       CircleAvatar(
                         radius: 28.r,
                         backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                        child: FaIcon(
-                          FontAwesomeIcons.userCheck,
-                          color: AppColors.primary,
-                          size: 24.r,
-                        ),
+                        backgroundImage: (avatarUrl != null && avatarUrl.toString().isNotEmpty)
+                            ? NetworkImage(avatarUrl.toString())
+                            : null,
+                        child: (avatarUrl == null || avatarUrl.toString().isEmpty)
+                            ? FaIcon(
+                                FontAwesomeIcons.userCheck,
+                                color: AppColors.primary,
+                                size: 24.r,
+                              )
+                            : null,
                       ),
                       SizedBox(width: 14.w),
                       Expanded(
@@ -363,11 +377,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: TextStyle(color: textSecondary, fontSize: 11.sp),
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(context.tr('liveSupport'))),
-                      );
-                    },
+                    onTap: () => _showLiveSupportSheet(context),
                   ),
                   Divider(height: 1, color: border, indent: 48.w),
                   ListTile(
@@ -547,6 +557,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showLiveSupportSheet(BuildContext context) {
+    final surface = AppColors.getSurface(context);
+    final textPrimary = AppColors.getTextPrimary(context);
+    final textSecondary = AppColors.getTextSecondary(context);
+    final isAr = context.watch<LanguageCubit>().isArabic;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.all(24.r),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: textSecondary.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              Text(
+                isAr ? 'الدعم الفني المباشر 💬' : 'Live Technical Support 💬',
+                style: TextStyle(
+                  color: textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16.sp,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                isAr ? 'نحن هنا لمساعدتك في أي استفسار حول منصة وثيقة' : 'We are here to assist you with any questions about Watheqa',
+                style: TextStyle(color: textSecondary, fontSize: 11.sp),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 20.h),
+              ListTile(
+                leading: const FaIcon(FontAwesomeIcons.envelope, color: AppColors.primary),
+                title: Text(isAr ? 'البريد الإلكتروني للدعم' : 'Support Email', style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold)),
+                subtitle: const Text('support@watheqa.eg', style: TextStyle(color: AppColors.primary)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.push(Routes.aboutUs);
+                },
+              ),
+              Divider(color: textSecondary.withValues(alpha: 0.2)),
+              ListTile(
+                leading: const FaIcon(FontAwesomeIcons.briefcase, color: AppColors.gold),
+                title: Text(isAr ? 'بورتفوليو مبرمج التطبيق 👨‍💻' : 'Developer Portfolio 👨‍💻', style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold)),
+                subtitle: const Text('https://v0-youssef-farahat.vercel.app/', style: TextStyle(color: AppColors.gold)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.push(Routes.aboutUs);
+                },
+              ),
+              SizedBox(height: 10.h),
+            ],
+          ),
+        );
+      },
     );
   }
 }

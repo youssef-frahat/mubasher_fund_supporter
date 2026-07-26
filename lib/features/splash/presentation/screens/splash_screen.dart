@@ -84,10 +84,14 @@ class _SplashScreenState extends State<SplashScreen> {
 
           // Main Center Splash Content
           SafeArea(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Spacer(flex: 3),
+            child: SingleChildScrollView(
+              child: Container(
+                height: MediaQuery.of(context).size.height,
+                alignment: Alignment.center,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(height: 40.h),
 
                 // Master Glowing Vault Logo Emblem
                 Center(
@@ -218,7 +222,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ).animate().fadeIn(delay: 650.ms).scale(),
 
-                const Spacer(flex: 2),
+                SizedBox(height: 30.h),
 
                 // Custom Loading Indicator
                 const AppLoadingIndicator(message: 'جاري الاتصال الآمن بالسوق المصري...'),
@@ -243,6 +247,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 SizedBox(height: 24.h),
               ],
+                ),
+              ),
             ),
           ),
         ],

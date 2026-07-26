@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart' as google_auth;
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
@@ -131,6 +132,63 @@ class AuthCubit extends Cubit<AuthState> {
     final client = SupabaseService.client;
     if (client != null) {
       await client.auth.signOut();
+    }
+  }
+
+  // --- Profile Update & Avatar Upload ---
+  Future<bool> updateProfile({
+    required String fullName,
+    String? phone,
+    dynamic avatarFile,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) return false;
+
+    final user = client.auth.currentUser;
+    if (user == null) return false;
+
+    try {
+      String? avatarUrl = user.userMetadata?['avatar_url'];
+
+      if (avatarFile != null) {
+        final filePath = 'avatars/${user.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final fileBytes = await avatarFile.readAsBytes();
+        
+        await client.storage.from('avatars').uploadBinary(
+              filePath,
+              fileBytes,
+              fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
+            );
+
+        avatarUrl = client.storage.from('avatars').getPublicUrl(filePath);
+      }
+
+      final updatedMetadata = Map<String, dynamic>.from(user.userMetadata ?? {});
+      updatedMetadata['full_name'] = fullName;
+      if (phone != null) updatedMetadata['phone'] = phone;
+      if (avatarUrl != null) updatedMetadata['avatar_url'] = avatarUrl;
+
+      await client.auth.updateUser(
+        UserAttributes(data: updatedMetadata),
+      );
+
+      // Upsert into profiles table
+      await client.from('profiles').upsert({
+        'id': user.id,
+        'full_name': fullName,
+        'phone': phone,
+        'avatar_url': avatarUrl,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+
+      final refreshedUser = client.auth.currentUser;
+      if (refreshedUser != null) {
+        emit(Authenticated(refreshedUser));
+      }
+      return true;
+    } catch (e) {
+      debugPrint('Profile update error: $e');
+      return false;
     }
   }
 }

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -9,7 +8,7 @@ import '../../../../core/routing/routes.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/widgets/social_login_button.dart';
 import '../../../../core/widgets/app_snackbar.dart';
-import '../../../../core/services/avatar_picker_service.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
@@ -26,8 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordObscured = true;
-  bool _acceptedTerms = true;
-  File? _avatarFile;
+  bool _acceptedTerms = false;
 
   @override
   void dispose() {
@@ -61,11 +59,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
             child: BlocConsumer<AuthCubit, AuthState>(
               listener: (context, state) {
-                if (state is Authenticated) {
-                  AppSnackBar.showSuccess(context, 'تم إنشاء حسابك وتأمينه بنجاح! 🚀');
-                  context.go(Routes.home);
-                } else if (state is OtpSent) {
-                  AppSnackBar.showInfo(context, 'تم إرسال رمز التفعيل لبريدك الإلكتروني 📩');
+                if (state is OtpSent) {
+                  AppSnackBar.showInfo(context, context.tr('otpSentSuccess'));
                   context.push(Routes.otp, extra: state.email);
                 } else if (state is AuthError) {
                   AppSnackBar.showError(context, state.message);
@@ -79,62 +74,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Header Avatar Picker
                       Center(
-                        child: GestureDetector(
-                          onTap: () async {
-                            final file = await AvatarPickerService.pickAndCropAvatar(context);
-                            if (!context.mounted) return;
-                            if (file != null) {
-                              setState(() => _avatarFile = file);
-                              AppSnackBar.showSuccess(context, 'تم حفظ وتعشيب الصورة الشخصية ✨');
-                            }
-                          },
-                          child: Stack(
-                            alignment: Alignment.bottomRight,
-                            children: [
-                              CircleAvatar(
-                                radius: 42.r,
-                                backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-                                backgroundImage: _avatarFile != null ? FileImage(_avatarFile!) : null,
-                                child: _avatarFile == null
-                                    ? FaIcon(FontAwesomeIcons.userPlus, color: AppColors.primary, size: 30.r)
-                                    : null,
-                              ),
-                              CircleAvatar(
-                                radius: 14.r,
-                                backgroundColor: AppColors.primary,
-                                child: const Icon(Icons.camera_alt, color: Colors.black, size: 14),
-                              ),
-                            ],
+                        child: CircleAvatar(
+                          radius: 38.r,
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                          child: FaIcon(
+                            FontAwesomeIcons.userPlus,
+                            color: AppColors.primary,
+                            size: 32.r,
                           ),
                         ),
                       ).animate().scale(delay: 150.ms, duration: 400.ms, curve: Curves.easeOutBack),
-                      SizedBox(height: 8.h),
-                      Text(
-                        _avatarFile == null ? 'إضافة صورة شخصية (اختياري 📸)' : 'تم اختيار الصورة وتعشيبها بنجاح ✨',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: _avatarFile == null ? textSecondary : AppColors.primary,
-                          fontSize: 11.sp,
-                          fontWeight: _avatarFile == null ? FontWeight.normal : FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 12.h),
+                      SizedBox(height: 18.h),
 
                       Text(
-                        'إنشاء حساب جديد',
+                        context.tr('createAccountTitle'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: textPrimary,
                           fontSize: 24.sp,
                           fontWeight: FontWeight.bold,
                         ),
-                      ).animate().fadeIn(delay: 250.ms),
+                      ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.1, end: 0),
                       SizedBox(height: 6.h),
 
                       Text(
-                        'انضم إلى مباشر للخدمات والاستشارات المالية الذكية',
+                        context.tr('appSubtitle'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: textSecondary,
@@ -143,7 +108,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ).animate().fadeIn(delay: 350.ms),
                       SizedBox(height: 28.h),
 
-                      // Input Box Container
                       Container(
                         padding: EdgeInsets.all(20.r),
                         decoration: BoxDecoration(
@@ -153,50 +117,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         child: Column(
                           children: [
-                            // Full Name Input
                             TextFormField(
                               controller: _nameController,
                               style: TextStyle(color: textPrimary),
                               decoration: InputDecoration(
-                                labelText: 'الاسم بالكامل',
+                                labelText: context.tr('fullName'),
                                 labelStyle: TextStyle(color: textSecondary),
                                 prefixIcon: Icon(Icons.person_outline, color: textSecondary),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
                               validator: (val) {
-                                if (val == null || val.trim().isEmpty) return 'يرجى إدخال الاسم بالكامل';
-                                if (val.trim().length < 3) return 'الاسم لا يقل عن 3 أحرف';
+                                if (val == null || val.trim().isEmpty) return context.tr('enterNameErr');
+                                if (val.trim().length < 3) return context.tr('nameMinLengthErr');
                                 return null;
                               },
                             ),
                             SizedBox(height: 14.h),
 
-                            // Email Input
                             TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
                               style: TextStyle(color: textPrimary),
                               decoration: InputDecoration(
-                                labelText: 'البريد الإلكتروني',
+                                labelText: context.tr('email'),
                                 labelStyle: TextStyle(color: textSecondary),
                                 prefixIcon: Icon(Icons.email_outlined, color: textSecondary),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
                               validator: (val) {
-                                if (val == null || val.trim().isEmpty) return 'يرجى إدخال البريد الإلكتروني';
-                                if (!val.contains('@') || !val.contains('.')) return 'صيغة البريد غير صحيحة';
+                                if (val == null || val.trim().isEmpty) return context.tr('enterEmailErr');
+                                if (!val.contains('@') || !val.contains('.')) return context.tr('invalidEmailErr');
                                 return null;
                               },
                             ),
                             SizedBox(height: 14.h),
 
-                            // Password Input
                             TextFormField(
                               controller: _passwordController,
                               obscureText: _isPasswordObscured,
                               style: TextStyle(color: textPrimary),
                               decoration: InputDecoration(
-                                labelText: 'كلمة المرور',
+                                labelText: context.tr('password'),
                                 labelStyle: TextStyle(color: textSecondary),
                                 prefixIcon: Icon(Icons.lock_outline, color: textSecondary),
                                 suffixIcon: IconButton(
@@ -211,14 +172,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
                               validator: (val) {
-                                if (val == null || val.trim().isEmpty) return 'يرجى كتابة كلمة المرور';
-                                if (val.length < 6) return 'كلمة المرور لا تقل عن 6 أحرف';
+                                if (val == null || val.trim().isEmpty) return context.tr('enterPassErr');
+                                if (val.length < 6) return context.tr('passMinLengthErr');
                                 return null;
                               },
                             ),
                             SizedBox(height: 14.h),
 
-                            // Terms & Conditions Checkbox
                             Row(
                               children: [
                                 Checkbox(
@@ -233,9 +193,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       text: TextSpan(
                                         style: TextStyle(color: textSecondary, fontSize: 11.sp),
                                         children: [
-                                          const TextSpan(text: 'أوافق على '),
+                                          TextSpan(text: context.tr('agreeToTermsPrefix')),
                                           TextSpan(
-                                            text: 'الشروط والأحكام وسياسة الخصوصية',
+                                            text: context.tr('termsAndPrivacy'),
                                             style: TextStyle(
                                               color: AppColors.primary,
                                               fontWeight: FontWeight.bold,
@@ -254,29 +214,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0),
                       SizedBox(height: 20.h),
 
-                      // Submit Register Button
                       ElevatedButton(
                         onPressed: isLoading
                             ? null
                             : () {
                                 if (!_acceptedTerms) {
-                                  AppSnackBar.showWarning(
-                                    context,
-                                    'يرجى الموافقة على الشروط والأحكام للمتابعة',
-                                  );
+                                  AppSnackBar.showWarning(context, 'يرجى الموافقة على الشروط والأحكام أولاً');
                                   return;
                                 }
                                 if (_formKey.currentState!.validate()) {
-                                  context.read<AuthCubit>().signUpWithEmail(
-                                        _emailController.text.trim(),
-                                        _passwordController.text,
-                                        _nameController.text.trim(),
-                                      );
-                                } else {
-                                  AppSnackBar.showWarning(
-                                    context,
-                                    'يرجى تصحيح وقراءة كافة البيانات المطلوبة بالنموذج',
-                                  );
+                                  final name = _nameController.text.trim();
+                                  final email = _emailController.text.trim();
+                                  final password = _passwordController.text.trim();
+                                  context.read<AuthCubit>().signUpWithEmail(email, password, name);
                                 }
                               },
                         style: ElevatedButton.styleFrom(
@@ -293,7 +243,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 child: const CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
                               )
                             : Text(
-                                'تسجيل حساب جديد',
+                                context.tr('register'),
                                 style: TextStyle(
                                   color: Colors.black,
                                   fontSize: 15.sp,
@@ -303,7 +253,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       SizedBox(height: 20.h),
 
-                      // Divider OR
                       Row(
                         children: [
                           Expanded(child: Divider(color: border)),
@@ -316,9 +265,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       SizedBox(height: 20.h),
 
-                      // Google Sign Up Button
                       SocialLoginButton(
-                        label: 'التسجيل باستخدام Google',
+                        label: context.tr('continueWithGoogle'),
                         isLoading: isLoading,
                         onPressed: () {
                           context.read<AuthCubit>().signInWithGoogle();
@@ -326,18 +274,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       SizedBox(height: 24.h),
 
-                      // Already have account login link
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'لديك حساب بالفعل؟ ',
+                            context.tr('alreadyHaveAccount'),
                             style: TextStyle(color: textSecondary, fontSize: 13.sp),
                           ),
                           GestureDetector(
                             onTap: () => context.pop(),
                             child: Text(
-                              'تسجيل الدخول',
+                              context.tr('login'),
                               style: TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.bold,

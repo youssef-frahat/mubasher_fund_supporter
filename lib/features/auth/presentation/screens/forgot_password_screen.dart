@@ -4,7 +4,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
-import '../../../../core/app_config/font_styles.dart';
+import '../../../../core/app_config/app_colors.dart';
+import '../../../../core/language/language_cubit.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -24,60 +26,63 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bg = AppColors.getBackground(context);
+    final textPrimary = AppColors.getTextPrimary(context);
+    final textSecondary = AppColors.getTextSecondary(context);
+
     return Scaffold(
+      backgroundColor: bg,
       appBar: AppBar(
-        title: const Text('Forgot Password'),
+        title: Text(
+          context.tr('resetPasswordTitle'),
+          style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 16.sp),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: textPrimary),
+          onPressed: () => context.pop(),
+        ),
       ),
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-            );
+            AppSnackBar.showError(context, state.message);
           } else if (state is Unauthenticated) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Password reset link sent to your email!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            context.pop(); // Go back to login screen
+            AppSnackBar.showSuccess(context, context.tr('resetEmailSent'));
+            context.pop();
           }
         },
-        child: Padding(
+        child: SingleChildScrollView(
           padding: EdgeInsets.all(24.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(height: 40.h),
-              Icon(Icons.lock_reset, size: 80.sp, color: Theme.of(context).colorScheme.primary),
+              SizedBox(height: 20.h),
+              Icon(Icons.lock_reset, size: 80.sp, color: AppColors.primary),
               SizedBox(height: 24.h),
               Text(
-                'Reset your password',
-                style: FontStyles.titleLarge,
+                context.tr('resetPasswordTitle'),
+                style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 20.sp),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 8.h),
               Text(
-                'Enter your email address and we will send you a link to reset your password.',
-                style: FontStyles.bodyMedium.copyWith(color: Colors.grey),
+                context.tr('resetPasswordSub'),
+                style: TextStyle(color: textSecondary, fontSize: 12.sp),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 40.h),
+              SizedBox(height: 36.h),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
+                style: TextStyle(color: textPrimary),
                 decoration: InputDecoration(
-                  hintText: 'Enter your email',
-                  prefixIcon: const Icon(Icons.email_outlined),
+                  labelText: context.tr('email'),
+                  prefixIcon: Icon(Icons.email_outlined, color: textSecondary),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16.r),
-                    borderSide: BorderSide.none,
                   ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
                 ),
               ),
               SizedBox(height: 24.h),
@@ -91,24 +96,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             final email = _emailController.text.trim();
                             if (email.isNotEmpty) {
                               context.read<AuthCubit>().resetPassword(email);
+                            } else {
+                              AppSnackBar.showWarning(context, context.tr('enterEmailErr'));
                             }
                           },
                     style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 16.h),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16.r),
+                        borderRadius: BorderRadius.circular(14.r),
                       ),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      backgroundColor: AppColors.primary,
                     ),
                     child: isLoading
                         ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
                           )
                         : Text(
-                            'Send Reset Link',
-                            style: FontStyles.labelLarge.copyWith(color: Colors.white),
+                            context.tr('sendResetLink'),
+                            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14.sp),
                           ),
                   );
                 },

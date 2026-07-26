@@ -75,22 +75,20 @@ class _WatheqaAnimatedTitleState extends State<WatheqaAnimatedTitle> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
+      textDirection: currentWord == 'وثيقة' ? TextDirection.rtl : TextDirection.ltr,
       children: [
         // Typewriter Letter-by-Letter Animation ("وثيقة" ↔ "Watheqa")
-        ConstrainedBox(
-          constraints: BoxConstraints(minWidth: 80.w),
-          child: Text(
-            displayedText.isEmpty ? ' ' : displayedText,
-            style: TextStyle(
-              color: textPrimary,
-              fontSize: 20.sp,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.w,
-            ),
-          )
-          .animate(onPlay: (controller) => controller.repeat(reverse: true))
-          .shimmer(duration: 2200.ms, color: AppColors.primary),
-        ),
+        Text(
+          displayedText.isEmpty ? ' ' : displayedText,
+          style: TextStyle(
+            color: textPrimary,
+            fontSize: 20.sp,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.w,
+          ),
+        )
+        .animate(onPlay: (controller) => controller.repeat(reverse: true))
+        .shimmer(duration: 2200.ms, color: AppColors.primary),
 
         SizedBox(width: 4.w),
 

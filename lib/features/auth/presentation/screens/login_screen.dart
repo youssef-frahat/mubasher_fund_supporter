@@ -114,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(height: 18.h),
 
                       Text(
-                        'مرحباً بك مجدداً',
+                        context.tr('welcomeBackTitle'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: textPrimary,
@@ -156,8 +156,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
                               validator: (val) {
-                                if (val == null || val.trim().isEmpty) return 'يرجى إدخال البريد الإلكتروني';
-                                if (!val.contains('@') || !val.contains('.')) return 'صيغة البريد غير صحيحة';
+                                if (val == null || val.trim().isEmpty) return context.tr('enterEmailErr');
+                                if (!val.contains('@') || !val.contains('.')) return context.tr('invalidEmailErr');
                                 return null;
                               },
                             ),
@@ -184,8 +184,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
                               validator: (val) {
-                                if (val == null || val.trim().isEmpty) return 'يرجى إدخال كلمة المرور';
-                                if (val.length < 6) return 'كلمة المرور لا تقل عن 6 أحرف';
+                                if (val == null || val.trim().isEmpty) return context.tr('enterPassErr');
+                                if (val.length < 6) return context.tr('passMinLengthErr');
                                 return null;
                               },
                             ),
@@ -265,7 +265,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // Pure White Google Sign In Button
                       SocialLoginButton(
-                        label: 'متابعة باستخدام Google',
+                        label: context.tr('continueWithGoogle'),
                         isLoading: isLoading,
                         onPressed: () {
                           context.read<AuthCubit>().signInWithGoogle();
@@ -277,7 +277,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: _loginWithBiometrics,
                           icon: const FaIcon(FontAwesomeIcons.fingerprint, color: AppColors.primary),
                           label: Text(
-                            'الدخول السريع باستخدام البصمة 👆',
+                            context.tr('loginWithBiometrics'),
                             style: TextStyle(
                               color: textPrimary,
                               fontSize: 14.sp,
@@ -300,7 +300,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'ليس لديك حساب حتى الآن؟ ',
+                            context.tr('noAccountYet'),
                             style: TextStyle(color: textSecondary, fontSize: 13.sp),
                           ),
                           GestureDetector(

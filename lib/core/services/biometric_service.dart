@@ -4,6 +4,8 @@ import 'package:local_auth/local_auth.dart';
 
 class BiometricService {
   static final LocalAuthentication _auth = LocalAuthentication();
+  static bool isCurrentlyAuthenticating = false;
+  static DateTime? lastUnlockedTime;
 
   /// Check if device supports Biometric Authentication (Fingerprint / Face ID)
   static Future<bool> isBiometricAvailable() async {
@@ -28,6 +30,9 @@ class BiometricService {
 
   /// Trigger Biometric Authentication Prompt
   static Future<bool> authenticateUser(BuildContext context, {String? localizedReason}) async {
+    if (isCurrentlyAuthenticating) return false;
+    isCurrentlyAuthenticating = true;
+
     try {
       final bool isAvailable = await isBiometricAvailable();
       if (!isAvailable) {
@@ -50,6 +55,10 @@ class BiometricService {
         persistAcrossBackgrounding: true,
       );
 
+      if (didAuthenticate) {
+        lastUnlockedTime = DateTime.now();
+      }
+
       return didAuthenticate;
     } on PlatformException catch (e) {
       debugPrint('Biometrics PlatformException: ${e.code} - ${e.message}');
@@ -70,6 +79,8 @@ class BiometricService {
     } catch (e) {
       debugPrint('Biometric error: $e');
       return false;
+    } finally {
+      isCurrentlyAuthenticating = false;
     }
   }
 }

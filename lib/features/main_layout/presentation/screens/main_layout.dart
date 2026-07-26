@@ -33,6 +33,13 @@ class _MainLayoutState extends State<MainLayout> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
+      if (BiometricService.isCurrentlyAuthenticating) return;
+
+      final lastUnlock = BiometricService.lastUnlockedTime;
+      if (lastUnlock != null && DateTime.now().difference(lastUnlock).inSeconds < 10) {
+        return;
+      }
+
       final prefs = await SharedPreferences.getInstance();
       final biometricsEnabled = prefs.getBool('biometrics_enabled') ?? false;
       final isBiometricAvailable = await BiometricService.isBiometricAvailable();
@@ -97,36 +104,39 @@ class _MainLayoutState extends State<MainLayout> with WidgetsBindingObserver {
               ),
             ],
           ),
-          child: NavigationBar(
-            selectedIndex: widget.navigationShell.currentIndex,
-            onDestinationSelected: (int index) {
-              widget.navigationShell.goBranch(
-                index,
-                initialLocation: index == widget.navigationShell.currentIndex,
-              );
-            },
-            destinations: [
-              NavigationDestination(
-                icon: const FaIcon(FontAwesomeIcons.house),
-                selectedIcon: const FaIcon(FontAwesomeIcons.house),
-                label: context.tr('home'),
-              ),
-              NavigationDestination(
-                icon: const FaIcon(FontAwesomeIcons.robot),
-                selectedIcon: const FaIcon(FontAwesomeIcons.robot),
-                label: context.tr('roboAdvisor'),
-              ),
-              NavigationDestination(
-                icon: const FaIcon(FontAwesomeIcons.wallet),
-                selectedIcon: const FaIcon(FontAwesomeIcons.wallet),
-                label: context.tr('portfolio'),
-              ),
-              NavigationDestination(
-                icon: const FaIcon(FontAwesomeIcons.gear),
-                selectedIcon: const FaIcon(FontAwesomeIcons.gear),
-                label: context.tr('settings'),
-              ),
-            ],
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: NavigationBar(
+              selectedIndex: widget.navigationShell.currentIndex,
+              onDestinationSelected: (int index) {
+                widget.navigationShell.goBranch(
+                  index,
+                  initialLocation: index == widget.navigationShell.currentIndex,
+                );
+              },
+              destinations: [
+                NavigationDestination(
+                  icon: const FaIcon(FontAwesomeIcons.house),
+                  selectedIcon: const FaIcon(FontAwesomeIcons.house),
+                  label: context.tr('home'),
+                ),
+                NavigationDestination(
+                  icon: const FaIcon(FontAwesomeIcons.robot),
+                  selectedIcon: const FaIcon(FontAwesomeIcons.robot),
+                  label: context.tr('roboAdvisor'),
+                ),
+                NavigationDestination(
+                  icon: const FaIcon(FontAwesomeIcons.wallet),
+                  selectedIcon: const FaIcon(FontAwesomeIcons.wallet),
+                  label: context.tr('portfolio'),
+                ),
+                NavigationDestination(
+                  icon: const FaIcon(FontAwesomeIcons.gear),
+                  selectedIcon: const FaIcon(FontAwesomeIcons.gear),
+                  label: context.tr('settings'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

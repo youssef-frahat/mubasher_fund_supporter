@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/language/language_cubit.dart';
 import '../../../../core/services/avatar_picker_service.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
@@ -66,7 +67,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: BlocBuilder<AuthCubit, AuthState>(
         builder: (context, state) {
           if (state is Authenticated) {
-            _nameController.text = state.user.userMetadata?['full_name'] ?? context.tr('proInvestor');
+            final userMeta = state.user.userMetadata ?? {};
+            if (_nameController.text.isEmpty) {
+              _nameController.text = userMeta['full_name'] ?? '';
+            }
+            if (_phoneController.text == '01002938471' && userMeta['phone'] != null) {
+              _phoneController.text = userMeta['phone'];
+            }
+            final avatarUrl = userMeta['avatar_url'];
 
             return SingleChildScrollView(
               padding: EdgeInsets.all(20.r),
@@ -86,8 +94,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         CircleAvatar(
                           radius: 50.r,
                           backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                          backgroundImage: _avatarFile != null ? FileImage(_avatarFile!) : null,
-                          child: _avatarFile == null
+                          backgroundImage: _avatarFile != null
+                              ? FileImage(_avatarFile!)
+                              : (avatarUrl != null && avatarUrl.toString().isNotEmpty
+                                  ? NetworkImage(avatarUrl.toString()) as ImageProvider
+                                  : null),
+                          child: (_avatarFile == null && (avatarUrl == null || avatarUrl.toString().isEmpty))
                               ? FaIcon(
                                   FontAwesomeIcons.userCheck,
                                   color: AppColors.primary,
@@ -105,12 +117,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   SizedBox(height: 14.h),
 
-                  Text(
-                    state.user.email ?? '',
-                    style: TextStyle(
-                      color: textSecondary,
-                      fontSize: 13.sp,
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final email = state.user.email ?? '';
+                      String displayEmail = email;
+                      if (email.contains('@')) {
+                        final domain = email.split('@').last.split('.').first;
+                        final companyName = domain.isNotEmpty ? domain[0].toUpperCase() + domain.substring(1) : '';
+                        if (companyName.isNotEmpty) {
+                          displayEmail = '${context.tr('account')}: $companyName ($email)';
+                        }
+                      }
+                      return Text(
+                        displayEmail,
+                        style: TextStyle(
+                          color: textSecondary,
+                          fontSize: 13.sp,
+                        ),
+                      );
+                    }
                   ),
                   SizedBox(height: 24.h),
 
@@ -210,14 +235,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(context.tr('profileSavedSuccess')),
-                            backgroundColor: AppColors.primary,
-                          ),
-                        );
-                        context.pop();
+                      onPressed: () async {
+                        final success = await context.read<AuthCubit>().updateProfile(
+                              fullName: _nameController.text.trim(),
+                              phone: _phoneController.text.trim(),
+                              avatarFile: _avatarFile,
+                            );
+
+                        if (!context.mounted) return;
+                        if (success) {
+                          AppSnackBar.showSuccess(context, context.tr('profileSavedSuccess'));
+                          context.pop();
+                        } else {
+                          AppSnackBar.showError(context, 'فشل حفظ بيانات البروفايل، يرجى المحاولة مرة أخرى.');
+                        }
                       },
                       icon: const FaIcon(FontAwesomeIcons.floppyDisk, color: Colors.black, size: 16),
                       label: Text(

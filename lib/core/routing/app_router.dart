@@ -44,18 +44,31 @@ class AppRouter {
       final isGoingToLogin = state.matchedLocation == Routes.login;
       final isGoingToRegister = state.matchedLocation == Routes.register;
       final isGoingToOtp = state.matchedLocation == Routes.otp;
-      final isAuthRoute = isGoingToLogin || isGoingToRegister || isGoingToOtp;
+      final isGoingToForgotPassword = state.matchedLocation == Routes.forgotPassword;
+      final isGoingToTerms = state.matchedLocation == Routes.termsConditions;
+      final isGoingToFaq = state.matchedLocation == Routes.faq;
+      final isGoingToAboutUs = state.matchedLocation == Routes.aboutUs;
+
+      final isPublicRoute = isGoingToSplash ||
+          isGoingToBiometricLock ||
+          isGoingToLogin ||
+          isGoingToRegister ||
+          isGoingToOtp ||
+          isGoingToForgotPassword ||
+          isGoingToTerms ||
+          isGoingToFaq ||
+          isGoingToAboutUs;
 
       // Allow splash screen & biometric lock screen to show
       if (isGoingToSplash || isGoingToBiometricLock) return null;
 
-      // If user is not authenticated and not heading to an auth route, redirect to login
-      if (!isAuthenticated && !isAuthRoute) {
+      // If user is not authenticated and not heading to a public route, redirect to login
+      if (!isAuthenticated && !isPublicRoute) {
         return Routes.login;
       }
 
-      // If user is authenticated and heading to an auth route, redirect to home
-      if (isAuthenticated && isAuthRoute) {
+      // If user is authenticated and heading to pure auth login/register, redirect to home
+      if (isAuthenticated && (isGoingToLogin || isGoingToRegister || isGoingToOtp)) {
         return Routes.home;
       }
 

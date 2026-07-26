@@ -169,8 +169,8 @@ class TopPerformingCard extends StatelessWidget {
                       fontSize: 16.sp,
                       height: 1.3,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    maxLines: 3,
+                    overflow: TextOverflow.visible,
                   ),
                   SizedBox(height: 4.h),
                   Text(
@@ -179,8 +179,8 @@ class TopPerformingCard extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.45),
                       fontSize: 11.sp,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                    overflow: TextOverflow.visible,
                   ),
                   SizedBox(height: 14.h),
 
