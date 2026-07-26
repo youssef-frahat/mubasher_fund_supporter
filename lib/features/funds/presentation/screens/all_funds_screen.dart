@@ -199,7 +199,7 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'نتائج التصفية (${filteredFunds.length})',
+                  '${context.tr('filterResults')} (${filteredFunds.length})',
                   style: TextStyle(
                     color: textSecondary,
                     fontSize: 12.sp,

@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/app_config/app_colors.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../portfolio/data/repositories/portfolio_repository.dart';
 import '../../data/models/risk_profile_model.dart';
@@ -30,6 +31,7 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
     final textPrimary = AppColors.getTextPrimary(context);
     final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
+    final isAr = context.isArabic;
 
     return Container(
       width: double.infinity,
@@ -53,9 +55,9 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Badge
+          // Header Badges (flex-wrapped)
           Wrap(
-            alignment: WrapAlignment.spaceBetween,
+            alignment: WrapAlignment.start,
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: 8.w,
             runSpacing: 8.h,
@@ -74,7 +76,9 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
                     SizedBox(width: 6.w),
                     Flexible(
                       child: Text(
-                        'المستشار الذكي: ${widget.riskResult.riskCategory}',
+                        isAr
+                            ? 'المستشار الذكي: ${widget.riskResult.riskCategory}'
+                            : 'Robo-Advisor: ${widget.riskResult.riskCategory}',
                         style: TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.bold,
@@ -93,7 +97,9 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Text(
-                  'متوسط العائد: ${widget.riskResult.expectedRoiPercentage}% سنويًا',
+                  isAr
+                      ? 'متوسط العائد: ${widget.riskResult.expectedRoiPercentage}% سنويًا'
+                      : 'Avg Return: ${widget.riskResult.expectedRoiPercentage}% p.a.',
                   style: TextStyle(
                     color: AppColors.gold,
                     fontSize: 10.sp,
@@ -106,10 +112,12 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
           SizedBox(height: 14.h),
 
           Text(
-            '🤖 المحفظة الاستثمارية المقترحة لك من الباك إند:',
+            isAr
+                ? '🤖 المحفظة الاستثمارية المقترحة لك من الباك إند:'
+                : '🤖 Recommended Portfolio from Backend:',
             style: TextStyle(
               color: textPrimary,
-              fontSize: 15.sp,
+              fontSize: 14.sp,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -155,7 +163,7 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
               child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 14.r,
+                    radius: 18.r,
                     backgroundColor: alloc.categoryColor.withValues(alpha: 0.2),
                     child: Text(
                       '${alloc.percentage.toInt()}%',
@@ -178,6 +186,8 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
                             fontSize: 12.sp,
                             fontWeight: FontWeight.bold,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         SizedBox(height: 2.h),
                         Text(
@@ -186,16 +196,22 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
                             color: textSecondary,
                             fontSize: 10.sp,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
-                  Text(
-                    '${allocatedEgp.toStringAsFixed(0)} ج.م',
-                    style: TextStyle(
-                      color: alloc.categoryColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13.sp,
+                  SizedBox(width: 6.w),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '${allocatedEgp.toStringAsFixed(0)} ${isAr ? 'ج.م' : 'EGP'}',
+                      style: TextStyle(
+                        color: alloc.categoryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13.sp,
+                      ),
                     ),
                   ),
                 ],
@@ -205,7 +221,7 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
 
           SizedBox(height: 14.h),
 
-          // Action Button to Save Portfolio directly to user account / Simulation Page
+          // Action Button - Save Portfolio to Simulation Page
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -214,11 +230,14 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
                   : () async {
                       final messenger = ScaffoldMessenger.of(context);
                       final router = GoRouter.of(context);
+                      final isArabic = context.isArabic;
 
                       setState(() => _isSaving = true);
                       try {
                         final repo = PortfolioRepository();
-                        final portfolioName = 'محفظة المستشار (${widget.riskResult.riskCategory})';
+                        final portfolioName = isArabic
+                            ? 'محفظة المستشار (${widget.riskResult.riskCategory})'
+                            : 'Advisor Portfolio (${widget.riskResult.riskCategory})';
                         final createdPortfolio = await repo.createPortfolioFromRecommendedMix(
                           name: portfolioName,
                           riskResult: widget.riskResult,
@@ -228,22 +247,24 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
                         messenger.showSnackBar(
                           SnackBar(
                             content: Text(
-                              'تم حفظ محفظة "${createdPortfolio.name}" بنجاح في صفحة المحافظ! 🚀',
+                              isArabic
+                                  ? 'تم حفظ محفظة "${createdPortfolio.name}" بنجاح في صفحة المحافظ! 🚀'
+                                  : 'Portfolio "${createdPortfolio.name}" saved successfully! 🚀',
                             ),
                             backgroundColor: AppColors.primary,
                             action: SnackBarAction(
-                              label: 'عرض المحفظة',
+                              label: isArabic ? 'عرض المحفظة' : 'View Portfolio',
                               textColor: Colors.black,
-                              onPressed: () {
-                                router.go(Routes.portfolio);
-                              },
+                              onPressed: () => router.go(Routes.portfolio),
                             ),
                           ),
                         );
                       } catch (e) {
                         messenger.showSnackBar(
                           SnackBar(
-                            content: Text('خطأ في حفظ المحفظة: $e'),
+                            content: Text(
+                              isAr ? 'خطأ في حفظ المحفظة: $e' : 'Error saving portfolio: $e',
+                            ),
                             backgroundColor: AppColors.error,
                           ),
                         );
@@ -258,16 +279,24 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
                       child: const CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
                     )
                   : const FaIcon(FontAwesomeIcons.circlePlus, color: Colors.black, size: 14),
-              label: Text(
-                _isSaving ? 'جاري الحفظ في حسابك...' : 'حفظ وتطبيق هذه المحفظة في صفحة المحافظ',
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
+              label: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  _isSaving
+                      ? (isAr ? 'جاري الحفظ في حسابك...' : 'Saving portfolio...')
+                      : (isAr
+                          ? 'حفظ وتطبيق هذه المحفظة في صفحة المحافظ'
+                          : 'Save & Apply Portfolio to My Portfolio'),
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
                 ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                padding: EdgeInsets.symmetric(vertical: 12.h),
+                padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.r),
                 ),

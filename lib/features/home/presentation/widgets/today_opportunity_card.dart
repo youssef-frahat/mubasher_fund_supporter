@@ -343,7 +343,7 @@ class _AiMarketSignalsSheetState extends State<_AiMarketSignalsSheet> {
                             badgeColor: const Color(0xFF10B981),
                             fund: topGainer,
                             reason: context.tr('buyReason'),
-                            actionLabel: 'ترشيح الشراء والدخول 🚀',
+                            actionLabel: context.tr('buyActionLabel'),
                             onTap: () {
                               Navigator.pop(context);
                               context.push(Routes.fundDetails, extra: topGainer!.toPlatformFeature());
@@ -359,7 +359,7 @@ class _AiMarketSignalsSheetState extends State<_AiMarketSignalsSheet> {
                             badgeColor: AppColors.error,
                             fund: topDip,
                             reason: context.tr('sellReason'),
-                            actionLabel: 'تأمين الأرباح والتخرج ⚠️',
+                            actionLabel: context.tr('sellActionLabel'),
                             onTap: () {
                               Navigator.pop(context);
                               context.push(Routes.fundDetails, extra: topDip!.toPlatformFeature());
@@ -371,11 +371,15 @@ class _AiMarketSignalsSheetState extends State<_AiMarketSignalsSheet> {
                         if (topGoldLiquidity != null)
                           _buildSignalCard(
                             context: context,
-                            title: '🛡️ ترشيح التحوط والسيولة (HEDGE & LIQUIDITY)',
+                            title: context.isArabic
+                                ? context.tr('hedgeSignalTitle')
+                                : context.tr('hedgeSignalTitleEn'),
                             badgeColor: AppColors.gold,
                             fund: topGoldLiquidity,
-                            reason: 'أفضل اختيار لحفظ القوة الشرائية وامتصاص تقلبات البورصة اليومية',
-                            actionLabel: 'استكشاف صندوق التحوط ⚡',
+                            reason: context.isArabic
+                                ? context.tr('hedgeReason')
+                                : context.tr('hedgeReasonEn'),
+                            actionLabel: context.tr('hedgeActionLabel'),
                             onTap: () {
                               Navigator.pop(context);
                               context.push(Routes.fundDetails, extra: topGoldLiquidity!.toPlatformFeature());
@@ -479,7 +483,7 @@ class _AiMarketSignalsSheetState extends State<_AiMarketSignalsSheet> {
               border: Border.all(color: border),
             ),
             child: Text(
-              '💡 السبب: $reason',
+              '${context.isArabic ? context.tr('signalReason') : context.tr('signalReasonEn')} $reason',
               style: TextStyle(
                 color: textPrimary,
                 fontSize: 11.sp,

@@ -51,7 +51,7 @@ class FundDetailsScreen extends StatelessWidget {
               final fundId = fund.id ?? '';
               final isSaved = savedIds.contains(fundId);
               return IconButton(
-                tooltip: 'إضافة للمفضلة',
+                tooltip: context.tr('addToWishlist'),
                 icon: FaIcon(
                   isSaved ? FontAwesomeIcons.solidBookmark : FontAwesomeIcons.bookmark,
                   color: isSaved ? AppColors.gold : textPrimary,
@@ -169,7 +169,7 @@ class FundDetailsScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: Text(
-                          'عائد متوقع: 24% سنويًا',
+                          context.tr('expectedAnnualReturn'),
                           style: TextStyle(
                             color: AppColors.gold,
                             fontSize: 10.sp,
@@ -186,7 +186,7 @@ class FundDetailsScreen extends StatelessWidget {
 
             // NAV Chart Timeline Header
             Text(
-              '📈 التطور التاريخي لسعر الوثيقة (NAV Timeline)',
+              context.tr('navTimeline'),
               style: TextStyle(
                 color: textPrimary,
                 fontSize: 14.sp,
@@ -251,9 +251,11 @@ class FundDetailsScreen extends StatelessWidget {
                 ),
                 onPressed: () => _showAddTransactionDialog(context, fund),
                 icon: const FaIcon(FontAwesomeIcons.circlePlus, color: Colors.black, size: 16),
-                label: const Text(
-                  'إضافة إلى محفظتي الاستثمارية (محاكاة)',
-                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                label: Text(
+                  context.tr('addToPortfolioBtn'),
+                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
@@ -314,7 +316,7 @@ class FundDetailsScreen extends StatelessWidget {
                 controller: unitsController,
                 style: TextStyle(color: textPrimary),
                 decoration: InputDecoration(
-                  labelText: 'عدد الوثائق',
+                  labelText: context.tr('unitsLabel'),
                   labelStyle: TextStyle(color: textSecondary),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
                 ),
@@ -326,7 +328,7 @@ class FundDetailsScreen extends StatelessWidget {
                 controller: priceController,
                 style: TextStyle(color: textPrimary),
                 decoration: InputDecoration(
-                  labelText: 'سعر الوثيقة وقت الشراء (ج.م)',
+                  labelText: context.tr('purchasePriceEgp'),
                   labelStyle: TextStyle(color: textSecondary),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
                 ),
@@ -365,9 +367,9 @@ class FundDetailsScreen extends StatelessWidget {
                       );
                     }
                   },
-                  child: const Text(
-                    'حفظ الصفقة',
-                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  child: Text(
+                    context.tr('saveDeal'),
+                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
