@@ -498,17 +498,21 @@ function renderFundsTable() {
     tr.innerHTML = `
       <td><strong>${fund.name_ar || fund.name}</strong><br><small style="color:#9ca3af">${fund.name_en || ''}</small></td>
       <td>${fund.manager_name || fund.manager || 'مباشر كابيتال'}</td>
-      <td style="color:#00E676; font-weight:bold">${navVal.toFixed(4)} EGP</td>
-      <td style="color:#3B82F6; font-weight:bold">${ytdVal >= 0 ? '+' : ''}${ytdVal.toFixed(2)}%</td>
+      <td style="color:#00E676; font-weight:bold; white-space:nowrap">${navVal.toFixed(4)} EGP</td>
+      <td style="color:#3B82F6; font-weight:bold; white-space:nowrap">${ytdVal >= 0 ? '+' : ''}${ytdVal.toFixed(2)}%</td>
       <td><span class="badge" style="background:rgba(59,130,246,0.15); color:#3B82F6">${fund.category || 'Equity'}</span></td>
       <td>
-        ${fund.is_sponsored ? '<span class="badge" style="background:rgba(0,230,118,0.15); color:#00E676">رعائي ⭐</span>' : ''}
-        ${fund.is_recommended ? '<span class="badge" style="background:rgba(245,158,11,0.15); color:#F59E0B">موصى به 💡</span>' : ''}
-        ${fund.is_top_performing ? '<span class="badge" style="background:rgba(139,92,246,0.15); color:#8B5CF6">الأعلى أداءً 🏆</span>' : ''}
+        <div class="badge-group">
+          ${fund.is_sponsored ? '<span class="badge badge-sponsored">رعائي ⭐</span>' : ''}
+          ${fund.is_recommended ? '<span class="badge badge-recommended">موصى به 💡</span>' : ''}
+          ${fund.is_top_performing ? '<span class="badge badge-top">الأعلى أداءً 🏆</span>' : ''}
+        </div>
       </td>
-      <td>
-        <button class="btn btn-secondary" onclick="editFund('${fund.id}')"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn btn-danger" onclick="deleteFund('${fund.id}')"><i class="fa-solid fa-trash"></i></button>
+      <td class="actions-cell">
+        <div class="btn-action-group">
+          <button class="btn btn-secondary btn-icon" onclick="editFund('${fund.id}')" title="تعديل"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn btn-danger btn-icon" onclick="deleteFund('${fund.id}')" title="مسح"><i class="fa-solid fa-trash"></i></button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
@@ -535,7 +539,7 @@ function renderSponsoredTable() {
     tr.innerHTML = `
       <td><strong>${fund.name_ar || fund.name}</strong></td>
       <td>${fund.manager_name || fund.manager || 'مباشر كابيتال'}</td>
-      <td style="color:#00E676; font-weight:bold">${navVal.toFixed(2)} EGP</td>
+      <td style="color:#00E676; font-weight:bold; white-space:nowrap">${navVal.toFixed(2)} EGP</td>
       <td>
         <button class="btn ${fund.is_sponsored ? 'btn-primary' : 'btn-secondary'}" onclick="toggleFundFlag('${fund.id}', 'is_sponsored', ${!fund.is_sponsored})">
           ${fund.is_sponsored ? 'مفعل رعائي ⭐' : 'تفعيل رعائي'}
@@ -543,13 +547,15 @@ function renderSponsoredTable() {
       </td>
       <td>
         <button class="btn ${fund.is_recommended ? 'btn-primary' : 'btn-secondary'}" onclick="toggleFundFlag('${fund.id}', 'is_recommended', ${!fund.is_recommended})">
-          ${fund.is_recommended ? 'موصى به / مخصص 💡' : 'إضافة للتوصيات'}
+          ${fund.is_recommended ? 'موصى به 💡' : 'إضافة للتوصيات'}
         </button>
       </td>
-      <td>
-        <button class="btn btn-danger" onclick="removeFundFromSponsored('${fund.id}')" title="إزالة من القائمة الرعائية">
-          <i class="fa-solid fa-trash"></i> إزالة من القائمة
-        </button>
+      <td class="actions-cell">
+        <div class="btn-action-group">
+          <button class="btn btn-danger" onclick="removeFundFromSponsored('${fund.id}')" title="إزالة من القائمة الرعائية">
+            <i class="fa-solid fa-trash"></i> إزالة
+          </button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
@@ -937,7 +943,7 @@ function logMessage(msg, type = 'info') {
     container.insertBefore(div, container.firstChild);
   }
   if (fullContainer) {
-    const clone.Node(true);
+    const clone = div.cloneNode(true);
     fullContainer.insertBefore(clone, fullContainer.firstChild);
   }
 }
