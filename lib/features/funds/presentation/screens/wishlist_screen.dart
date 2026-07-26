@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/services/wishlist_service.dart';
 import '../../../home/data/models/fund_model.dart';
@@ -20,6 +21,7 @@ class WishlistScreen extends StatefulWidget {
 
 class _WishlistScreenState extends State<WishlistScreen> {
   List<FundModel> _allFunds = [];
+  List<FundModel> _savedFundsList = [];
   bool _isLoading = true;
 
   @override
@@ -31,15 +33,40 @@ class _WishlistScreenState extends State<WishlistScreen> {
   Future<void> _loadFunds() async {
     try {
       final funds = await SupabaseFundsRepository().getFunds();
+      final wishlistService = sl<WishlistService>();
+
       if (mounted) {
         setState(() {
           _allFunds = funds;
+          _syncSavedFunds(wishlistService.orderedFundIds.value);
           _isLoading = false;
         });
       }
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _syncSavedFunds(List<String> orderedIds) {
+    final Map<String, FundModel> fundMap = {for (var f in _allFunds) f.id: f};
+    final List<FundModel> result = [];
+
+    for (final id in orderedIds) {
+      if (fundMap.containsKey(id)) {
+        result.add(fundMap[id]!);
+      }
+    }
+
+    // Add any remaining saved IDs not in ordered list
+    final wishlistService = sl<WishlistService>();
+    final savedSet = wishlistService.savedFundIds.value;
+    for (final f in _allFunds) {
+      if (savedSet.contains(f.id) && !result.contains(f)) {
+        result.add(f);
+      }
+    }
+
+    _savedFundsList = result;
   }
 
   @override
@@ -59,12 +86,15 @@ class _WishlistScreenState extends State<WishlistScreen> {
           icon: Icon(Icons.arrow_back_ios, color: textPrimary),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          'الصناديق المفضلة ⭐️',
-          style: TextStyle(
-            color: textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 16.sp,
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'الصناديق المفضلة ⭐️',
+            style: TextStyle(
+              color: textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 16.sp,
+            ),
           ),
         ),
       ),
@@ -73,11 +103,12 @@ class _WishlistScreenState extends State<WishlistScreen> {
           : ValueListenableBuilder<Set<String>>(
               valueListenable: wishlistService.savedFundIds,
               builder: (context, savedIds, _) {
-                final savedFunds = _allFunds
+                // Ensure local list matches saved IDs
+                final currentSaved = _savedFundsList
                     .where((fund) => savedIds.contains(fund.id))
                     .toList();
 
-                if (savedFunds.isEmpty) {
+                if (currentSaved.isEmpty) {
                   return Center(
                     child: Padding(
                       padding: EdgeInsets.all(24.r),
@@ -138,16 +169,63 @@ class _WishlistScreenState extends State<WishlistScreen> {
                   );
                 }
 
-                return ListView.builder(
-                  padding: EdgeInsets.all(20.r),
-                  itemCount: savedFunds.length,
-                  itemBuilder: (context, index) {
-                    final fund = savedFunds[index];
-                    return FundListTile(
-                      fund: fund,
-                      rank: index + 1,
-                    );
-                  },
+                return Column(
+                  children: [
+                    // Interactive Drag & Drop Reorder Tip Banner
+                    Container(
+                      width: double.infinity,
+                      margin: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 12.h),
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.touch_app, color: AppColors.primary, size: 18.r),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: Text(
+                              context.tr('dragReorderTip'),
+                              style: TextStyle(
+                                color: textPrimary,
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Interactive Reorderable List
+                    Expanded(
+                      child: ReorderableListView.builder(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+                        itemCount: currentSaved.length,
+                        onReorderItem: (oldIndex, newIndex) async {
+                          setState(() {
+                            final item = currentSaved.removeAt(oldIndex);
+                            currentSaved.insert(newIndex, item);
+                            _savedFundsList = List.from(currentSaved);
+                          });
+                          final updatedIds = currentSaved.map((f) => f.id).toList();
+                          await wishlistService.reorderWishlist(updatedIds);
+                        },
+                        itemBuilder: (context, index) {
+                          final fund = currentSaved[index];
+                          return KeyedSubtree(
+                            key: ValueKey(fund.id),
+                            child: FundListTile(
+                              fund: fund,
+                              rank: index + 1,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 );
               },
             ),

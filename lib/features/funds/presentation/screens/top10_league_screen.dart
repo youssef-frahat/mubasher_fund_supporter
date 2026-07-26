@@ -82,7 +82,7 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Banner Title & Info with Dynamic Trend Arrows
+                  // Top Banner Title & Info with Standardized Clean Trend Icons
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(16.r),
@@ -113,8 +113,19 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
                       children: [
                         Row(
                           children: [
-                            Text(_selectedTab == 0 ? '📈 🟢 🏆' : '📉 🔴 🔻', style: const TextStyle(fontSize: 20)),
-                            SizedBox(width: 8.w),
+                            Container(
+                              padding: EdgeInsets.all(6.r),
+                              decoration: BoxDecoration(
+                                color: (_selectedTab == 0 ? const Color(0xFF10B981) : AppColors.error).withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(10.r),
+                              ),
+                              child: Icon(
+                                _selectedTab == 0 ? Icons.trending_up : Icons.trending_down,
+                                color: _selectedTab == 0 ? const Color(0xFF10B981) : AppColors.error,
+                                size: 20.r,
+                              ),
+                            ),
+                            SizedBox(width: 10.w),
                             Expanded(
                               child: Text(
                                 context.tr('fundSupporterLeague'),
@@ -127,7 +138,7 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
                             ),
                           ],
                         ),
-                        SizedBox(height: 6.h),
+                        SizedBox(height: 8.h),
                         Text(
                           context.tr('fundSupporterLeagueSub'),
                           style: TextStyle(

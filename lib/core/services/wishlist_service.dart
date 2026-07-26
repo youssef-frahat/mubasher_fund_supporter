@@ -5,6 +5,7 @@ import '../supabase/supabase_service.dart';
 class WishlistService {
   static const String _wishlistKey = 'saved_wishlist_fund_ids_v1';
   final ValueNotifier<Set<String>> savedFundIds = ValueNotifier<Set<String>>({});
+  final ValueNotifier<List<String>> orderedFundIds = ValueNotifier<List<String>>([]);
 
   WishlistService() {
     loadWishlist();
@@ -15,6 +16,7 @@ class WishlistService {
       final prefs = await SharedPreferences.getInstance();
       final localList = prefs.getStringList(_wishlistKey) ?? [];
       savedFundIds.value = localList.toSet();
+      orderedFundIds.value = localList;
 
       // Sync with Supabase if logged in
       final client = SupabaseService.client;
@@ -31,6 +33,7 @@ class WishlistService {
 
         final merged = {...savedFundIds.value, ...remoteSet};
         savedFundIds.value = merged;
+        orderedFundIds.value = merged.toList();
         await prefs.setStringList(_wishlistKey, merged.toList());
       }
     } catch (e) {
@@ -43,20 +46,26 @@ class WishlistService {
   }
 
   Future<bool> toggleWishlist(String fundId) async {
-    final updated = Set<String>.from(savedFundIds.value);
-    final isAdding = !updated.contains(fundId);
+    final updatedSet = Set<String>.from(savedFundIds.value);
+    final updatedList = List<String>.from(orderedFundIds.value);
+    final isAdding = !updatedSet.contains(fundId);
 
     if (isAdding) {
-      updated.add(fundId);
+      updatedSet.add(fundId);
+      if (!updatedList.contains(fundId)) {
+        updatedList.add(fundId);
+      }
     } else {
-      updated.remove(fundId);
+      updatedSet.remove(fundId);
+      updatedList.remove(fundId);
     }
 
-    savedFundIds.value = updated;
+    savedFundIds.value = updatedSet;
+    orderedFundIds.value = updatedList;
 
     // Save locally
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_wishlistKey, updated.toList());
+    await prefs.setStringList(_wishlistKey, updatedList);
 
     // Sync to Supabase in background if authenticated
     try {
@@ -81,5 +90,12 @@ class WishlistService {
     }
 
     return isAdding;
+  }
+
+  Future<void> reorderWishlist(List<String> newOrderedIds) async {
+    savedFundIds.value = newOrderedIds.toSet();
+    orderedFundIds.value = newOrderedIds;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_wishlistKey, newOrderedIds);
   }
 }

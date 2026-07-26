@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/app_config/app_colors.dart';
-import '../../../../core/routing/routes.dart';
 import '../../../../core/language/language_cubit.dart';
-import '../../../calculator/data/repositories/calculator_repository.dart';
-import '../../../home/data/models/platform_feature.dart';
+import '../../../home/data/models/fund_model.dart';
+import '../../../home/data/repositories/funds_repository.dart';
+import '../../../home/presentation/widgets/fund_list_tile.dart';
 
 class AllFundsScreen extends StatefulWidget {
   const AllFundsScreen({super.key});
@@ -19,7 +18,7 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedCategoryKey = 'catAll';
   String _searchQuery = '';
-  List<PlatformFeature> _funds = [];
+  List<FundModel> _funds = [];
   bool _isLoading = true;
 
   final List<String> _categoryKeys = [
@@ -39,39 +38,10 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
 
   Future<void> _fetchRealFunds() async {
     try {
-      final backendFunds = await CalculatorRepository().getSponsoredBackendFunds();
-      final mapped = backendFunds.map((f) {
-        Color color = const Color(0xFF10B981);
-        dynamic icon = FontAwesomeIcons.chartLine;
-        final cat = f.category.toLowerCase();
-        final name = f.name.toLowerCase();
-
-        if (cat.contains('gold') || cat.contains('silver') || cat.contains('metal') || name.contains('ذهب') || name.contains('فضة') || name.contains('معادن')) {
-          color = const Color(0xFFF59E0B);
-          icon = FontAwesomeIcons.coins;
-        } else if (cat.contains('islamic') || cat.contains('sharia') || name.contains('إسلام') || name.contains('شريعة') || name.contains('وفاق')) {
-          color = const Color(0xFF059669);
-          icon = FontAwesomeIcons.kaaba;
-        } else if (cat.contains('money') || cat.contains('cash') || name.contains('سيولة') || name.contains('نقدي') || name.contains('يومي')) {
-          color = const Color(0xFF10B981);
-          icon = FontAwesomeIcons.moneyBillWave;
-        } else if (cat.contains('fixed') || cat.contains('treasury') || cat.contains('bill') || name.contains('سند') || name.contains('أذون') || name.contains('خزانة')) {
-          color = const Color(0xFF6366F1);
-          icon = FontAwesomeIcons.shieldHalved;
-        }
-
-        return PlatformFeature(
-          id: f.id,
-          title: f.name,
-          subtitle: '${f.managerName} | ${f.category} | NAV: ${f.currentNav} ${f.currency}',
-          icon: icon,
-          accentColor: color,
-        );
-      }).toList();
-
+      final backendFunds = await SupabaseFundsRepository().getFunds();
       if (mounted) {
         setState(() {
-          _funds = mapped;
+          _funds = backendFunds;
           _isLoading = false;
         });
       }
@@ -95,30 +65,34 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
     final border = AppColors.getBorder(context);
 
     final filteredFunds = _funds.where((fund) {
-      final titleLower = fund.title.toLowerCase();
-      final subLower = fund.subtitle.toLowerCase();
+      final nameLower = fund.name.toLowerCase();
+      final mgrLower = fund.managerName.toLowerCase();
+      final catLower = fund.category.toLowerCase();
       final queryLower = _searchQuery.toLowerCase();
 
-      final matchesSearch = queryLower.isEmpty || titleLower.contains(queryLower) || subLower.contains(queryLower);
+      final matchesSearch = queryLower.isEmpty ||
+          nameLower.contains(queryLower) ||
+          mgrLower.contains(queryLower) ||
+          catLower.contains(queryLower);
 
       if (!matchesSearch) return false;
 
       if (_selectedCategoryKey == 'catAll') return true;
 
       if (_selectedCategoryKey == 'catLiquidity') {
-        return subLower.contains('moneymarket') || subLower.contains('liquidity') || subLower.contains('cash') || titleLower.contains('نقدي') || titleLower.contains('يومي') || titleLower.contains('سيولة') || titleLower.contains('جذور');
+        return catLower.contains('money') || catLower.contains('liquidity') || catLower.contains('cash') || nameLower.contains('نقدي') || nameLower.contains('يومي') || nameLower.contains('سيولة') || nameLower.contains('جذور');
       }
       if (_selectedCategoryKey == 'catPreciousMetals') {
-        return subLower.contains('gold') || subLower.contains('silver') || subLower.contains('metal') || titleLower.contains('ذهب') || titleLower.contains('فضة') || titleLower.contains('معادن') || titleLower.contains('سبائك');
+        return catLower.contains('gold') || catLower.contains('silver') || catLower.contains('metal') || nameLower.contains('ذهب') || nameLower.contains('فضة') || nameLower.contains('معادن') || nameLower.contains('سبائك');
       }
       if (_selectedCategoryKey == 'catEquities') {
-        return subLower.contains('equity') || subLower.contains('growth') || titleLower.contains('أسهم') || titleLower.contains('نمو') || titleLower.contains('مباشر أسهم');
+        return catLower.contains('equity') || catLower.contains('growth') || nameLower.contains('أسهم') || nameLower.contains('نمو') || nameLower.contains('مباشر أسهم');
       }
       if (_selectedCategoryKey == 'catIslamic') {
-        return subLower.contains('islamic') || subLower.contains('sharia') || titleLower.contains('إسلامي') || titleLower.contains('شريعة') || titleLower.contains('وفاق');
+        return catLower.contains('islamic') || catLower.contains('sharia') || nameLower.contains('إسلامي') || nameLower.contains('شريعة') || nameLower.contains('وفاق');
       }
       if (_selectedCategoryKey == 'catTreasury') {
-        return subLower.contains('fixed') || subLower.contains('treasury') || subLower.contains('bill') || subLower.contains('bond') || titleLower.contains('أذون') || titleLower.contains('سندات') || titleLower.contains('خزانة') || titleLower.contains('دخل ثابت') || titleLower.contains('مرابحة');
+        return catLower.contains('fixed') || catLower.contains('treasury') || catLower.contains('bill') || catLower.contains('bond') || nameLower.contains('أذون') || nameLower.contains('سندات') || nameLower.contains('خزانة') || nameLower.contains('دخل ثابت') || nameLower.contains('مرابحة');
       }
 
       return true;
@@ -244,7 +218,7 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
           ),
           SizedBox(height: 8.h),
 
-          // Fund List
+          // Fund List using standardized FundListTile
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -260,43 +234,9 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
                         itemCount: filteredFunds.length,
                         itemBuilder: (context, index) {
                           final fund = filteredFunds[index];
-                          return Padding(
-                            padding: EdgeInsets.only(bottom: 12.h),
-                            child: Material(
-                              color: surface,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14.r),
-                                side: BorderSide(color: border),
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: ListTile(
-                                tileColor: Colors.transparent,
-                                leading: CircleAvatar(
-                                  radius: 22.r,
-                                  backgroundColor: fund.accentColor.withValues(alpha: 0.15),
-                                  child: FaIcon(fund.icon, color: fund.accentColor, size: 18.r),
-                                ),
-                                title: Text(
-                                  fund.title,
-                                  style: TextStyle(
-                                    color: textPrimary,
-                                    fontSize: 13.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  fund.subtitle,
-                                  style: TextStyle(
-                                    color: textSecondary,
-                                    fontSize: 11.sp,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                                onTap: () => context.push(Routes.fundDetails, extra: fund),
-                              ),
-                            ),
+                          return FundListTile(
+                            fund: fund,
+                            rank: index + 1,
                           );
                         },
                       ),

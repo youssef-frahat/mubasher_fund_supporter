@@ -16,147 +16,240 @@ class FundListTile extends StatelessWidget {
 
   const FundListTile({super.key, required this.rank, required this.fund});
 
+  dynamic _getCategoryIcon(String category, String name) {
+    final cat = category.toLowerCase();
+    final n = name.toLowerCase();
+
+    if (cat.contains('gold') || cat.contains('silver') || cat.contains('metal') || n.contains('ذهب') || n.contains('فضة') || n.contains('معادن')) {
+      return FontAwesomeIcons.gem;
+    } else if (cat.contains('islamic') || cat.contains('sharia') || n.contains('إسلام') || n.contains('شريعة') || n.contains('وفاق')) {
+      return FontAwesomeIcons.kaaba;
+    } else if (cat.contains('money') || cat.contains('cash') || n.contains('سيولة') || n.contains('نقدي') || n.contains('يومي') || n.contains('جذور')) {
+      return FontAwesomeIcons.moneyBill1Wave;
+    } else if (cat.contains('fixed') || cat.contains('treasury') || cat.contains('bill') || n.contains('سند') || n.contains('أذون') || n.contains('خزانة')) {
+      return FontAwesomeIcons.landmark;
+    }
+    return FontAwesomeIcons.chartLine;
+  }
+
+  Color _getCategoryColor(String category, String name) {
+    final cat = category.toLowerCase();
+    final n = name.toLowerCase();
+
+    if (cat.contains('gold') || cat.contains('silver') || cat.contains('metal') || n.contains('ذهب') || n.contains('فضة') || n.contains('معادن')) {
+      return const Color(0xFFF59E0B);
+    } else if (cat.contains('islamic') || cat.contains('sharia') || n.contains('إسلام') || n.contains('شريعة') || n.contains('وفاق')) {
+      return const Color(0xFF059669);
+    } else if (cat.contains('money') || cat.contains('cash') || n.contains('سيولة') || n.contains('نقدي') || n.contains('يومي') || n.contains('جذور')) {
+      return const Color(0xFF10B981);
+    } else if (cat.contains('fixed') || cat.contains('treasury') || cat.contains('bill') || n.contains('سند') || n.contains('أذون') || n.contains('خزانة')) {
+      return const Color(0xFF6366F1);
+    }
+    return const Color(0xFF3B82F6);
+  }
+
   @override
   Widget build(BuildContext context) {
     final wishlistService = sl<WishlistService>();
+    final isPositive = fund.ytdReturn >= 0;
+    final badgeColor = isPositive ? const Color(0xFF10B981) : AppColors.error;
+    final changeText = isPositive ? '▲ +${fund.ytdReturn}%' : '▼ ${fund.ytdReturn}%';
 
-    return GestureDetector(
-      onTap: () => context.push(Routes.fundDetails, extra: fund.toPlatformFeature()),
-      child: Container(
-        margin: EdgeInsets.only(bottom: 12.h),
-        padding: EdgeInsets.all(12.r),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outlineVariant,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 30.w,
-              height: 30.h,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: rank <= 3 
-                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
-                    : Theme.of(context).colorScheme.surfaceContainerHighest,
-                shape: BoxShape.circle,
+    final categoryIcon = _getCategoryIcon(fund.category, fund.name);
+    final categoryColor = _getCategoryColor(fund.category, fund.name);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final nameText = fund.displayNameOnly;
+    final abbrText = fund.abbreviation;
+
+    return ValueListenableBuilder<Set<String>>(
+      valueListenable: wishlistService.savedFundIds,
+      builder: (context, savedIds, _) {
+        final isSaved = savedIds.contains(fund.id);
+
+        return GestureDetector(
+          onTap: () => context.push(Routes.fundDetails, extra: fund.toPlatformFeature()),
+          child: Container(
+            margin: EdgeInsets.only(bottom: 12.h),
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+            decoration: BoxDecoration(
+              color: isSaved
+                  ? AppColors.gold.withValues(alpha: 0.08)
+                  : Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(
+                color: isSaved
+                    ? AppColors.gold.withValues(alpha: 0.6)
+                    : Theme.of(context).colorScheme.outlineVariant,
+                width: isSaved ? 1.4 : 1.0,
               ),
-              child: Text(
-                "$rank",
-                style: FontStyles.labelLarge.copyWith(
-                  color: rank <= 3 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12.sp,
-                ),
-              ),
-            ),
-            SizedBox(width: 10.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    fund.displayNameOnly,
-                    style: FontStyles.titleSmall.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13.sp,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (fund.abbreviation != null) ...[
-                    SizedBox(height: 1.h),
-                    Text(
-                      '🏷️ ${fund.abbreviation}',
-                      style: FontStyles.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 10.sp,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                  SizedBox(height: 2.h),
-                  Text(
-                    '${fund.managerName} | ${fund.category}',
-                    style: FontStyles.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 10.sp,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: 6.w),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    "${fund.currentNav} ${fund.currency}",
-                    style: FontStyles.labelLarge.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12.sp,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                  decoration: BoxDecoration(
-                    color: Colors.greenAccent[400]!.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(4.r),
-                  ),
-                  child: Text(
-                    "+${fund.ytdReturn}%",
-                    style: FontStyles.labelSmall.copyWith(
-                      color: Colors.green[700],
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10.sp,
-                    ),
-                  ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
-            SizedBox(width: 4.w),
-            ValueListenableBuilder<Set<String>>(
-              valueListenable: wishlistService.savedFundIds,
-              builder: (context, savedIds, _) {
-                final isSaved = savedIds.contains(fund.id);
-                return IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  icon: FaIcon(
-                    isSaved ? FontAwesomeIcons.solidBookmark : FontAwesomeIcons.bookmark,
-                    size: 15.r,
-                    color: isSaved ? AppColors.gold : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Spacious Circular Category Avatar (Matching Image 2)
+                Container(
+                  width: 44.r,
+                  height: 44.r,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: categoryColor.withValues(alpha: isDark ? 0.25 : 0.12),
+                    shape: BoxShape.circle,
                   ),
-                  onPressed: () async {
-                    final added = await wishlistService.toggleWishlist(fund.id);
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        duration: const Duration(seconds: 2),
-                        content: Text(
-                          added ? 'تمت إضافة "${fund.name}" للمفضلة ⭐️' : 'تم مسح "${fund.name}" من المفضلة',
-                        ),
-                        behavior: SnackBarBehavior.floating,
+                  child: FaIcon(
+                    categoryIcon,
+                    color: categoryColor,
+                    size: 19.r,
+                  ),
+                ),
+                SizedBox(width: 12.w),
+
+                // Organized 3-Line Text Info Column
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Line 1: Fund Name & Abbreviation
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                nameText,
+                                style: FontStyles.titleSmall.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13.5.sp,
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (abbrText != null) ...[
+                            SizedBox(width: 6.w),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(6.r),
+                              ),
+                              child: Text(
+                                abbrText,
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    );
-                  },
-                );
-              },
+                      SizedBox(height: 3.h),
+
+                      // Line 2: Manager & Category
+                      Text(
+                        '${fund.managerName} | ${fund.category}',
+                        style: FontStyles.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 11.sp,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 2.h),
+
+                      // Line 3: Structured NAV Price Line
+                      Text(
+                        'NAV: ${fund.currentNav} ${fund.currency}',
+                        style: FontStyles.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11.sp,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 8.w),
+
+                // Right Actions Column: Price Badge, Bookmark, Chevron
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Price Movement Badge (Green for Gain ▲, Red for Decline ▼)
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
+                      decoration: BoxDecoration(
+                        color: badgeColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(
+                          color: badgeColor.withValues(alpha: 0.3),
+                          width: 1.0,
+                        ),
+                      ),
+                      child: Text(
+                        changeText,
+                        style: TextStyle(
+                          color: badgeColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10.5.sp,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 6.h),
+
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: FaIcon(
+                            isSaved ? FontAwesomeIcons.solidBookmark : FontAwesomeIcons.bookmark,
+                            size: 15.r,
+                            color: isSaved ? AppColors.gold : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                          ),
+                          onPressed: () async {
+                            final added = await wishlistService.toggleWishlist(fund.id);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                duration: const Duration(seconds: 2),
+                                content: Text(
+                                  added ? 'تمت إضافة "${fund.name}" للمفضلة ⭐️' : 'تم مسح "${fund.name}" من المفضلة',
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        ),
+                        SizedBox(width: 4.w),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 18.r,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

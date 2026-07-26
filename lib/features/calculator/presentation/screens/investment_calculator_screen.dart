@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -23,8 +24,40 @@ class InvestmentCalculatorScreen extends StatelessWidget {
   }
 }
 
-class _InvestmentCalculatorContent extends StatelessWidget {
+class _InvestmentCalculatorContent extends StatefulWidget {
   const _InvestmentCalculatorContent();
+
+  @override
+  State<_InvestmentCalculatorContent> createState() => _InvestmentCalculatorContentState();
+}
+
+class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorContent> {
+  late TextEditingController _amountController;
+
+  @override
+  void initState() {
+    super.initState();
+    final cubit = context.read<CalculatorCubit>();
+    _amountController = TextEditingController(
+      text: cubit.selectedAmount.toStringAsFixed(0),
+    );
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  void _syncAmountText(double amount) {
+    final newText = amount.toStringAsFixed(0);
+    if (_amountController.text != newText) {
+      _amountController.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: newText.length),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +152,7 @@ class _InvestmentCalculatorContent extends StatelessWidget {
                 ),
                 SizedBox(height: 20.h),
 
-                // Step 3: Investment Amount Slider
+                // Step 3: Investment Amount Input & Slider
                 Text(
                   '3. ما هو المبلغ المخطط استثماره؟',
                   style: TextStyle(
@@ -137,35 +170,82 @@ class _InvestmentCalculatorContent extends StatelessWidget {
                     border: Border.all(color: border),
                   ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'المبلغ الاستثماري:',
+                            'المبلغ الاستثماري (أدخل يدويًا أو عبر الشريط):',
                             style: TextStyle(
                               color: textSecondary,
-                              fontSize: 13.sp,
-                            ),
-                          ),
-                          Text(
-                            '${cubit.selectedAmount.toStringAsFixed(0)} ج.م',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18.sp,
+                              fontSize: 12.sp,
                             ),
                           ),
                         ],
                       ),
+                      SizedBox(height: 8.h),
+
+                      // Editable Number Keyboard TextField
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 48.h,
+                              child: TextField(
+                                controller: _amountController,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18.sp,
+                                ),
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(Icons.edit_note, color: AppColors.primary, size: 20.r),
+                                  suffixText: 'ج.م',
+                                  suffixStyle: TextStyle(
+                                    color: textSecondary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14.sp,
+                                  ),
+                                  filled: true,
+                                  fillColor: bg,
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.r),
+                                    borderSide: BorderSide(color: border),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.r),
+                                    borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                                  ),
+                                ),
+                                onChanged: (val) {
+                                  final doubleVal = double.tryParse(val);
+                                  if (doubleVal != null && doubleVal > 0) {
+                                    cubit.updateAmount(doubleVal);
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 10.h),
+
+                      // Synchronized Slider
                       Slider(
-                        value: cubit.selectedAmount,
+                        value: cubit.selectedAmount.clamp(10000, 1000000),
                         min: 10000,
                         max: 1000000,
                         divisions: 99,
                         activeColor: AppColors.primary,
                         inactiveColor: border,
-                        onChanged: (value) => cubit.updateAmount(value),
+                        onChanged: (value) {
+                          cubit.updateAmount(value);
+                          _syncAmountText(value);
+                        },
                       ),
                     ],
                   ),

@@ -13,10 +13,11 @@ import '../../../../core/widgets/watheqa_top_app_bar.dart';
 import '../../../../core/language/language_cubit.dart';
 import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
-import '../widgets/feature_card.dart';
+import '../widgets/market_movement_insight_card.dart';
 import '../widgets/today_opportunity_card.dart';
 import '../widgets/top_performing_card.dart';
 import '../widgets/recommended_funds_list.dart';
+import '../widgets/fund_list_tile.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -39,6 +40,7 @@ class HomeScreen extends StatelessWidget {
             builder: (context, state) {
               if (state is HomeLoaded) {
                 final recommendedFirst = state.recommendedFunds.isNotEmpty ? state.recommendedFunds.first : null;
+                final rankedFundsPreview = state.rankedFunds.take(3).toList();
 
                 return CustomScrollView(
                   slivers: [
@@ -184,34 +186,62 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // 5. Platform Features Header
+                    // 5. All Funds Preview Section (Limited to 3 Items + See All Button to AllFundsScreen)
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 10.h),
-                        child: Text(
-                          '⚡ ${context.tr('watheqaToolsAndSystem')}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: textPrimary,
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 10.h),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '📋 ${context.tr('allFunds')}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: textPrimary,
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                            GestureDetector(
+                              onTap: () => context.push(Routes.allFunds),
+                              child: Text(
+                                '${context.tr('seeAll')} 📋',
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 11.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                     SliverPadding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      padding: EdgeInsets.symmetric(horizontal: 20.w),
                       sliver: SliverList.builder(
-                        itemCount: state.features.length,
+                        itemCount: rankedFundsPreview.length,
                         itemBuilder: (context, index) {
-                          return Padding(
-                            padding: EdgeInsets.only(bottom: 12.h),
-                            child: FeatureCard(feature: state.features[index]),
-                          );
+                          return FundListTile(
+                            fund: rankedFundsPreview[index],
+                            rank: index + 1,
+                          ).animate().fadeIn(delay: (200 + (50 * index)).ms).slideY(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOutQuart);
                         },
                       ),
                     ),
+
+                    // 6. Final Crown Jewel: Daily Funds Market Movement Card (CardView ختام الهوم)
+                    SliverToBoxAdapter(
+                      child: MarketMovementInsightCard(funds: state.rankedFunds)
+                          .animate()
+                          .fadeIn(delay: 350.ms)
+                          .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuart),
+                    ),
+
                     SliverToBoxAdapter(child: SizedBox(height: 30.h)),
                   ],
                 );
