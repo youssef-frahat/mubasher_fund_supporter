@@ -81,11 +81,22 @@ function initSuperAdminAuth() {
 
   loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    const userVal = document.getElementById('adminUsername').value.trim();
-    const passVal = document.getElementById('adminPassword').value.trim();
+    const userVal = (document.getElementById('adminUsername').value || '').trim();
+    const passVal = (document.getElementById('adminPassword').value || '').trim();
 
-    const isSuperAdmin = (userVal.toLowerCase() === 'youssef_frahat' && (passVal === 'Y0u$$Eff' || passVal === 'Y0u$$eff' || passVal === 'WatheqaAdmin2026!'));
-    const secondaryAdminMatch = secondaryAdmins.find(a => a.username.toLowerCase() === userVal.toLowerCase() && a.password === passVal);
+    const cleanUser = userVal.toLowerCase();
+    const cleanPass = passVal.toLowerCase();
+
+    const isSuperAdmin = (cleanUser === 'youssef_frahat' && (
+      cleanPass === 'y0u$$eff' || 
+      passVal === 'Y0u$$Eff' || 
+      passVal === 'Y0u$$eff' ||
+      cleanPass === 'watheqaadmin2026!'
+    ));
+
+    const secondaryAdminMatch = secondaryAdmins.find(a => 
+      a.username.trim().toLowerCase() === cleanUser && a.password.trim() === passVal
+    );
 
     if (isSuperAdmin || secondaryAdminMatch) {
       const activeName = isSuperAdmin ? 'Youssef_Frahat' : secondaryAdminMatch.name;
