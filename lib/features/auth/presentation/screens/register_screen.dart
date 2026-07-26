@@ -60,8 +60,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: BlocConsumer<AuthCubit, AuthState>(
               listener: (context, state) {
                 if (state is OtpSent) {
-                  AppSnackBar.showInfo(context, context.tr('otpSentSuccess'));
-                  context.push(Routes.otp, extra: state.email);
+                  _showEmailConfirmationDialog(context, state.email);
                 } else if (state is AuthError) {
                   AppSnackBar.showError(context, state.message);
                 }
@@ -299,6 +298,84 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 );
               },
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEmailConfirmationDialog(BuildContext context, String email) {
+    final surface = AppColors.getSurface(context);
+    final textPrimary = AppColors.getTextPrimary(context);
+    final textSecondary = AppColors.getTextSecondary(context);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+        child: Padding(
+          padding: EdgeInsets.all(24.r),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 70.r,
+                height: 70.r,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: FaIcon(
+                    FontAwesomeIcons.paperPlane,
+                    color: AppColors.primary,
+                    size: 32.r,
+                  ),
+                ),
+              ),
+              SizedBox(height: 16.h),
+
+              Text(
+                'تم إرسال رابط تأكيد الحساب 📩',
+                style: TextStyle(
+                  color: textPrimary,
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 10.h),
+
+              Text(
+                'تم إرسال رابط تفعيل الحساب إلى البريد الإلكتروني:\n$email\n\nيرجى فتح البريد الضغط على زر التفعيل لتأكيد وثيقة حسابك وتوثيقه بشارة (موثّق 🟢).',
+                style: TextStyle(
+                  color: textSecondary,
+                  fontSize: 12.sp,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 20.h),
+
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context.go(Routes.login);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                ),
+                icon: const Icon(Icons.login, color: Colors.black),
+                label: const Text(
+                  'الانتقال لتسجيل الدخول 🚀',
+                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -64,29 +64,36 @@ class AboutUsScreen extends StatelessWidget {
               height: 90.r,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary,
-                    AppColors.primary.withValues(alpha: 0.6),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    blurRadius: 20,
+                    color: AppColors.primary.withValues(alpha: 0.35),
+                    blurRadius: 25,
                     spreadRadius: 4,
                   ),
                 ],
               ),
-              child: Center(
-                child: Text(
-                  'W',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 40.sp,
-                    fontWeight: FontWeight.w900,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(45.r),
+                child: Image.asset(
+                  'assets/images/app_icon.png',
+                  width: 90.r,
+                  height: 90.r,
+                  fit: BoxFit.cover,
+                  errorBuilder: (ctx, err, stack) => Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.primary,
+                    ),
+                    child: Center(
+                      child: Text(
+                        'W',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 40.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -159,10 +166,32 @@ class AboutUsScreen extends StatelessWidget {
                   SizedBox(height: 12.h),
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 28.r,
-                        backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-                        child: FaIcon(FontAwesomeIcons.userTie, color: AppColors.primary, size: 24.r),
+                      Container(
+                        width: 60.r,
+                        height: 60.r,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.primary, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.25),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(30.r),
+                          child: Image.asset(
+                            'assets/images/developer.jpg',
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, err, stack) => CircleAvatar(
+                              radius: 28.r,
+                              backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                              child: FaIcon(FontAwesomeIcons.userTie, color: AppColors.primary, size: 24.r),
+                            ),
+                          ),
+                        ),
                       ),
                       SizedBox(width: 14.w),
                       Expanded(

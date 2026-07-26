@@ -113,8 +113,8 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
 
           Text(
             isAr
-                ? '🤖 المحفظة الاستثمارية المقترحة لك من الباك إند:'
-                : '🤖 Recommended Portfolio from Backend:',
+                ? '🤖 المحفظة الاستثمارية الموصى بها:'
+                : '🤖 Recommended Investment Portfolio:',
             style: TextStyle(
               color: textPrimary,
               fontSize: 14.sp,

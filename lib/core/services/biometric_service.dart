@@ -50,8 +50,8 @@ class BiometricService {
       await HapticFeedback.mediumImpact();
 
       final bool didAuthenticate = await _auth.authenticate(
-        localizedReason: localizedReason ?? 'يرجى تأكيد بصمة الأصبع أو الوجه لتأمين الحساب',
-        biometricOnly: true,
+        localizedReason: localizedReason ?? 'يرجى تأكيد هوية جهازك (البصمة / الوجه / كلمة مرور الهاتف) لتأمين وثيقة',
+        biometricOnly: false,
         persistAcrossBackgrounding: true,
       );
 

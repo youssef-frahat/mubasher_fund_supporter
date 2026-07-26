@@ -119,23 +119,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   Builder(
                     builder: (context) {
-                      final email = state.user.email ?? '';
-                      String displayEmail = email;
-                      if (email.contains('@')) {
-                        final domain = email.split('@').last.split('.').first;
-                        final companyName = domain.isNotEmpty ? domain[0].toUpperCase() + domain.substring(1) : '';
-                        if (companyName.isNotEmpty) {
-                          displayEmail = '${context.tr('account')}: $companyName ($email)';
-                        }
-                      }
-                      return Text(
-                        displayEmail,
-                        style: TextStyle(
-                          color: textSecondary,
-                          fontSize: 13.sp,
-                        ),
+                      final isVerified = state.user.emailConfirmedAt != null || state.user.appMetadata['provider'] == 'google';
+                      final fullName = state.user.userMetadata?['full_name'] ?? 'مستثمر وثيقة';
+
+                      return Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                fullName,
+                                style: TextStyle(
+                                  color: textPrimary,
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              if (isVerified)
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1DA1F2).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    border: Border.all(color: const Color(0xFF1DA1F2).withValues(alpha: 0.3)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.verified, color: const Color(0xFF1DA1F2), size: 14.r),
+                                      SizedBox(width: 4.w),
+                                      Text(
+                                        'موثّق 🟢',
+                                        style: TextStyle(color: const Color(0xFF1DA1F2), fontSize: 10.sp, fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.gpp_maybe, color: Colors.orange, size: 14.r),
+                                      SizedBox(width: 4.w),
+                                      Text(
+                                        'غير موثّق ⚠️',
+                                        style: TextStyle(color: Colors.orange, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                          SizedBox(height: 6.h),
+
+                          Builder(
+                            builder: (context) {
+                              final email = state.user.email ?? '';
+                              String displayEmail = email;
+                              if (email.contains('@')) {
+                                final domain = email.split('@').last.split('.').first;
+                                final companyName = domain.isNotEmpty ? domain[0].toUpperCase() + domain.substring(1) : '';
+                                if (companyName.isNotEmpty) {
+                                  displayEmail = '${context.tr('account')}: $companyName ($email)';
+                                }
+                              }
+                              return Text(
+                                displayEmail,
+                                style: TextStyle(
+                                  color: textSecondary,
+                                  fontSize: 12.sp,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       );
-                    }
+                    },
                   ),
                   SizedBox(height: 24.h),
 

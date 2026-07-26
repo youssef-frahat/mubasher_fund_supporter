@@ -143,6 +143,18 @@ class AppTranslation {
       'seconds': 'ثانية',
       'verifyOtpBtn': 'تأكيد الرمز والدخول 🚀',
       'otpSentSuccess': 'تم إرسال رمز التحقق إلى بريدك الإلكتروني 📩',
+      'orderHistory': 'سجل أوامر الشراء والبيع 📜',
+      'buyOrder': 'أمر شراء (BUY) 🟢',
+      'sellOrder': 'أمر بيع (SELL) 🔴',
+      'addOrder': 'إضافة أمر جديد ➕',
+      'transactionType': 'نوع الأمر',
+      'totalAmount': 'القيمة الإجمالية',
+      'noTransactionsYet': 'لا توجد أوامر سابقة مسجلة لهذا الصندوق 📭',
+      'newOrderAddedSuccess': 'تم تسجيل الأمر وحفظه بنجاح! 🚀',
+      'buy': 'شراء',
+      'sell': 'بيع',
+      'unitsOwned': 'إجمالي الوثائق المملوكة',
+      'avgPurchasePrice': 'متوسط سعر الشراء',
       'optionalPhoto': 'إضافة صورة شخصية (اختياري 📸)',
       'lastNavUpdate': 'آخر تحديث للوثيقة: اليوم 📅',
       'buyNowBroker': 'تداول واستثمر عبر المدير الرسمي 🔗',
@@ -169,7 +181,7 @@ class AppTranslation {
       'deleteConfirmationMsg': 'هل أنت تأكد من رغبتك في حذف الصندوق؟',
       'duplicatePortfolioError': 'اسم المحفظة موجود بالفعل! يرجى اختيار اسم فريد ⚠️',
       'selectFundFromList': 'اختر الصندوق الاستثماري من القائمة 🔍',
-      'useCurrentNavDefault': 'استخدام سعر اليوم الحالي تلقائياً من الباك إند',
+      'useCurrentNavDefault': 'استخدام سعر اليوم الحالي تلقائياً',
       'enterCustomPurchasePrice': 'إدخال سعر شراء مختلف/سابق يدوياً',
       'purchasePriceLabel': 'سعر الشراء للوثيقة (ج.م)',
       'invalidUnitsError': 'يرجى إدخال عدد وثائق صحيح أكبر من صفر',
@@ -215,7 +227,7 @@ class AppTranslation {
       'portfolioDeletedSuccess': 'تم حذف المحفظة بنجاح',
       'transactionDeletedSuccess': 'تم حذف الطلب من المحفظة',
       'addSimTransactionTitle': '➕ إضافة طلب محاكاة جديد',
-      'selectFundLabel': 'الصندوق الاستثماري (من الباك إند):',
+      'selectFundLabel': 'الصندوق الاستثماري:',
       'chooseFundFromList': 'اختر الصندوق من القائمة...',
       'setPriceMode': 'تحديد سعر وثيقة الشراء:',
       'unitsHint': 'مثال: 10 أو 25.5',
@@ -370,6 +382,18 @@ class AppTranslation {
       'seconds': 'seconds',
       'verifyOtpBtn': 'Verify & Continue 🚀',
       'otpSentSuccess': 'Verification code sent to your email 📩',
+      'orderHistory': 'Buy/Sell Order History 📜',
+      'buyOrder': 'Buy Order (BUY) 🟢',
+      'sellOrder': 'Sell Order (SELL) 🔴',
+      'addOrder': 'Add New Order ➕',
+      'transactionType': 'Order Type',
+      'totalAmount': 'Total Amount',
+      'noTransactionsYet': 'No recorded orders for this fund yet 📭',
+      'newOrderAddedSuccess': 'Order recorded and saved successfully! 🚀',
+      'buy': 'Buy',
+      'sell': 'Sell',
+      'unitsOwned': 'Total Units Owned',
+      'avgPurchasePrice': 'Avg Purchase Price',
       'optionalPhoto': 'Add Profile Photo (Optional 📸)',
       'lastNavUpdate': 'Last Unit Value Update: Today 📅',
       'buyNowBroker': 'Trade via Official Manager 🔗',
@@ -396,7 +420,7 @@ class AppTranslation {
       'deleteConfirmationMsg': 'Are you sure you want to delete this fund?',
       'duplicatePortfolioError': 'Portfolio name already exists! Please choose a unique name ⚠️',
       'selectFundFromList': 'Select Investment Fund from List 🔍',
-      'useCurrentNavDefault': 'Use today current NAV automatically from backend',
+      'useCurrentNavDefault': 'Use today current NAV automatically',
       'enterCustomPurchasePrice': 'Enter custom/previous purchase price manually',
       'purchasePriceLabel': 'Purchase Price per Unit (EGP)',
       'invalidUnitsError': 'Please enter a valid units count greater than zero',
@@ -442,7 +466,7 @@ class AppTranslation {
       'portfolioDeletedSuccess': 'Portfolio deleted successfully',
       'transactionDeletedSuccess': 'Request removed from portfolio',
       'addSimTransactionTitle': '➕ Add New Simulation Request',
-      'selectFundLabel': 'Investment Fund (from backend):',
+      'selectFundLabel': 'Investment Fund:',
       'chooseFundFromList': 'Choose fund from the list...',
       'setPriceMode': 'Set purchase unit price:',
       'unitsHint': 'e.g. 10 or 25.5',
@@ -502,9 +526,9 @@ class AppTranslation {
 
 extension TranslationExtension on BuildContext {
   String tr(String key) {
-    final locale = watch<LanguageCubit>().state;
+    final locale = read<LanguageCubit>().state;
     return AppTranslation.translate(key, locale.languageCode);
   }
 
-  bool get isArabic => watch<LanguageCubit>().state.languageCode == 'ar';
+  bool get isArabic => read<LanguageCubit>().state.languageCode == 'ar';
 }
