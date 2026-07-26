@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>وثيقة | Watheqa Super Admin & DevOps Portal 🔐</title>
+  
+  <!-- Google Fonts: Cairo & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js & Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- SUPER ADMIN LOGIN OVERLAY -->
+  <div class="login-overlay active" id="superAdminLoginOverlay">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo-icon">W</div>
+        <h2>وثيقة | Watheqa</h2>
+        <span class="sub-text">Super Admin Portal 🔐</span>
+      </div>
+
+      <form id="superAdminLoginForm">
+        <div class="form-group">
+          <label><i class="fa-solid fa-user-shield"></i> اسم المستخدم (Username)</label>
+          <input type="text" id="adminUsername" class="form-input" required placeholder="ادخل اسم المستخدم (Username)">
+        </div>
+
+        <div class="form-group">
+          <label><i class="fa-solid fa-key"></i> كلمة المرور (Password)</label>
+          <input type="password" id="adminPassword" class="form-input" required placeholder="••••••••">
+        </div>
+
+        <div id="loginErrorMsg" class="error-msg" style="display: none;">
+          اسم المستخدم أو كلمة المرور غير صحيحة ⚠️
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">
+          دخول لوحة التحكم السوبر أدمن 🚀
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MAIN ADMIN APP LAYOUT (Hidden until Super Admin Login) -->
+  <div class="app-layout" id="mainAdminApp" style="display: none;">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand-logo">
+        <div class="logo-icon">W</div>
+        <div class="brand-text">
+          <h2>وثيقة | Watheqa</h2>
+          <span class="sub-text">Super Admin Portal</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-item active" data-tab="devops">
+          <i class="fa-solid fa-server"></i>
+          <span>منظومة DevOps والحالة</span>
+        </button>
+        <button class="nav-item" data-tab="quick-price">
+          <i class="fa-solid fa-bolt"></i>
+          <span>تعديل الأسعار السريع ⚡</span>
+        </button>
+        <button class="nav-item" data-tab="funds">
+          <i class="fa-solid fa-vault"></i>
+          <span>إدارة كافة الصناديق (CRUD)</span>
+        </button>
+        <button class="nav-item" data-tab="sponsored">
+          <i class="fa-solid fa-star"></i>
+          <span>الصناديق الرعائية والموصى بها</span>
+        </button>
+        <button class="nav-item" data-tab="portfolios">
+          <i class="fa-solid fa-wallet"></i>
+          <span>محافظ العملاء وطلبات التداول</span>
+        </button>
+        <button class="nav-item" data-tab="users">
+          <i class="fa-solid fa-users-gear"></i>
+          <span>المستخدمين وتفعيل التوثيق</span>
+        </button>
+        <button class="nav-item" data-tab="admins">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>إدارة فريق الأدمن والمساعدين 🔑</span>
+        </button>
+        <button class="nav-item" data-tab="insights">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>تحليلات الاستخدام والربط</span>
+        </button>
+        <button class="nav-item" data-tab="logs">
+          <i class="fa-solid fa-terminal"></i>
+          <span>سجلات النظام Live Logs</span>
+        </button>
+      </nav>
+
+      <div class="system-status-card">
+        <div class="status-indicator online"></div>
+        <div class="status-info">
+          <h4>مربوط بـ Supabase DB 🟢</h4>
+          <p id="supabaseConnectionText">maorabzkqtqmlrakqlya</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Header Bar -->
+      <header class="top-header">
+        <div class="header-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="globalSearch" placeholder="بحث في قاعدة البيانات، الصناديق، أو العملاء...">
+        </div>
+
+        <div class="header-actions">
+          <button class="action-btn" id="btnRefresh" title="إعادة جلب البيانات من Supabase">
+            <i class="fa-solid fa-arrows-rotate"></i>
+          </button>
+          <div class="user-profile">
+            <div class="avatar-icon"><i class="fa-solid fa-user-shield"></i></div>
+            <div class="user-meta">
+              <span class="name" id="displayAdminName">Youssef_Frahat</span>
+              <span class="role">Super Admin 🔑</span>
+            </div>
+            <button class="btn btn-danger btn-sm" id="btnLogoutAdmin" title="تسجيل الخروج" style="margin-right:8px;">
+              <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- TAB: DEVOPS MONITORING & PIPELINE -->
+      <section id="tab-devops" class="tab-content active">
+        <div class="section-title">
+          <h2><i class="fa-solid fa-network-wired"></i> حالة البنية التحتية و Supabase Connection</h2>
+          <span class="badge live">Live Connected</span>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card green">
+            <div class="metric-header">
+              <span>حالة اتصال Supabase DB</span>
+              <i class="fa-solid fa-database"></i>
+            </div>
+            <div class="metric-value text-success" id="dbStatusVal">Connected 🟢</div>
+            <div class="metric-sub text-success">استجابة 14ms (PostgreSQL 15)</div>
+          </div>
+
+          <div class="metric-card blue">
+            <div class="metric-header">
+              <span>إجمالي الصناديق في الداتا بيز</span>
+              <i class="fa-solid fa-vault"></i>
+            </div>
+            <div class="metric-value" id="dbFundsCount">201 صندوق</div>
+            <div class="metric-sub text-info">تقرير EIMA الرسمي</div>
+          </div>
+
+          <div class="metric-card gold">
+            <div class="metric-header">
+              <span>إجمالي المحافظ المسجلة</span>
+              <i class="fa-solid fa-wallet"></i>
+            </div>
+            <div class="metric-value" id="dbPortfoliosCount">0 محفظة</div>
+            <div class="metric-sub text-gold">محافظ العملاء الفعلية</div>
+          </div>
+
+          <div class="metric-card purple">
+            <div class="metric-header">
+              <span>معدل الأمان والـ Uptime</span>
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div class="metric-value">99.98%</div>
+            <div class="metric-sub text-purple">Super Admin Authenticated</div>
+          </div>
+        </div>
+
+        <div class="card glass-card pipeline-card">
+          <h3><i class="fa-solid fa-diagram-project"></i> مسار التشغيل والنشر التلقائي (DevOps Pipeline)</h3>
+          
+          <div class="pipeline-steps">
+            <div class="step completed">
+              <div class="step-icon"><i class="fa-solid fa-code"></i></div>
+              <div class="step-label">Flutter & Web Code</div>
+              <div class="step-status">Clean ✅</div>
+            </div>
+            <div class="line active"></div>
+
+            <div class="step completed">
+              <div class="step-icon"><i class="fa-solid fa-database"></i></div>
+              <div class="step-label">Supabase Seed SQL</div>
+              <div class="step-status">Seeded ✅</div>
+            </div>
+            <div class="line active"></div>
+
+            <div class="step completed">
+              <div class="step-icon"><i class="fa-solid fa-shield-cat"></i></div>
+              <div class="step-label">Super Admin Gate</div>
+              <div class="step-status">Youssef_Frahat 🔑</div>
+            </div>
+            <div class="line active"></div>
+
+            <div class="step active">
+              <div class="step-icon"><i class="fa-solid fa-chart-line"></i></div>
+              <div class="step-label">Web Portal Sync</div>
+              <div class="step-status">Active 🟢</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <div class="card glass-card">
+            <h3><i class="fa-solid fa-chart-area"></i> استجابة الخوادم (API Response Latency)</h3>
+            <canvas id="devopsTrafficChart" height="180"></canvas>
+          </div>
+
+          <div class="card glass-card terminal-card">
+            <h3><i class="fa-solid fa-terminal"></i> سجل الاتصال بـ Supabase Live Logs</h3>
+            <div class="terminal-body" id="devopsLogsBody">
+              <!-- Log output -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: QUICK PRICE UPDATER (⚡ تعديل الأسعار السريع) -->
+      <section id="tab-quick-price" class="tab-content">
+        <div class="section-title">
+          <h2><i class="fa-solid fa-bolt" style="color:#F59E0B"></i> لوحة تعديل أسعار الوثائق السريعة (Quick NAV Price Updater)</h2>
+        </div>
+        
+        <div class="card glass-card">
+          <p class="section-desc">شاشة مخصصة لتغيير سعر الوثيقة (NAV EGP) والعائد السنوي فوراً بضغطة زر واحدة بدون الحاجة لفتح شاشات CRUD المعقدة.</p>
+          
+          <div class="table-controls">
+            <input type="text" id="quickPriceSearch" placeholder="بحث سريع عن صندوق لتعديل السعر..." class="form-input">
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>اسم الصندوق</th>
+                  <th>المدير الرسمي</th>
+                  <th>السعر الحالي (NAV EGP)</th>
+                  <th>تعديل السعر الجديد ⚡</th>
+                  <th>العائد السنوي %</th>
+                  <th>حفظ السعر المباشر</th>
+                </tr>
+              </thead>
+              <tbody id="quickPriceTableBody">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: ADMINS MANAGEMENT (إدارة الأدمنز والمساعدين) -->
+      <section id="tab-admins" class="tab-content">
+        <div class="section-header">
+          <div class="section-title">
+            <h2><i class="fa-solid fa-user-plus"></i> إدارة مديري النظام والمساعدين (Admins Management)</h2>
+          </div>
+          <button class="btn btn-primary" id="btnOpenAddAdminModal">
+            <i class="fa-solid fa-user-plus"></i> إضافة أدمن مساعد جديد
+          </button>
+        </div>
+
+        <div class="card glass-card">
+          <p class="section-desc">يمكنك بفتحتك كـ Super Admin إضافة حسابات أدمن فرعية للمساعدين لتحديث أسعار الصناديق والمحفظة.</p>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>اسم الأدمن</th>
+                  <th>اسم المستخدم (Username)</th>
+                  <th>الرتبة والدور</th>
+                  <th>الصلاحيات</th>
+                  <th>التحكم</th>
+                </tr>
+              </thead>
+              <tbody id="adminsTableBody">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: INSIGHTS & ANALYTICS -->
+      <section id="tab-insights" class="tab-content">
+        <div class="section-title">
+          <h2><i class="fa-solid fa-chart-pie"></i> تحليلات استخدام العملاء وأداء التطبيق 📊</h2>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card green">
+            <div class="metric-header">
+              <span>إجمالي المستخدمين المسجلين</span>
+              <i class="fa-solid fa-users"></i>
+            </div>
+            <div class="metric-value" id="insightTotalUsers">0</div>
+            <div class="metric-sub text-success">جدول المستخدمين الموثقين</div>
+          </div>
+
+          <div class="metric-card blue">
+            <div class="metric-header">
+              <span>المستخدمين الموثقين (Verified)</span>
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="metric-value" id="insightVerifiedUsers">0</div>
+            <div class="metric-sub text-info">تأكيد البريد الإلكتروني</div>
+          </div>
+
+          <div class="metric-card gold">
+            <div class="metric-header">
+              <span>قيمة المحافظ بالجنيه المصري</span>
+              <i class="fa-solid fa-sack-dollar"></i>
+            </div>
+            <div class="metric-value" id="insightTotalValuation">0 EGP</div>
+            <div class="metric-sub text-gold">محاكاة استثمارية فعلية</div>
+          </div>
+
+          <div class="metric-card purple">
+            <div class="metric-header">
+              <span>إجمالي طلبات التداول المسجلة</span>
+              <i class="fa-solid fa-right-left"></i>
+            </div>
+            <div class="metric-value" id="insightTotalTransactions">0 طلب</div>
+            <div class="metric-sub text-purple">شراء وبيع وثائق</div>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <div class="card glass-card">
+            <h3>توزيع الصناديق الاستثمارية حسب الفئات 🥧</h3>
+            <canvas id="categoryPieChart" height="200"></canvas>
+          </div>
+
+          <div class="card glass-card">
+            <h3>الصناديق الأعلى عائداً سنويًا (YTD Return) 📈</h3>
+            <canvas id="topFundsBarChart" height="200"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: FUNDS CRUD MANAGEMENT -->
+      <section id="tab-funds" class="tab-content">
+        <div class="section-header">
+          <div class="section-title">
+            <h2><i class="fa-solid fa-box-archive"></i> إدارة كافة الصناديق الاستثمارية 💼</h2>
+          </div>
+          <button class="btn btn-primary" id="btnOpenAddFundModal">
+            <i class="fa-solid fa-plus"></i> إضافة صندوق جديد
+          </button>
+        </div>
+
+        <div class="card glass-card">
+          <div class="table-controls">
+            <input type="text" id="fundSearchInput" placeholder="بحث باسم الصندوق أو المدير..." class="form-input">
+            <select id="fundCategoryFilter" class="form-select">
+              <option value="ALL">جميع الفئات</option>
+              <option value="Equity">أسهم (Equity)</option>
+              <option value="MoneyMarket">أدوات نقدية (Money Market)</option>
+              <option value="TreasuryBills">أذون وسندات خزينة (Treasury Bills)</option>
+              <option value="Gold">ذهب (Gold)</option>
+              <option value="Islamic">إسلامية (Islamic)</option>
+            </select>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>اسم الصندوق</th>
+                  <th>المدير الرسمي</th>
+                  <th>سعر الوثيقة (NAV)</th>
+                  <th>العائد السنوي YTD</th>
+                  <th>الفئة</th>
+                  <th>رعائي / موصى به</th>
+                  <th>الإجراءات (CRUD)</th>
+                </tr>
+              </thead>
+              <tbody id="fundsTableBody">
+                <!-- Loaded from Supabase DB -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: SPONSORED & RECOMMENDED FUNDS CRUD -->
+      <section id="tab-sponsored" class="tab-content">
+        <div class="section-header">
+          <div class="section-title">
+            <h2><i class="fa-solid fa-star"></i> إدارة الصناديق الرعائية والموصى بها (Sponsored & Recommended)</h2>
+          </div>
+          <button class="btn btn-primary" id="btnOpenAddSponsoredModal">
+            <i class="fa-solid fa-plus"></i> إضافة صندوق للقائمة الرعائية والموصى بها
+          </button>
+        </div>
+
+        <div class="card glass-card">
+          <p class="section-desc">تحكم كامل في الصناديق المحددة كـ (رعائية ⭐ / موصى بها 💡 / الأعلى أداءً 🏆). قم باختيار أي صندوق وإعطائه التميز الذي تريده أو إزالته بحرية.</p>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>اسم الصندوق</th>
+                  <th>المدير الرسمي</th>
+                  <th>سعر الوثيقة (NAV)</th>
+                  <th>صندوق رعائي (Sponsored ⭐)</th>
+                  <th>موصى به / مخصص لك (Recommended 💡)</th>
+                  <th>الإجراءات (CRUD)</th>
+                </tr>
+              </thead>
+              <tbody id="sponsoredTableBody">
+                <!-- Loaded dynamically from Supabase DB -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: USER PORTFOLIOS & ORDERS MANAGEMENT -->
+      <section id="tab-portfolios" class="tab-content">
+        <div class="section-title">
+          <h2><i class="fa-solid fa-wallet"></i> إدارة محافظ العملاء وطلبات التداول (Portfolios & Orders)</h2>
+        </div>
+
+        <div class="card glass-card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>اسم المحفظة</th>
+                  <th>معرف المستخدم (User ID)</th>
+                  <th>تاريخ الإنشـاء</th>
+                  <th>تاريخ التحديث</th>
+                  <th>التحكم</th>
+                </tr>
+              </thead>
+              <tbody id="portfoliosTableBody">
+                <!-- Loaded from Supabase DB -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: USERS MANAGEMENT & VERIFICATION -->
+      <section id="tab-users" class="tab-content">
+        <div class="section-title">
+          <h2><i class="fa-solid fa-user-shield"></i> إدارة حسابات المستخدمين وحالة التوثيق (Verified Badges)</h2>
+        </div>
+
+        <div class="card glass-card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>اسم المستثمر</th>
+                  <th>رقم الهاتف / المعرف</th>
+                  <th>حالة التوثيق (Verified Badge)</th>
+                  <th>تاريخ التحديث</th>
+                  <th>التحكم</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <!-- Loaded from Supabase DB -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: LOGS -->
+      <section id="tab-logs" class="tab-content">
+        <div class="section-title">
+          <h2><i class="fa-solid fa-scroll"></i> سجلات أحداث الباك إند المباشرة (Audit Logs)</h2>
+        </div>
+
+        <div class="card glass-card terminal-card full-height">
+          <div class="terminal-body" id="fullAuditLogs">
+            <!-- Loaded from live stream -->
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ADD SPONSORED FUND MODAL -->
+  <div class="modal-overlay" id="addSponsoredModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>إضافة صندوق للقائمة الرعائية والموصى بها</h3>
+        <button class="close-btn" id="btnCloseSponsoredModal">&times;</button>
+      </div>
+      <form id="addSponsoredForm">
+        <div class="form-group">
+          <label>اختر الصندوق من قاعدة البيانات (201 صندوق)</label>
+          <select id="selectFundForSponsored" class="form-select" required style="width:100%;">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+        <div class="form-group" style="margin-top:14px;">
+          <label style="font-weight:bold; margin-bottom:8px;">حدد التمييز الإداري للصندوق:</label>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="chkSponsored" checked>
+              <span>تفعيل كـ <strong>صندوق رعائي / إعلاني (Sponsored ⭐)</strong></span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="chkRecommended" checked>
+              <span>تفعيل كـ <strong>موصى به / مخصص لك (Recommended 💡)</strong></span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btnCancelSponsoredModal">إلغاء</button>
+          <button type="submit" class="btn btn-primary">حفظ وإضافة للقائمة 🚀</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD ADMIN MODAL -->
+  <div class="modal-overlay" id="addAdminModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>إضافة أدمن مساعد جديد</h3>
+        <button class="close-btn" id="btnCloseAdminModal">&times;</button>
+      </div>
+      <form id="addAdminForm">
+        <div class="form-group">
+          <label>اسم الأدمن الكامل</label>
+          <input type="text" id="newAdminName" required class="form-input" placeholder="مثال: مصطفى محمود">
+        </div>
+        <div class="form-group">
+          <label>اسم المستخدم (Username)</label>
+          <input type="text" id="newAdminUsername" required class="form-input" placeholder="e.g. Mostafa_Admin">
+        </div>
+        <div class="form-group">
+          <label>كلمة المرور (Password)</label>
+          <input type="password" id="newAdminPassword" required class="form-input" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label>الصلاحية والرتبة</label>
+          <select id="newAdminRole" class="form-select">
+            <option value="Fund Manager Admin">أدمن أسعار وصناديق (Fund & Price Manager)</option>
+            <option value="Customer Support Admin">أدمن توثيق ودعم عملاء (Support Admin)</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btnCancelAdminModal">إلغاء</button>
+          <button type="submit" class="btn btn-primary">إضافة الأدمن فوراً</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT FUND MODAL -->
+  <div class="modal-overlay" id="fundModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalTitle">إضافة صندوق جديد لقاعدة البيانات</h3>
+        <button class="close-btn" id="btnCloseFundModal">&times;</button>
+      </div>
+      <form id="fundForm">
+        <input type="hidden" id="fundDbId">
+        <div class="form-group">
+          <label>اسم الصندوق (بالعربي)</label>
+          <input type="text" id="fundNameAr" required class="form-input" placeholder="مثال: صندوق أزيموت للذهب">
+        </div>
+        <div class="form-group">
+          <label>اسم الصندوق (بالإنجليزي)</label>
+          <input type="text" id="fundNameEn" required class="form-input" placeholder="e.g. AZ Gold Fund">
+        </div>
+        <div class="form-group">
+          <label>اسم مدير الصندوق (Manager)</label>
+          <input type="text" id="fundManager" required class="form-input" placeholder="مثال: أزيموت مصر لإدارة الاستثمارات">
+        </div>
+        <div class="grid-2col">
+          <div class="form-group">
+            <label>سعر الوثيقة الحالي (NAV EGP)</label>
+            <input type="number" step="0.0001" id="fundNav" required class="form-input" placeholder="100.00">
+          </div>
+          <div class="form-group">
+            <label>العائد السنوي (YTD %)</label>
+            <input type="number" step="0.01" id="fundYtd" required class="form-input" placeholder="24.5">
+          </div>
+        </div>
+        <div class="grid-2col">
+          <div class="form-group">
+            <label>الفئة (Category)</label>
+            <select id="fundCategory" class="form-select">
+              <option value="Equity">أسهم (Equity)</option>
+              <option value="MoneyMarket">أدوات نقدية (Money Market)</option>
+              <option value="TreasuryBills">أذون وسندات خزينة (Treasury Bills)</option>
+              <option value="Gold">ذهب (Gold)</option>
+              <option value="Islamic">إسلامية (Islamic)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>مستوى المخاطرة</label>
+            <select id="fundRisk" class="form-select">
+              <option value="Low">منخفضة (Low)</option>
+              <option value="Medium">متوسطة (Medium)</option>
+              <option value="High">مرتفعة (High)</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btnCancelFundModal">إلغاء</button>
+          <button type="submit" class="btn btn-primary">حفظ وتعديل الباك إند</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

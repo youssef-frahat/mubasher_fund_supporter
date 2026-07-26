@@ -343,47 +343,9 @@ class PortfolioRepository {
     return [
       PortfolioModel(
         id: 'portfolio-default-1',
-        name: 'المحفظة الرئيسية (النمو والسيولة)',
+        name: 'المحفظة الرئيسية',
         createdAt: DateTime.now(),
-        items: [
-          PortfolioItem(
-            id: '1',
-            fundId: 'fund-nbe-4',
-            fundName: 'صندوق البنك الأهلي الرابع اليومي',
-            category: FundCategory.moneyMarket,
-            units: 100,
-            purchasePrice: 240.0,
-            currentNav: 268.5,
-            purchaseDate: DateTime.now().subtract(const Duration(days: 90)),
-          ),
-          PortfolioItem(
-            id: '2',
-            fundId: 'fund-azimut-gold',
-            fundName: 'صندوق أزموت الذهب (Azimut Gold)',
-            category: FundCategory.gold,
-            units: 50,
-            purchasePrice: 180.0,
-            currentNav: 215.0,
-            purchaseDate: DateTime.now().subtract(const Duration(days: 60)),
-          ),
-        ],
-      ),
-      PortfolioModel(
-        id: 'portfolio-default-2',
-        name: 'محفظة التحوط والأمان (ذهب وأذون)',
-        createdAt: DateTime.now(),
-        items: [
-          PortfolioItem(
-            id: '3',
-            fundId: 'fund-beltone-tbills',
-            fundName: 'صندوق أذون الخزانة المصرية',
-            category: FundCategory.treasuryBills,
-            units: 40,
-            purchasePrice: 1000.0,
-            currentNav: 1080.0,
-            purchaseDate: DateTime.now().subtract(const Duration(days: 45)),
-          ),
-        ],
+        items: [],
       ),
     ];
   }

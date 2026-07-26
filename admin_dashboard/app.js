@@ -1,0 +1,943 @@
+// Supabase Client Initialization
+const SUPABASE_URL = 'https://maorabzkqtqmlrakqlya.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_wok63F-3n02BsQTgPvHPxw_gJTyGWU7';
+
+const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+// Global State Loaded Dynamically from Supabase DB
+let liveFunds = [];
+let livePortfolios = [];
+let liveUsers = [];
+let liveTransactions = [];
+
+// Secondary Admins List (Managed by Super Admin Youssef_Frahat)
+let secondaryAdmins = JSON.parse(localStorage.getItem('watheqa_secondary_admins') || '[]') || [
+  { id: 'a1', name: 'أدمن مساعد 1', username: 'Assistant_Admin', role: 'Fund & Price Manager', password: 'pass123', created: '2026-07-26' }
+];
+
+// Global Chart Instances for Dynamic Updates
+let categoryPieChartInstance = null;
+let topBarChartInstance = null;
+let trafficLineChartInstance = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  initSuperAdminAuth();
+  initTabNavigation();
+  initCharts();
+  initModalEvents();
+  initAdminModalEvents();
+  initSponsoredModalEvents();
+  
+  document.getElementById('btnRefresh').addEventListener('click', refreshLiveData);
+  document.getElementById('btnLogoutAdmin').addEventListener('click', logoutSuperAdmin);
+});
+
+/**
+ * FIXED OFFICIAL FINANCIAL RETURN DISPLAY:
+ * Uses the official EIMA YTD return from the DB row directly (e.g. +24.5%, +28.3%, +18.2%).
+ * If price changes from P_old to P_new:
+ * Updated Return % = Original YTD % + ((P_new - P_old) / P_old) * 100
+ */
+function getOfficialFundYtd(fund, newNavInput = null) {
+  const originalYtd = parseFloat(fund.ytd_return) || 0;
+  const currentNav = parseFloat(fund.current_nav) || 0;
+  
+  if (newNavInput == null || isNaN(newNavInput) || newNavInput <= 0 || currentNav <= 0 || newNavInput === currentNav) {
+    return parseFloat(originalYtd.toFixed(2));
+  }
+
+  // Calculate percentage price delta when editing price
+  const priceDeltaPct = ((newNavInput - currentNav) / currentNav) * 100;
+  const updatedYtd = originalYtd + priceDeltaPct;
+  return parseFloat(updatedYtd.toFixed(2));
+}
+
+// Automatically compute Top Performing funds 🏆 dynamically based on highest actual YTD return
+function computeTopPerformingFundsDynamically() {
+  if (!liveFunds || liveFunds.length === 0) return;
+  const sorted = [...liveFunds].sort((a, b) => (parseFloat(b.ytd_return) || 0) - (parseFloat(a.ytd_return) || 0));
+  const top5Ids = new Set(sorted.slice(0, 5).map(f => f.id));
+  
+  liveFunds.forEach(f => {
+    f.is_top_performing = top5Ids.has(f.id);
+  });
+}
+
+// SUPER ADMIN AUTHENTICATION GATE
+function initSuperAdminAuth() {
+  const loginOverlay = document.getElementById('superAdminLoginOverlay');
+  const mainApp = document.getElementById('mainAdminApp');
+  const loginForm = document.getElementById('superAdminLoginForm');
+  const errorMsg = document.getElementById('loginErrorMsg');
+
+  const savedUser = sessionStorage.getItem('watheqa_super_admin_user');
+  if (savedUser) {
+    loginOverlay.style.display = 'none';
+    mainApp.style.display = 'flex';
+    document.getElementById('displayAdminName').innerText = savedUser;
+    refreshLiveData();
+    return;
+  }
+
+  loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const userVal = document.getElementById('adminUsername').value.trim();
+    const passVal = document.getElementById('adminPassword').value.trim();
+
+    const isSuperAdmin = (userVal.toLowerCase() === 'youssef_frahat' && (passVal === 'Y0u$$Eff' || passVal === 'Y0u$$eff' || passVal === 'WatheqaAdmin2026!'));
+    const secondaryAdminMatch = secondaryAdmins.find(a => a.username.toLowerCase() === userVal.toLowerCase() && a.password === passVal);
+
+    if (isSuperAdmin || secondaryAdminMatch) {
+      const activeName = isSuperAdmin ? 'Youssef_Frahat' : secondaryAdminMatch.name;
+      sessionStorage.setItem('watheqa_super_admin_user', activeName);
+      loginOverlay.style.display = 'none';
+      mainApp.style.display = 'flex';
+      document.getElementById('displayAdminName').innerText = activeName;
+      refreshLiveData();
+      logMessage(`[AUTH] Admin ${activeName} authenticated successfully 🔑`, 'success');
+    } else {
+      errorMsg.style.display = 'block';
+    }
+  });
+}
+
+function logoutSuperAdmin() {
+  if (confirm('هل ترغب في تسجيل الخروج من لوحة التحكم؟')) {
+    sessionStorage.removeItem('watheqa_super_admin_user');
+    window.location.reload();
+  }
+}
+
+// Refresh All Live Data from Supabase DB
+async function refreshLiveData() {
+  logMessage('[SUPABASE] Fetching live data directly from Supabase DB...', 'info');
+  await Promise.all([
+    fetchFunds(),
+    fetchPortfolios(),
+    fetchTransactions(),
+    fetchUsers(),
+  ]);
+  
+  computeTopPerformingFundsDynamically();
+  updateMetricsAndInsights();
+  updateDynamicCharts();
+  renderQuickPriceTable();
+  renderFundsTable();
+  renderSponsoredTable();
+  renderPortfoliosTable();
+  renderUsersTable();
+  renderAdminsTable();
+  logMessage('[SUPABASE] Live DB Sync complete! 🟢', 'success');
+}
+
+// 1. Fetch Funds directly from Supabase
+async function fetchFunds() {
+  if (!db) return;
+  try {
+    const { data, error } = await db.from('funds').select('*').order('rank', { ascending: true });
+    if (error) throw error;
+    if (data) {
+      liveFunds = data;
+      computeTopPerformingFundsDynamically();
+      document.getElementById('dbFundsCount').innerText = `${data.length} صندوق`;
+      logMessage(`[DB] Loaded ${data.length} funds from 'funds' table.`, 'success');
+    }
+  } catch (err) {
+    logMessage(`[DB ERROR] Fetch funds failed: ${err.message}`, 'warning');
+  }
+}
+
+// 2. Fetch Portfolios directly from Supabase
+async function fetchPortfolios() {
+  if (!db) return;
+  try {
+    const { data, error } = await db.from('portfolios').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    if (data) {
+      livePortfolios = data;
+      document.getElementById('dbPortfoliosCount').innerText = `${data.length} محفظة`;
+    }
+  } catch (err) {
+    logMessage(`[DB NOTICE] Fetch portfolios notice: ${err.message}`, 'info');
+  }
+}
+
+// 3. Fetch Transactions directly from Supabase
+async function fetchTransactions() {
+  if (!db) return;
+  try {
+    const { data, error } = await db.from('transactions').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    if (data) {
+      liveTransactions = data;
+    }
+  } catch (err) {
+    logMessage(`[DB NOTICE] Fetch transactions notice: ${err.message}`, 'info');
+  }
+}
+
+// 4. Fetch Users Profiles & Registered Accounts from Supabase
+async function fetchUsers() {
+  if (!db) return;
+  let fetchedProfiles = [];
+  try {
+    const { data, error } = await db.from('profiles').select('*').order('updated_at', { ascending: false });
+    if (!error && data) {
+      fetchedProfiles = data;
+    }
+  } catch (err) {
+    logMessage(`[DB NOTICE] Fetch profiles notice: ${err.message}`, 'info');
+  }
+
+  const registeredAccountsMap = new Map();
+
+  registeredAccountsMap.set('user-youssef', {
+    id: 'user-youssef',
+    full_name: 'يوسف فرحات (Youssef)',
+    phone: 'youssef@watheqa.app',
+    is_verified: true,
+    created_at: '2026-07-20'
+  });
+  registeredAccountsMap.set('user-wird', {
+    id: 'user-wird',
+    full_name: 'ويرد (Wird)',
+    phone: 'wird@watheqa.app',
+    is_verified: true,
+    created_at: '2026-07-22'
+  });
+  registeredAccountsMap.set('user-anan', {
+    id: 'user-anan',
+    full_name: 'عنان (Anan)',
+    phone: 'anan@watheqa.app',
+    is_verified: true,
+    created_at: '2026-07-24'
+  });
+
+  fetchedProfiles.forEach(p => {
+    registeredAccountsMap.set(p.id, {
+      id: p.id,
+      full_name: p.full_name || p.name || p.email || 'مستثمر وثيقة',
+      phone: p.phone || p.email || p.id,
+      is_verified: p.is_verified || p.email_confirmed_at != null,
+      created_at: p.created_at || p.updated_at || '2026-07-26'
+    });
+  });
+
+  livePortfolios.forEach(p => {
+    if (p.user_id && !registeredAccountsMap.has(p.user_id)) {
+      registeredAccountsMap.set(p.user_id, {
+        id: p.user_id,
+        full_name: 'مستثمر محفظة (' + p.user_id.substring(0, 8) + ')',
+        phone: p.user_id,
+        is_verified: true,
+        created_at: p.created_at || '2026-07-26'
+      });
+    }
+  });
+
+  liveUsers = Array.from(registeredAccountsMap.values());
+  logMessage(`[DB USERS] Total registered user accounts loaded: ${liveUsers.length} (Wird, Youssef, Anan, and Supabase users).`, 'success');
+}
+
+// ⚡ QUICK NAV PRICE UPDATER TABLE (Fixed Official EIMA YTD Return)
+function renderQuickPriceTable() {
+  const tbody = document.getElementById('quickPriceTableBody');
+  if (!tbody) return;
+  const search = (document.getElementById('quickPriceSearch')?.value || '').toLowerCase();
+
+  tbody.innerHTML = '';
+
+  if (liveFunds.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#9ca3af">جاري التحميل من قاعدة البيانات...</td></tr>';
+    return;
+  }
+
+  const filtered = liveFunds.filter(f => {
+    const nameAr = f.name_ar || f.name || '';
+    const nameEn = f.name_en || f.name || '';
+    return nameAr.toLowerCase().includes(search) || nameEn.toLowerCase().includes(search);
+  });
+
+  filtered.forEach(fund => {
+    const tr = document.createElement('tr');
+    const navVal = parseFloat(fund.current_nav) || 0;
+    const computedYtd = getOfficialFundYtd(fund);
+
+    tr.innerHTML = `
+      <td><strong>${fund.name_ar || fund.name}</strong></td>
+      <td>${fund.manager_name || fund.manager || 'مباشر كابيتال'}</td>
+      <td style="color:#00E676; font-weight:bold">${navVal.toFixed(4)} EGP</td>
+      <td>
+        <input type="number" step="0.0001" id="quickNavInput_${fund.id}" value="${navVal}" 
+               oninput="updateQuickYtdDisplay('${fund.id}')" 
+               class="form-input" style="width:140px; font-weight:bold; color:#00E676;">
+      </td>
+      <td>
+        <span id="quickYtdDisplay_${fund.id}" style="font-size:14px; font-weight:900; color:#3B82F6;">
+          ${computedYtd >= 0 ? '+' : ''}${computedYtd.toFixed(2)}%
+        </span>
+        <br><small style="color:#9ca3af; font-size:10px;">(تقرير EIMA الرسمى)</small>
+      </td>
+      <td>
+        <button class="btn btn-primary" onclick="saveQuickPrice('${fund.id}')">
+          <i class="fa-solid fa-floppy-disk"></i> حفظ السعر المباشر ⚡
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateQuickYtdDisplay(fundId) {
+  const navInput = document.getElementById(`quickNavInput_${fundId}`);
+  const display = document.getElementById(`quickYtdDisplay_${fundId}`);
+  if (!navInput || !display) return;
+
+  const fund = liveFunds.find(f => f.id.toString() === fundId.toString());
+  if (!fund) return;
+
+  const newNav = parseFloat(navInput.value) || 0;
+  const newYtd = getOfficialFundYtd(fund, newNav);
+  display.innerText = `${newYtd >= 0 ? '+' : ''}${newYtd.toFixed(2)}%`;
+}
+
+async function saveQuickPrice(fundId) {
+  const navInput = document.getElementById(`quickNavInput_${fundId}`);
+  if (!navInput) return;
+
+  const newNav = parseFloat(navInput.value);
+  const fund = liveFunds.find(f => f.id.toString() === fundId.toString());
+  
+  if (fund) {
+    const computedYtd = getOfficialFundYtd(fund, newNav);
+
+    fund.current_nav = newNav;
+    fund.ytd_return = computedYtd;
+    computeTopPerformingFundsDynamically();
+    renderFundsTable();
+    renderSponsoredTable();
+    updateDynamicCharts();
+
+    if (db) {
+      try {
+        await db.from('funds').update({ current_nav: newNav, ytd_return: computedYtd }).eq('id', fundId);
+        logMessage(`[SUPABASE FAST NAV] Fund '${fund.name_ar || fund.name}' price updated to ${newNav} EGP ⚡`, 'success');
+        alert(`تم تحديث سعر وثيقة (${fund.name_ar || fund.name}) إلى ${newNav} EGP بنجاح! 🚀`);
+      } catch (err) {
+        logMessage(`[DB ERROR] Fast price update failed: ${err.message}`, 'danger');
+      }
+    }
+  }
+}
+
+// 🔑 ADMINS MANAGEMENT TABLE
+function renderAdminsTable() {
+  const tbody = document.getElementById('adminsTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const superTr = document.createElement('tr');
+  superTr.innerHTML = `
+    <td><strong>يوسف فرحات (Super Admin)</strong></td>
+    <td><code>Youssef_Frahat</code></td>
+    <td><span class="badge" style="background:rgba(0,230,118,0.15); color:#00E676">مالك النظام وسوبر أدمن 🔑</span></td>
+    <td>صلاحية مطلقة 100%</td>
+    <td><span class="badge live">الحساب الرئيسي</span></td>
+  `;
+  tbody.appendChild(superTr);
+
+  secondaryAdmins.forEach(admin => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${admin.name}</strong></td>
+      <td><code>${admin.username}</code></td>
+      <td><span class="badge" style="background:rgba(59,130,246,0.15); color:#3B82F6">${admin.role}</span></td>
+      <td>تعديل الأسعار وإدارة الصناديق</td>
+      <td>
+        <button class="btn btn-danger" onclick="deleteAdmin('${admin.id}')"><i class="fa-solid fa-trash"></i> إزالة الأدمن</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function initAdminModalEvents() {
+  const modal = document.getElementById('addAdminModal');
+  const btnOpen = document.getElementById('btnOpenAddAdminModal');
+  const btnClose = document.getElementById('btnCloseAdminModal');
+  const btnCancel = document.getElementById('btnCancelAdminModal');
+  const form = document.getElementById('addAdminForm');
+
+  if (!btnOpen) return;
+
+  btnOpen.addEventListener('click', () => modal.classList.add('active'));
+  const closeModal = () => modal.classList.remove('active');
+  btnClose.addEventListener('click', closeModal);
+  btnCancel.addEventListener('click', closeModal);
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('newAdminName').value;
+    const username = document.getElementById('newAdminUsername').value;
+    const password = document.getElementById('newAdminPassword').value;
+    const role = document.getElementById('newAdminRole').value;
+
+    const newAdmin = {
+      id: 'admin-' + Date.now(),
+      name,
+      username,
+      password,
+      role,
+      created: new Date().toISOString().split('T')[0]
+    };
+
+    secondaryAdmins.push(newAdmin);
+    localStorage.setItem('watheqa_secondary_admins', JSON.stringify(secondaryAdmins));
+    renderAdminsTable();
+    closeModal();
+    form.reset();
+    logMessage(`[ADMIN SYSTEM] Added new assistant admin '${name}' (${username})`, 'success');
+  });
+}
+
+function deleteAdmin(id) {
+  if (confirm('هل أنت تأكد من إزالة هذا الأدمن المساعد من النظام؟')) {
+    secondaryAdmins = secondaryAdmins.filter(a => a.id !== id);
+    localStorage.setItem('watheqa_secondary_admins', JSON.stringify(secondaryAdmins));
+    renderAdminsTable();
+  }
+}
+
+// 📊 100% Dynamic Insights Cards Calculation from Supabase DB
+function updateMetricsAndInsights() {
+  const totalUsersCount = liveUsers.length;
+  const verifiedCount = liveUsers.filter(u => u.is_verified || u.email_confirmed_at).length;
+  
+  document.getElementById('insightTotalUsers').innerText = totalUsersCount.toLocaleString();
+  document.getElementById('insightVerifiedUsers').innerText = `${verifiedCount} عميل`;
+
+  let totalValuation = 0;
+  liveTransactions.forEach(t => {
+    totalValuation += (parseFloat(t.units) || 0) * (parseFloat(t.current_nav) || 0);
+  });
+
+  document.getElementById('insightTotalValuation').innerText = `${totalValuation.toLocaleString(undefined, { maximumFractionDigits: 0 })} EGP`;
+  document.getElementById('insightTotalTransactions').innerText = `${liveTransactions.length} طلب`;
+}
+
+// 🥧 100% Dynamic Chart.js Updates from Live Funds DB
+function updateDynamicCharts() {
+  if (!liveFunds || liveFunds.length === 0) return;
+
+  // 1. Dynamic Pie Chart: Group funds by category from DB
+  const categories = {};
+  liveFunds.forEach(f => {
+    const cat = f.category || 'Uncategorized';
+    categories[cat] = (categories[cat] || 0) + 1;
+  });
+
+  const catLabels = Object.keys(categories).map(c => {
+    switch (c) {
+      case 'MoneyMarket': return 'أدوات نقدية';
+      case 'TreasuryBills': return 'أذون وسندات خزينة';
+      case 'Equity': return 'أسهم';
+      case 'Gold': return 'ذهب وفضة';
+      case 'Islamic': return 'إسلامية';
+      default: return c;
+    }
+  });
+  const catCounts = Object.values(categories);
+
+  if (categoryPieChartInstance) {
+    categoryPieChartInstance.data.labels = catLabels;
+    categoryPieChartInstance.data.datasets[0].data = catCounts;
+    categoryPieChartInstance.update();
+  }
+
+  // 2. Dynamic Bar Chart: Top 5 performing funds automatically by YTD return
+  const sortedFunds = [...liveFunds].sort((a, b) => (parseFloat(b.ytd_return) || 0) - (parseFloat(a.ytd_return) || 0)).slice(0, 5);
+  const topNames = sortedFunds.map(f => (f.name_ar || f.name).substring(0, 18) + '...');
+  const topYtds = sortedFunds.map(f => parseFloat(f.ytd_return) || 0);
+
+  if (topBarChartInstance) {
+    topBarChartInstance.data.labels = topNames;
+    topBarChartInstance.data.datasets[0].data = topYtds;
+    topBarChartInstance.update();
+  }
+}
+
+// Render All Funds Table directly from DB
+function renderFundsTable() {
+  const tbody = document.getElementById('fundsTableBody');
+  const filterCat = document.getElementById('fundCategoryFilter').value;
+  const search = document.getElementById('fundSearchInput').value.toLowerCase();
+
+  tbody.innerHTML = '';
+
+  if (liveFunds.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#9ca3af">جاري التحميل من Supabase...</td></tr>';
+    return;
+  }
+
+  const filtered = liveFunds.filter(f => {
+    const nameAr = f.name_ar || f.name || '';
+    const nameEn = f.name_en || f.name || '';
+    const manager = f.manager_name || f.manager || '';
+    const category = f.category || '';
+
+    const matchCat = filterCat === 'ALL' || category === filterCat;
+    const matchSearch = nameAr.toLowerCase().includes(search) || nameEn.toLowerCase().includes(search) || manager.toLowerCase().includes(search);
+    return matchCat && matchSearch;
+  });
+
+  filtered.forEach(fund => {
+    const tr = document.createElement('tr');
+    const navVal = parseFloat(fund.current_nav) || 0;
+    const ytdVal = getOfficialFundYtd(fund);
+
+    tr.innerHTML = `
+      <td><strong>${fund.name_ar || fund.name}</strong><br><small style="color:#9ca3af">${fund.name_en || ''}</small></td>
+      <td>${fund.manager_name || fund.manager || 'مباشر كابيتال'}</td>
+      <td style="color:#00E676; font-weight:bold">${navVal.toFixed(4)} EGP</td>
+      <td style="color:#3B82F6; font-weight:bold">${ytdVal >= 0 ? '+' : ''}${ytdVal.toFixed(2)}%</td>
+      <td><span class="badge" style="background:rgba(59,130,246,0.15); color:#3B82F6">${fund.category || 'Equity'}</span></td>
+      <td>
+        ${fund.is_sponsored ? '<span class="badge" style="background:rgba(0,230,118,0.15); color:#00E676">رعائي ⭐</span>' : ''}
+        ${fund.is_recommended ? '<span class="badge" style="background:rgba(245,158,11,0.15); color:#F59E0B">موصى به 💡</span>' : ''}
+        ${fund.is_top_performing ? '<span class="badge" style="background:rgba(139,92,246,0.15); color:#8B5CF6">الأعلى أداءً 🏆</span>' : ''}
+      </td>
+      <td>
+        <button class="btn btn-secondary" onclick="editFund('${fund.id}')"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-danger" onclick="deleteFund('${fund.id}')"><i class="fa-solid fa-trash"></i></button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ⭐ CLEAN SPONSORED & RECOMMENDED FUNDS CRUD TABLE (Admin Controlled Only)
+function renderSponsoredTable() {
+  const tbody = document.getElementById('sponsoredTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const activeSponsoredFunds = liveFunds.filter(f => f.is_sponsored || f.is_recommended);
+
+  if (activeSponsoredFunds.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:#9ca3af">لا توجد صناديق مخصصة في القائمة الرعائية حالياً.<br>اضغط على زر <strong>"إضافة صندوق للقائمة"</strong> بالأعلى لاختيار صندوقك المفضل إدارياً ⭐</td></tr>';
+    return;
+  }
+
+  activeSponsoredFunds.forEach(fund => {
+    const tr = document.createElement('tr');
+    const navVal = parseFloat(fund.current_nav) || 0;
+
+    tr.innerHTML = `
+      <td><strong>${fund.name_ar || fund.name}</strong></td>
+      <td>${fund.manager_name || fund.manager || 'مباشر كابيتال'}</td>
+      <td style="color:#00E676; font-weight:bold">${navVal.toFixed(2)} EGP</td>
+      <td>
+        <button class="btn ${fund.is_sponsored ? 'btn-primary' : 'btn-secondary'}" onclick="toggleFundFlag('${fund.id}', 'is_sponsored', ${!fund.is_sponsored})">
+          ${fund.is_sponsored ? 'مفعل رعائي ⭐' : 'تفعيل رعائي'}
+        </button>
+      </td>
+      <td>
+        <button class="btn ${fund.is_recommended ? 'btn-primary' : 'btn-secondary'}" onclick="toggleFundFlag('${fund.id}', 'is_recommended', ${!fund.is_recommended})">
+          ${fund.is_recommended ? 'موصى به / مخصص 💡' : 'إضافة للتوصيات'}
+        </button>
+      </td>
+      <td>
+        <button class="btn btn-danger" onclick="removeFundFromSponsored('${fund.id}')" title="إزالة من القائمة الرعائية">
+          <i class="fa-solid fa-trash"></i> إزالة من القائمة
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Remove fund from active sponsored list completely
+async function removeFundFromSponsored(fundId) {
+  const fund = liveFunds.find(f => f.id.toString() === fundId.toString());
+  if (fund && confirm(`هل أنت تأكد من إزالة (${fund.name_ar || fund.name}) من القائمة الرعائية والموصى بها؟`)) {
+    fund.is_sponsored = false;
+    fund.is_recommended = false;
+
+    renderSponsoredTable();
+    renderFundsTable();
+    updateDynamicCharts();
+
+    if (db) {
+      try {
+        await db.from('funds').update({ is_sponsored: false, is_recommended: false }).eq('id', fundId);
+        logMessage(`[SUPABASE SPONSORED REMOVE] Fund '${fund.name_ar || fund.name}' removed from sponsored list.`, 'warning');
+      } catch (err) {
+        logMessage(`[SUPABASE ERROR] Remove sponsored failed: ${err.message}`, 'danger');
+      }
+    }
+  }
+}
+
+// Modal for adding any of the 201 EIMA funds to the active Sponsored list
+function initSponsoredModalEvents() {
+  const modal = document.getElementById('addSponsoredModal');
+  const btnOpen = document.getElementById('btnOpenAddSponsoredModal');
+  const btnClose = document.getElementById('btnCloseSponsoredModal');
+  const btnCancel = document.getElementById('btnCancelSponsoredModal');
+  const form = document.getElementById('addSponsoredForm');
+  const selectFund = document.getElementById('selectFundForSponsored');
+
+  if (!btnOpen) return;
+
+  btnOpen.addEventListener('click', () => {
+    selectFund.innerHTML = '';
+    liveFunds.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.id;
+      opt.innerText = `${f.name_ar || f.name} (${f.manager_name || f.manager || 'مباشر'}) - NAV: ${f.current_nav} EGP`;
+      selectFund.appendChild(opt);
+    });
+    modal.classList.add('active');
+  });
+
+  const closeModal = () => modal.classList.remove('active');
+  btnClose.addEventListener('click', closeModal);
+  btnCancel.addEventListener('click', closeModal);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fundId = selectFund.value;
+    const isSponsored = document.getElementById('chkSponsored').checked;
+    const isRecommended = document.getElementById('chkRecommended').checked;
+
+    const fund = liveFunds.find(f => f.id.toString() === fundId.toString());
+    if (fund) {
+      fund.is_sponsored = isSponsored;
+      fund.is_recommended = isRecommended;
+
+      renderSponsoredTable();
+      renderFundsTable();
+      updateDynamicCharts();
+
+      if (db) {
+        try {
+          await db.from('funds').update({
+            is_sponsored: isSponsored,
+            is_recommended: isRecommended
+          }).eq('id', fundId);
+          logMessage(`[SUPABASE SPONSORED ADD] Fund '${fund.name_ar || fund.name}' added to sponsored list 🚀`, 'success');
+        } catch (err) {
+          logMessage(`[SUPABASE ERROR] Add sponsored failed: ${err.message}`, 'danger');
+        }
+      }
+    }
+
+    closeModal();
+  });
+}
+
+// Render Portfolios Table directly from DB
+function renderPortfoliosTable() {
+  const tbody = document.getElementById('portfoliosTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (livePortfolios.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af">لا توجد محافظ مسجلة بعد في الباك إند (0)</td></tr>';
+    return;
+  }
+
+  livePortfolios.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${p.name || 'المحفظة الرئيسية'}</strong></td>
+      <td><code>${p.user_id || 'Anon User'}</code></td>
+      <td>${p.created_at ? p.created_at.split('T')[0] : '2026-07-26'}</td>
+      <td>${p.updated_at ? p.updated_at.split('T')[0] : '2026-07-26'}</td>
+      <td>
+        <button class="btn btn-danger" onclick="deletePortfolio('${p.id}')"><i class="fa-solid fa-trash"></i> مسح</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Render Users Table directly from DB (Including Wird, Youssef, Anan)
+function renderUsersTable() {
+  const tbody = document.getElementById('usersTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (liveUsers.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af">جاري تحميل حسابات المستخدمين...</td></tr>';
+    return;
+  }
+
+  liveUsers.forEach(u => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${u.full_name || u.name || u.email || 'مستثمر وثيقة'}</strong></td>
+      <td>${u.phone || u.id}</td>
+      <td>
+        ${(u.is_verified || u.email_confirmed_at)
+          ? '<span class="badge" style="background:rgba(0,230,118,0.15); color:#00E676"><i class="fa-solid fa-circle-check"></i> موثّق 🟢</span>'
+          : '<span class="badge" style="background:rgba(245,158,11,0.15); color:#F59E0B"><i class="fa-solid fa-triangle-exclamation"></i> غير موثّق ⚠️</span>'
+        }
+      </td>
+      <td>${u.created_at ? u.created_at.split('T')[0] : '2026-07-26'}</td>
+      <td>
+        <button class="btn ${u.is_verified ? 'btn-secondary' : 'btn-primary'}" onclick="toggleUserVerification('${u.id}', ${!u.is_verified})">
+          ${u.is_verified ? 'إلغاء التوثيق' : 'منح شارة موثق 🟢'}
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Toggle Fund Flags in Supabase DB
+async function toggleFundFlag(fundId, flagName, newValue) {
+  const fund = liveFunds.find(f => f.id.toString() === fundId.toString());
+  if (fund) {
+    fund[flagName] = newValue;
+    renderSponsoredTable();
+    renderFundsTable();
+    updateDynamicCharts();
+
+    if (db) {
+      try {
+        await db.from('funds').update({ [flagName]: newValue }).eq('id', fundId);
+        logMessage(`[SUPABASE UPDATE] Fund '${fund.name_ar || fund.name}' updated ${flagName} = ${newValue}`, 'success');
+      } catch (err) {
+        logMessage(`[SUPABASE ERROR] Update fund failed: ${err.message}`, 'danger');
+      }
+    }
+  }
+}
+
+// Modal & Form Setup
+function initModalEvents() {
+  const modal = document.getElementById('fundModal');
+  const btnOpen = document.getElementById('btnOpenAddFundModal');
+  const btnClose = document.getElementById('btnCloseFundModal');
+  const btnCancel = document.getElementById('btnCancelFundModal');
+  const form = document.getElementById('fundForm');
+
+  btnOpen.addEventListener('click', () => {
+    document.getElementById('modalTitle').innerText = 'إضافة صندوق جديد لقاعدة البيانات';
+    form.reset();
+    document.getElementById('fundDbId').value = '';
+    modal.classList.add('active');
+  });
+
+  const closeModal = () => modal.classList.remove('active');
+  btnClose.addEventListener('click', closeModal);
+  btnCancel.addEventListener('click', closeModal);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('fundDbId').value;
+    const nameAr = document.getElementById('fundNameAr').value;
+    const nameEn = document.getElementById('fundNameEn').value;
+    const manager = document.getElementById('fundManager').value;
+    const nav = parseFloat(document.getElementById('fundNav').value);
+    const category = document.getElementById('fundCategory').value;
+    const risk = document.getElementById('fundRisk').value;
+
+    const fundData = {
+      name: nameAr,
+      name_ar: nameAr,
+      name_en: nameEn,
+      manager_name: manager,
+      current_nav: nav,
+      ytd_return: 20.0,
+      category: category,
+      risk_level: risk,
+      nav_date: '09/07/26',
+      currency: 'EGP'
+    };
+
+    if (db) {
+      try {
+        if (id) {
+          await db.from('funds').update(fundData).eq('id', id);
+          logMessage(`[SUPABASE UPDATE] Fund '${nameAr}' updated successfully!`, 'success');
+        } else {
+          await db.from('funds').insert([fundData]);
+          logMessage(`[SUPABASE INSERT] New fund '${nameAr}' created in Supabase DB!`, 'success');
+        }
+        await fetchFunds();
+      } catch (err) {
+        logMessage(`[DB ERROR] Fund save failed: ${err.message}`, 'danger');
+      }
+    }
+
+    closeModal();
+    renderFundsTable();
+    updateDynamicCharts();
+  });
+
+  document.getElementById('fundSearchInput').addEventListener('input', renderFundsTable);
+  document.getElementById('fundCategoryFilter').addEventListener('change', renderFundsTable);
+  document.getElementById('quickPriceSearch')?.addEventListener('input', renderQuickPriceTable);
+}
+
+function editFund(id) {
+  const fund = liveFunds.find(f => f.id.toString() === id.toString());
+  if (!fund) return;
+
+  document.getElementById('modalTitle').innerText = 'تعديل بيانات الصندوق في الباك إند';
+  document.getElementById('fundDbId').value = fund.id;
+  document.getElementById('fundNameAr').value = fund.name_ar || fund.name || '';
+  document.getElementById('fundNameEn').value = fund.name_en || fund.name || '';
+  document.getElementById('fundManager').value = fund.manager_name || fund.manager || '';
+  document.getElementById('fundNav').value = fund.current_nav || 100;
+  document.getElementById('fundCategory').value = fund.category || 'Equity';
+  document.getElementById('fundRisk').value = fund.risk_level || 'Low';
+
+  document.getElementById('fundModal').classList.add('active');
+}
+
+async function deleteFund(id) {
+  if (confirm('هل أنت تأكد من مسح هذا الصندوق نهائياً من قاعدة بيانات Supabase؟')) {
+    if (db) {
+      try {
+        await db.from('funds').delete().eq('id', id);
+        logMessage(`[SUPABASE DELETE] Fund ID ${id} deleted.`, 'warning');
+        await fetchFunds();
+      } catch (err) {
+        logMessage(`[DB ERROR] Delete fund failed: ${err.message}`, 'danger');
+      }
+    }
+  }
+}
+
+async function deletePortfolio(id) {
+  if (confirm('هل أنت تأكد من حذف محفظة المستخدم من الباك إند؟')) {
+    if (db) {
+      try {
+        await db.from('portfolios').delete().eq('id', id);
+        logMessage(`[SUPABASE DELETE] Portfolio ${id} deleted.`, 'warning');
+        await fetchPortfolios();
+      } catch (err) {
+        logMessage(`[DB ERROR] Delete portfolio failed: ${err.message}`, 'danger');
+      }
+    }
+  }
+}
+
+async function toggleUserVerification(id, newStatus) {
+  const user = liveUsers.find(u => u.id === id);
+  if (user) {
+    user.is_verified = newStatus;
+    renderUsersTable();
+    if (db) {
+      try {
+        await db.from('profiles').upsert({ id: id, is_verified: newStatus, updated_at: new Date().toISOString() });
+        logMessage(`[SUPABASE VERIFY] User ${id} verification set to ${newStatus}`, 'success');
+      } catch (err) {
+        logMessage(`[DB ERROR] Toggle verification failed: ${err.message}`, 'warning');
+      }
+    }
+  }
+}
+
+function initTabNavigation() {
+  const navItems = document.getElementById('mainAdminApp')?.querySelectorAll('.nav-item') || [];
+  const tabContents = document.getElementById('mainAdminApp')?.querySelectorAll('.tab-content') || [];
+
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const tabId = item.getAttribute('data-tab');
+
+      navItems.forEach(n => n.classList.remove('active'));
+      tabContents.forEach(c => c.classList.remove('active'));
+
+      item.classList.add('active');
+      document.getElementById(`tab-${tabId}`)?.classList.add('active');
+    });
+  });
+}
+
+function initCharts() {
+  const ctxTraffic = document.getElementById('devopsTrafficChart').getContext('2d');
+  trafficLineChartInstance = new Chart(ctxTraffic, {
+    type: 'line',
+    data: {
+      labels: ['22:30', '22:40', '22:50', '23:00', '23:05', '23:10'],
+      datasets: [{
+        label: 'API Response Latency (ms)',
+        data: [14, 12, 18, 11, 14, 12],
+        borderColor: '#00E676',
+        backgroundColor: 'rgba(0, 230, 118, 0.1)',
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } }
+      }
+    }
+  });
+
+  const ctxPie = document.getElementById('categoryPieChart').getContext('2d');
+  categoryPieChartInstance = new Chart(ctxPie, {
+    type: 'doughnut',
+    data: {
+      labels: [],
+      datasets: [{
+        data: [],
+        backgroundColor: ['#00E676', '#3B82F6', '#F59E0B', '#8B5CF6', '#EC4899'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { color: '#f9fafb', font: { family: 'Cairo' } } } }
+    }
+  });
+
+  const ctxBar = document.getElementById('topFundsBarChart').getContext('2d');
+  topBarChartInstance = new Chart(ctxBar, {
+    type: 'bar',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'العائد السنوي YTD %',
+        data: [],
+        backgroundColor: '#00E676',
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#9ca3af' } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } }
+      }
+    }
+  });
+}
+
+function logMessage(msg, type = 'info') {
+  const container = document.getElementById('devopsLogsBody');
+  const fullContainer = document.getElementById('fullAuditLogs');
+  const time = new Date().toLocaleTimeString();
+
+  const div = document.createElement('div');
+  div.className = `log-line ${type}`;
+  div.innerText = `[${time}] ${msg}`;
+
+  if (container) {
+    container.insertBefore(div, container.firstChild);
+  }
+  if (fullContainer) {
+    const clone.Node(true);
+    fullContainer.insertBefore(clone, fullContainer.firstChild);
+  }
+}

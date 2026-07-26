@@ -60,6 +60,14 @@ class FundModel {
     return name;
   }
 
+  /// Dynamically computed YTD return based on price change
+  double get dynamicYtdReturn {
+    final basePrice = (initialValue != null && initialValue! > 0) ? initialValue! : 100.0;
+    if (basePrice <= 0) return ytdReturn;
+    final calc = ((currentNav - basePrice) / basePrice) * 100;
+    return double.parse(calc.toStringAsFixed(2));
+  }
+
   /// Returns abbreviation/code inside parentheses e.g. "Gozoor" from "AAIB (Gozoor)"
   String? get abbreviation {
     if (name.contains('(') && name.contains(')')) {
