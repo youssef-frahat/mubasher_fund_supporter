@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/language/language_cubit.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../cubit/portfolio_cubit.dart';
 import '../cubit/portfolio_state.dart';
 import '../../data/models/portfolio_item_model.dart';
@@ -94,7 +96,7 @@ class _PortfolioContentView extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'المحفظة النشطة حالياً:',
+                                  context.tr('activePortfolio'),
                                   style: TextStyle(color: textSecondary, fontSize: 10.sp),
                                 ),
                                 SizedBox(height: 2.h),
@@ -162,7 +164,7 @@ class _PortfolioContentView extends StatelessWidget {
                         onPressed: () => _openAddBottomSheet(context),
                         icon: FaIcon(FontAwesomeIcons.circlePlus, color: AppColors.primary, size: 15.r),
                         label: Text(
-                          'إضافة صفقة',
+                          context.tr('addTransaction'),
                           style: TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
@@ -268,18 +270,17 @@ class _PortfolioContentView extends StatelessWidget {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  // Blue Edit Icon Button
                                   IconButton(
-                                    tooltip: 'تعديل كمية الوثائق',
+                                    tooltip: context.tr('editUnits'),
                                     icon: const FaIcon(FontAwesomeIcons.penToSquare, color: Color(0xFF3B82F6), size: 15),
                                     onPressed: () => _showEditUnitsDialog(context, item),
                                   ),
-                                  // Delete Icon Button
                                   IconButton(
-                                    tooltip: 'حذف الوثيقة',
+                                    tooltip: context.tr('delete'),
                                     icon: const FaIcon(FontAwesomeIcons.trashCan, color: AppColors.error, size: 15),
                                     onPressed: () {
                                       context.read<PortfolioCubit>().removeTransaction(item.id);
+                                      AppSnackBar.showInfo(context, 'تم حذف الصفقة من المحفظة');
                                     },
                                   ),
                                 ],
@@ -298,14 +299,13 @@ class _PortfolioContentView extends StatelessWidget {
         },
       ),
 
-      // Bottom Button to Create a New Portfolio
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreatePortfolioDialog(context),
         backgroundColor: AppColors.primary,
         icon: const FaIcon(FontAwesomeIcons.folderPlus, color: Colors.black, size: 15),
-        label: const Text(
-          'إضافة محفظة محاكاة جديدة ➕',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        label: Text(
+          context.tr('addPortfolio'),
+          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -329,7 +329,7 @@ class _PortfolioContentView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'إجمالي قيمة هذه المحفظة الحالية',
+            context.tr('totalValue'),
             style: TextStyle(
               color: textSecondary,
               fontSize: 11.sp,
@@ -374,7 +374,7 @@ class _PortfolioContentView extends StatelessWidget {
               ),
               SizedBox(width: 8.w),
               Text(
-                'صافي الأرباح/الخسائر',
+                context.tr('profitLoss'),
                 style: TextStyle(
                   color: textSecondary,
                   fontSize: 11.sp,
@@ -471,35 +471,36 @@ class _PortfolioContentView extends StatelessWidget {
                           '(${p.items.length}) صناديق مضافة',
                           style: TextStyle(color: textSecondary, fontSize: 11.sp),
                         ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (isActive)
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                borderRadius: BorderRadius.circular(6.r),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isActive)
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(6.r),
+                                ),
+                                child: const Text(
+                                  'نشطة الان',
+                                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 10),
+                                ),
                               ),
-                              child: const Text(
-                                'نشطة الان',
-                                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 10),
+                            if (portfolios.length > 1)
+                              IconButton(
+                                icon: const FaIcon(FontAwesomeIcons.trashCan, color: AppColors.error, size: 14),
+                                onPressed: () {
+                                  cubit.deletePortfolio(p.id);
+                                  Navigator.pop(ctx);
+                                  AppSnackBar.showInfo(context, 'تم حذف المحفظة بنجاح');
+                                },
                               ),
-                            ),
-                          if (portfolios.length > 1)
-                            IconButton(
-                              icon: const FaIcon(FontAwesomeIcons.trashCan, color: AppColors.error, size: 14),
-                              onPressed: () {
-                                cubit.deletePortfolio(p.id);
-                                Navigator.pop(ctx);
-                              },
-                            ),
-                        ],
-                      ),
-                      onTap: () {
-                        cubit.switchPortfolio(p.id);
-                        Navigator.pop(ctx);
-                      },
+                          ],
+                        ),
+                        onTap: () {
+                          cubit.switchPortfolio(p.id);
+                          Navigator.pop(ctx);
+                        },
                       ),
                     ),
                   );
@@ -520,9 +521,9 @@ class _PortfolioContentView extends StatelessWidget {
                     _showCreatePortfolioDialog(context);
                   },
                   icon: const FaIcon(FontAwesomeIcons.plus, color: Colors.black, size: 14),
-                  label: const Text(
-                    'إنشاء محفظة استثمارية جديدة',
-                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  label: Text(
+                    context.tr('addPortfolio'),
+                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -629,16 +630,31 @@ class _PortfolioContentView extends StatelessWidget {
                   ),
                   onPressed: () {
                     final name = nameController.text.trim();
-                    if (name.isNotEmpty) {
-                      cubit.createPortfolio(name);
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('تم إنشاء وتفعيل "$name" بنجاح! 🚀'),
-                          backgroundColor: AppColors.primary,
-                        ),
-                      );
+                    if (name.isEmpty) {
+                      AppSnackBar.showWarning(context, 'يرجى إدخال اسم المحفظة الجديدة');
+                      return;
                     }
+
+                    final state = cubit.state;
+                    if (state is PortfolioLoaded) {
+                      final isDuplicate = state.allPortfolios.any(
+                        (p) => p.name.trim().toLowerCase() == name.toLowerCase(),
+                      );
+                      if (isDuplicate) {
+                        AppSnackBar.showError(
+                          context,
+                          context.tr('duplicatePortfolioError'),
+                        );
+                        return;
+                      }
+                    }
+
+                    cubit.createPortfolio(name);
+                    Navigator.pop(ctx);
+                    AppSnackBar.showSuccess(
+                      context,
+                      'تم إنشاء وتفعيل محفظة "$name" بنجاح! 🚀',
+                    );
                   },
                   child: const Text(
                     'إنشاء وتفعيل المحفظة',
@@ -731,7 +747,7 @@ class _PortfolioContentView extends StatelessWidget {
                           ),
                           SizedBox(width: 10.w),
                           Text(
-                            'تعديل عدد الوثائق',
+                            context.tr('editUnits'),
                             style: TextStyle(
                               color: textPrimary,
                               fontSize: 16.sp,
@@ -760,6 +776,9 @@ class _PortfolioContentView extends StatelessWidget {
                   TextFormField(
                     controller: unitsController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                    ],
                     style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 16.sp),
                     onChanged: (_) => setStateModal(() {}),
                     decoration: InputDecoration(
@@ -803,15 +822,15 @@ class _PortfolioContentView extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'القيمة الإجمالية المعدلة:',
-                          style: TextStyle(color: textSecondary, fontSize: 12.sp),
+                          'القيمة الإجمالية المقدرة:',
+                          style: TextStyle(color: textSecondary, fontSize: 11.sp),
                         ),
                         Text(
                           '${calculatedTotal.toStringAsFixed(0)} ج.م',
                           style: TextStyle(
                             color: AppColors.primary,
-                            fontSize: 15.sp,
                             fontWeight: FontWeight.bold,
+                            fontSize: 14.sp,
                           ),
                         ),
                       ],
@@ -829,18 +848,20 @@ class _PortfolioContentView extends StatelessWidget {
                       ),
                       onPressed: () {
                         final newUnits = double.tryParse(unitsController.text) ?? 0;
-                        cubit.updateTransactionUnits(itemId: item.id, newUnits: newUnits);
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('تم تحديث عدد الوثائق بالمحفظة بنجاح! 📈'),
-                            backgroundColor: Color(0xFF3B82F6),
-                          ),
-                        );
+                        if (newUnits > 0) {
+                          cubit.updateTransactionUnits(itemId: item.id, newUnits: newUnits);
+                          Navigator.pop(ctx);
+                          AppSnackBar.showSuccess(
+                            context,
+                            'تم تحديث كمية وثائق "${item.fundName}" إلى $newUnits وثيقة بنجاح!',
+                          );
+                        } else {
+                          AppSnackBar.showWarning(context, context.tr('invalidUnitsError'));
+                        }
                       },
-                      child: const Text(
-                        'حفظ الكمية الجديدة',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      child: Text(
+                        context.tr('save'),
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -859,35 +880,14 @@ class _PortfolioContentView extends StatelessWidget {
     TextEditingController controller,
     StateSetter setStateModal,
   ) {
-    return GestureDetector(
-      onTap: () {
-        double current = double.tryParse(controller.text) ?? 0;
-        double updated = (current + delta).clamp(0, 99999);
+    return ActionChip(
+      label: Text(label, style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.bold)),
+      onPressed: () {
+        final current = double.tryParse(controller.text) ?? 0;
+        final updated = (current + delta).clamp(0, 999999).toDouble();
         controller.text = updated.toStringAsFixed(0);
         setStateModal(() {});
       },
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-        decoration: BoxDecoration(
-          color: delta > 0
-              ? AppColors.success.withValues(alpha: 0.12)
-              : AppColors.error.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(8.r),
-          border: Border.all(
-            color: delta > 0
-                ? AppColors.success.withValues(alpha: 0.4)
-                : AppColors.error.withValues(alpha: 0.4),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: delta > 0 ? AppColors.success : AppColors.error,
-            fontSize: 11.sp,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
     );
   }
 }

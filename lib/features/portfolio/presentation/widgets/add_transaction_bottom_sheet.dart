@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/app_config/app_colors.dart';
+import '../../../../core/widgets/app_snackbar.dart';
+import '../../../../core/language/language_cubit.dart';
+import '../../../calculator/data/repositories/calculator_repository.dart';
+import '../../../home/data/models/fund_model.dart';
 import '../../data/models/portfolio_item_model.dart';
 
 class AddTransactionBottomSheet extends StatefulWidget {
@@ -20,18 +25,221 @@ class AddTransactionBottomSheet extends StatefulWidget {
 
 class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
   final _unitsController = TextEditingController(text: '10');
-  final _priceController = TextEditingController(text: '100');
+  final _customPriceController = TextEditingController();
+  final _searchController = TextEditingController();
 
-  FundCategory _selectedCategory = FundCategory.moneyMarket;
+  List<FundModel> _backendFunds = [];
+  List<FundModel> _filteredFunds = [];
+  FundModel? _selectedFund;
+  bool _isLoadingFunds = true;
+
+  // Price Mode: false = Automatic (Current Backend NAV), true = Manual (Custom Purchase Price)
+  bool _isManualPrice = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBackendFunds();
+  }
+
+  Future<void> _loadBackendFunds() async {
+    try {
+      final funds = await CalculatorRepository().getSponsoredBackendFunds();
+      if (mounted) {
+        setState(() {
+          _backendFunds = funds;
+          _filteredFunds = funds;
+          _isLoadingFunds = false;
+          if (funds.isNotEmpty) {
+            _selectedFund = funds.first;
+          }
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoadingFunds = false);
+      }
+    }
+  }
 
   @override
   void dispose() {
-    _nameController.dispose();
     _unitsController.dispose();
-    _priceController.dispose();
+    _customPriceController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  FundCategory _mapCategory(String categoryStr) {
+    final cat = categoryStr.toLowerCase();
+    if (cat.contains('gold') || cat.contains('ذهب')) return FundCategory.gold;
+    if (cat.contains('islamic') || cat.contains('إسلام')) return FundCategory.islamic;
+    if (cat.contains('equity') || cat.contains('أسهم')) return FundCategory.equity;
+    if (cat.contains('fixed') || cat.contains('سندات') || cat.contains('أذون')) return FundCategory.treasuryBills;
+    return FundCategory.moneyMarket;
+  }
+
+  void _openFundPickerModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final surface = AppColors.getSurface(context);
+        final textPrimary = AppColors.getTextPrimary(context);
+        final textSecondary = AppColors.getTextSecondary(context);
+        final border = AppColors.getBorder(context);
+
+        return StatefulBuilder(
+          builder: (context, setStateModal) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.75,
+              padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 16.h),
+              decoration: BoxDecoration(
+                color: surface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        context.tr('selectFundFromList'),
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: textSecondary),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10.h),
+
+                  // Search Bar Input
+                  TextField(
+                    controller: _searchController,
+                    style: TextStyle(color: textPrimary),
+                    decoration: InputDecoration(
+                      hintText: context.tr('searchBackendFunds'),
+                      hintStyle: TextStyle(color: textSecondary, fontSize: 12.sp),
+                      prefixIcon: Icon(Icons.search, color: AppColors.primary, size: 20.r),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear, color: textSecondary),
+                              onPressed: () {
+                                _searchController.clear();
+                                setStateModal(() {
+                                  _filteredFunds = _backendFunds;
+                                });
+                              },
+                            )
+                          : null,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        borderSide: BorderSide(color: border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        borderSide: const BorderSide(color: AppColors.primary),
+                      ),
+                    ),
+                    onChanged: (query) {
+                      final q = query.toLowerCase().trim();
+                      setStateModal(() {
+                        _filteredFunds = _backendFunds.where((f) {
+                          final nameMatch = f.name.toLowerCase().contains(q);
+                          final managerMatch = f.managerName.toLowerCase().contains(q);
+                          final catMatch = f.category.toLowerCase().contains(q);
+                          return nameMatch || managerMatch || catMatch;
+                        }).toList();
+                      });
+                    },
+                  ),
+                  SizedBox(height: 12.h),
+
+                  Expanded(
+                    child: _filteredFunds.isEmpty
+                        ? Center(
+                            child: Text(
+                              'لا توجد صناديق مطابقة للبحث',
+                              style: TextStyle(color: textSecondary, fontSize: 12.sp),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: _filteredFunds.length,
+                            itemBuilder: (context, index) {
+                              final fund = _filteredFunds[index];
+                              final isSelected = _selectedFund?.id == fund.id;
+
+                              return Card(
+                                margin: EdgeInsets.only(bottom: 8.h),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  side: BorderSide(
+                                    color: isSelected ? AppColors.primary : border,
+                                    width: isSelected ? 1.5 : 1,
+                                  ),
+                                ),
+                                color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : surface,
+                                child: ListTile(
+                                  title: Text(
+                                    fund.name,
+                                    style: TextStyle(
+                                      color: textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13.sp,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '${fund.managerName} | ${fund.category}',
+                                    style: TextStyle(color: textSecondary, fontSize: 11.sp),
+                                  ),
+                                  trailing: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        'NAV: ${fund.currentNav} ${fund.currency}',
+                                        style: TextStyle(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12.sp,
+                                        ),
+                                      ),
+                                      Text(
+                                        'YTD: +${fund.ytdReturn}%',
+                                        style: TextStyle(
+                                          color: AppColors.success,
+                                          fontSize: 10.sp,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedFund = fund;
+                                    });
+                                    Navigator.pop(ctx);
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -40,6 +248,8 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
     final textPrimary = AppColors.getTextPrimary(context);
     final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
+
+    final selectedNav = _selectedFund?.currentNav ?? 100.0;
 
     return Container(
       padding: EdgeInsets.only(
@@ -76,14 +286,72 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                   ),
                 ],
               ),
+              SizedBox(height: 14.h),
+
+              // 1. Backend Fund Selection Selector (Searchable)
+              Text(
+                'الصندوق الاستثماري (من الباك إند):',
+                style: TextStyle(color: textSecondary, fontSize: 11.sp, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 6.h),
+
+              _isLoadingFunds
+                  ? const Center(child: CircularProgressIndicator())
+                  : GestureDetector(
+                      onTap: () => _openFundPickerModal(context),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                        decoration: BoxDecoration(
+                          color: surface,
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(color: AppColors.primary, width: 1.2),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.search, color: AppColors.primary, size: 20.r),
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _selectedFund?.name ?? 'اختر الصندوق من القائمة...',
+                                    style: TextStyle(
+                                      color: textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13.sp,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (_selectedFund != null) ...[
+                                    SizedBox(height: 2.h),
+                                    Text(
+                                      '${_selectedFund!.managerName} | NAV الحالي: ${_selectedFund!.currentNav} ${_selectedFund!.currency}',
+                                      style: TextStyle(color: textSecondary, fontSize: 10.sp),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            Icon(Icons.arrow_drop_down, color: AppColors.primary, size: 24.r),
+                          ],
+                        ),
+                      ),
+                    ),
               SizedBox(height: 16.h),
 
-              // Fund Name
+              // 2. Units Input Field (Numbers & Decimals Only Protected)
               TextFormField(
-                controller: _nameController,
-                style: TextStyle(color: textPrimary),
+                controller: _unitsController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                ],
+                style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
                 decoration: InputDecoration(
-                  labelText: 'اسم الصندوق / الأداة المالية',
+                  labelText: context.tr('units'),
+                  hintText: 'مثال: 10 أو 25.5',
                   labelStyle: TextStyle(color: textSecondary),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10.r),
@@ -94,111 +362,128 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                     borderSide: const BorderSide(color: AppColors.primary),
                   ),
                 ),
-                validator: (val) => val == null || val.isEmpty ? 'يرجى إدخال اسم الصندوق' : null,
-              ),
-              SizedBox(height: 14.h),
-
-              // Category Selector Dropdown
-              DropdownButtonFormField<FundCategory>(
-                initialValue: _selectedCategory,
-                dropdownColor: surface,
-                style: TextStyle(color: textPrimary),
-                decoration: InputDecoration(
-                  labelText: 'الفئة المالية (Asset Category)',
-                  labelStyle: TextStyle(color: textSecondary),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.r),
-                    borderSide: BorderSide(color: border),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.r),
-                    borderSide: const BorderSide(color: AppColors.primary),
-                  ),
-                ),
-                items: FundCategory.values.map((cat) {
-                  return DropdownMenuItem(
-                    value: cat,
-                    child: Row(
-                      children: [
-                        Icon(cat.icon, color: cat.color, size: 18.r),
-                        SizedBox(width: 8.w),
-                        Text(cat.displayNameAr),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) setState(() => _selectedCategory = val);
+                validator: (val) {
+                  final parsed = double.tryParse(val ?? '');
+                  if (parsed == null || parsed <= 0) return context.tr('invalidUnitsError');
+                  return null;
                 },
               ),
-              SizedBox(height: 14.h),
+              SizedBox(height: 16.h),
 
-              // Units & Price Inputs Row
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _unitsController,
-                      keyboardType: TextInputType.number,
-                      style: TextStyle(color: textPrimary),
-                      decoration: InputDecoration(
-                        labelText: 'عدد الوثائق',
-                        labelStyle: TextStyle(color: textSecondary),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.r),
-                          borderSide: BorderSide(color: border),
+              // 3. Purchase Price Mode Switcher (Automatic vs Custom Manual)
+              Container(
+                padding: EdgeInsets.all(12.r),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'تحديد سعر وثيقة الشراء:',
+                          style: TextStyle(
+                            color: textPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12.sp,
+                          ),
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.r),
-                          borderSide: const BorderSide(color: AppColors.primary),
+                        Switch(
+                          value: _isManualPrice,
+                          activeTrackColor: AppColors.primary,
+                          onChanged: (val) => setState(() => _isManualPrice = val),
                         ),
-                      ),
-                      validator: (val) => (double.tryParse(val ?? '') ?? 0) <= 0 ? 'مطلوب' : null,
+                      ],
                     ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _priceController,
-                      keyboardType: TextInputType.number,
-                      style: TextStyle(color: textPrimary),
-                      decoration: InputDecoration(
-                        labelText: 'سعر الوثيقة (ج.م)',
-                        labelStyle: TextStyle(color: textSecondary),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.r),
-                          borderSide: BorderSide(color: border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.r),
-                          borderSide: const BorderSide(color: AppColors.primary),
-                        ),
+                    Text(
+                      _isManualPrice
+                          ? context.tr('enterCustomPurchasePrice')
+                          : '${context.tr('useCurrentNavDefault')} ($selectedNav EGP)',
+                      style: TextStyle(
+                        color: _isManualPrice ? AppColors.gold : AppColors.success,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.bold,
                       ),
-                      validator: (val) => (double.tryParse(val ?? '') ?? 0) <= 0 ? 'مطلوب' : null,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              SizedBox(height: 20.h),
+              SizedBox(height: 12.h),
 
-              // Submit Button
+              // Custom Manual Purchase Price Input (If Manual Enabled)
+              if (_isManualPrice) ...[
+                TextFormField(
+                  controller: _customPriceController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                  ],
+                  style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
+                  decoration: InputDecoration(
+                    labelText: context.tr('purchasePriceLabel'),
+                    hintText: 'أدخل سعر الوثيقة وقت الشراء السابق (ج.م)',
+                    labelStyle: TextStyle(color: textSecondary),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                      borderSide: BorderSide(color: border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                      borderSide: const BorderSide(color: AppColors.primary),
+                    ),
+                  ),
+                  validator: (val) {
+                    if (_isManualPrice) {
+                      final parsed = double.tryParse(val ?? '');
+                      if (parsed == null || parsed <= 0) return context.tr('invalidPriceError');
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 16.h),
+              ],
+
+              // Submit Action Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
+                    if (_selectedFund == null) {
+                      AppSnackBar.showWarning(context, 'يرجى اختيار صندوق استثماري من القائمة أولاً');
+                      return;
+                    }
+
                     if (_formKey.currentState!.validate()) {
                       final units = double.parse(_unitsController.text);
-                      final price = double.parse(_priceController.text);
+                      final purchasePrice = _isManualPrice
+                          ? double.parse(_customPriceController.text)
+                          : selectedNav;
+                      final fundName = _selectedFund!.name;
+                      final category = _mapCategory(_selectedFund!.category);
 
                       widget.onAdd(
-                        fundName: _nameController.text,
-                        category: _selectedCategory,
+                        fundName: fundName,
+                        category: category,
                         units: units,
-                        purchasePrice: price,
-                        currentNav: price * 1.08,
+                        purchasePrice: purchasePrice,
+                        currentNav: selectedNav,
                       );
 
                       Navigator.pop(context);
+
+                      AppSnackBar.showSuccess(
+                        context,
+                        'تمت إضافة صفقة "$fundName" بعدد $units وثائق بنجاح!',
+                      );
+                    } else {
+                      AppSnackBar.showWarning(
+                        context,
+                        'يرجى التأكد من استكمال كافة البيانات بصورة صحيحة',
+                      );
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -208,9 +493,9 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                       borderRadius: BorderRadius.circular(10.r),
                     ),
                   ),
-                  child: const Text(
-                    'حفظ الصفقة في المحفظة',
-                    style: TextStyle(
+                  child: Text(
+                    context.tr('addTransaction'),
+                    style: const TextStyle(
                       color: Colors.black,
                       fontWeight: FontWeight.bold,
                     ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../../../home/data/models/fund_model.dart';
 
 class EditFundDialog extends StatefulWidget {
@@ -65,13 +66,17 @@ class _EditFundDialogState extends State<EditFundDialog> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'اسم الصندوق'),
-                validator: (val) => val == null || val.isEmpty ? 'يرجى إدخال اسم الصندوق' : null,
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) return 'يرجى إدخال اسم الصندوق';
+                  if (val.trim().length < 3) return 'الاسم قصير جداً';
+                  return null;
+                },
               ),
               SizedBox(height: 8.h),
               TextFormField(
                 controller: _managerController,
                 decoration: const InputDecoration(labelText: 'الشركة المديرة'),
-                validator: (val) => val == null || val.isEmpty ? 'يرجى إدخال اسم المدير' : null,
+                validator: (val) => val == null || val.trim().isEmpty ? 'يرجى إدخال اسم المدير' : null,
               ),
               SizedBox(height: 8.h),
               Row(
@@ -81,7 +86,11 @@ class _EditFundDialogState extends State<EditFundDialog> {
                       controller: _navController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(labelText: 'سعر الوثيقة (NAV)'),
-                      validator: (val) => double.tryParse(val ?? '') == null ? 'سعر غير صالح' : null,
+                      validator: (val) {
+                        final d = double.tryParse(val ?? '');
+                        if (d == null || d <= 0) return 'سعر غير صالح';
+                        return null;
+                      },
                     ),
                   ),
                   SizedBox(width: 8.w),
@@ -90,7 +99,11 @@ class _EditFundDialogState extends State<EditFundDialog> {
                       controller: _ytdController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(labelText: 'العائد % (YTD)'),
-                      validator: (val) => double.tryParse(val ?? '') == null ? 'نسبة غير صالحة' : null,
+                      validator: (val) {
+                        final d = double.tryParse(val ?? '');
+                        if (d == null) return 'نسبة غير صالحة';
+                        return null;
+                      },
                     ),
                   ),
                 ],
@@ -164,6 +177,16 @@ class _EditFundDialogState extends State<EditFundDialog> {
               );
               widget.onSave(updatedFund);
               Navigator.pop(context);
+
+              AppSnackBar.showSuccess(
+                context,
+                'تمت تحديث بيانات صندوق "${updatedFund.name}" بنجاح!',
+              );
+            } else {
+              AppSnackBar.showWarning(
+                context,
+                'يرجى التأكد من استكمال كافة بيانات الصندوق بشكل صحيح',
+              );
             }
           },
           child: const Text('حفظ التعديلات'),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../../../home/data/models/fund_model.dart';
 import '../cubit/admin_cubit.dart';
 import '../cubit/admin_state.dart';
@@ -194,6 +195,7 @@ class _AdminFundsScreenState extends State<AdminFundsScreen> {
   }
 
   void _confirmDelete(BuildContext context, FundModel fund) {
+    final cubit = context.read<AdminCubit>();
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -207,8 +209,12 @@ class _AdminFundsScreenState extends State<AdminFundsScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
-              context.read<AdminCubit>().deleteFund(fund.id);
+              cubit.deleteFund(fund.id);
               Navigator.pop(dialogContext);
+              AppSnackBar.showSuccess(
+                context,
+                'تم حذف صندوق "${fund.name}" من الباك إند بنجاح!',
+              );
             },
             child: const Text('حذف', style: TextStyle(color: Colors.white)),
           ),

@@ -8,8 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/widgets/social_login_button.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/services/biometric_service.dart';
-import '../../../../core/supabase/supabase_service.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import '../../../../core/language/language_cubit.dart';
@@ -51,18 +51,10 @@ class _LoginScreenState extends State<LoginScreen> {
       localizedReason: 'يرجى استخدام البصمة لتسجيل الدخول السريع 🔒',
     );
     if (authenticated && mounted) {
-      final session = SupabaseService.client?.auth.currentSession;
-      if (session != null) {
-        context.go(Routes.home);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم التحقق من البصمة بنجاح! 🔓'),
-            backgroundColor: AppColors.primary,
-          ),
-        );
-        context.go(Routes.home);
-      }
+      AppSnackBar.showSuccess(context, 'تم التحقق من البصمة وتأمين الحساب بنجاح! 🔓');
+      context.go(Routes.home);
+    } else if (mounted) {
+      AppSnackBar.showError(context, 'فشل التحقق من البصمة، يرجى المحاولة مجدداً');
     }
   }
 
@@ -90,13 +82,13 @@ class _LoginScreenState extends State<LoginScreen> {
             child: BlocConsumer<AuthCubit, AuthState>(
               listener: (context, state) {
                 if (state is Authenticated) {
+                  AppSnackBar.showSuccess(context, 'أهلاً بك مجدداً في منصة وثيقة! 🚀');
                   context.go(Routes.home);
                 } else if (state is OtpSent) {
+                  AppSnackBar.showInfo(context, 'تم إرسال رمز التحقق إلى بريدك الإلكتروني 📩');
                   context.push(Routes.otp, extra: state.email);
                 } else if (state is AuthError) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
-                  );
+                  AppSnackBar.showError(context, state.message);
                 }
               },
               builder: (context, state) {
@@ -163,7 +155,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 prefixIcon: Icon(Icons.email_outlined, color: textSecondary),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
-                              validator: (val) => val == null || !val.contains('@') ? 'بريد إلكتروني غير صحيح' : null,
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) return 'يرجى إدخال البريد الإلكتروني';
+                                if (!val.contains('@') || !val.contains('.')) return 'صيغة البريد غير صحيحة';
+                                return null;
+                              },
                             ),
                             SizedBox(height: 14.h),
 
@@ -187,6 +183,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) return 'يرجى إدخال كلمة المرور';
+                                if (val.length < 6) return 'كلمة المرور لا تقل عن 6 أحرف';
+                                return null;
+                              },
                             ),
                             SizedBox(height: 8.h),
 
@@ -215,12 +216,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: isLoading
                             ? null
                             : () {
-                                final email = _emailController.text.trim();
-                                if (email.isNotEmpty) {
+                                if (_formKey.currentState!.validate()) {
+                                  final email = _emailController.text.trim();
                                   context.read<AuthCubit>().sendOtp(email);
                                 } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('يرجى كتابة البريد الإلكتروني')),
+                                  AppSnackBar.showWarning(
+                                    context,
+                                    'يرجى مراجعة وتصحيح حقول البريد وكلمة المرور',
                                   );
                                 }
                               },
@@ -261,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       SizedBox(height: 20.h),
 
-                      // Pure White Google Sign In Button with Multi-Colored Logo & Blue Ripple
+                      // Pure White Google Sign In Button
                       SocialLoginButton(
                         label: 'متابعة باستخدام Google',
                         isLoading: isLoading,

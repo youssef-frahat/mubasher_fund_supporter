@@ -4,8 +4,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/routing/routes.dart';
+import '../../../../core/services/biometric_service.dart';
 import '../../../../core/supabase/supabase_service.dart';
 import '../../../../core/widgets/app_loading_indicator.dart';
 
@@ -30,8 +32,18 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
     final session = SupabaseService.client?.auth.currentSession;
     if (session != null) {
-      context.go(Routes.home);
+      final prefs = await SharedPreferences.getInstance();
+      final biometricsEnabled = prefs.getBool('biometrics_enabled') ?? false;
+      final isBiometricsAvailable = await BiometricService.isBiometricAvailable();
+
+      if (!mounted) return;
+      if (biometricsEnabled && isBiometricsAvailable) {
+        context.go(Routes.biometricLock);
+      } else {
+        context.go(Routes.home);
+      }
     } else {
+      if (!mounted) return;
       context.go(Routes.login);
     }
   }

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/language/language_cubit.dart';
+import '../../../calculator/data/repositories/calculator_repository.dart';
 import '../../../home/data/models/platform_feature.dart';
 
 class AllFundsScreen extends StatefulWidget {
@@ -18,6 +19,8 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedCategoryFilter = 'الكل';
   String _searchQuery = '';
+  List<PlatformFeature> _funds = [];
+  bool _isLoading = true;
 
   final List<String> _categories = [
     'الكل',
@@ -28,44 +31,53 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
     'أذون وسندات',
   ];
 
-  final List<PlatformFeature> _allFunds = const [
-    PlatformFeature(
-      title: 'صندوق مباشر اليومي للسيولة',
-      subtitle: 'صندوق استثمار نقدي يومي تراكمي - عائد آمن وسحب فوري',
-      icon: FontAwesomeIcons.moneyBillWave,
-      accentColor: Color(0xFF10B981),
-    ),
-    PlatformFeature(
-      title: 'صندوق أزموت للذهب (Azimut Gold)',
-      subtitle: 'أول صندوق استثمار مصري متخصص في سبائك الذهب النقية 999.9',
-      icon: FontAwesomeIcons.coins,
-      accentColor: Color(0xFFF59E0B),
-    ),
-    PlatformFeature(
-      title: 'صندوق فيصل الإسلامي للأسهم',
-      subtitle: 'استثمار متوافق 100% مع الشريعة الإسلامية في أسهم واعدة',
-      icon: FontAwesomeIcons.kaaba,
-      accentColor: Color(0xFF059669),
-    ),
-    PlatformFeature(
-      title: 'صندوق هيرميس للنمو والتنمية',
-      subtitle: 'صندوق أسهم للنمو المرتفع في البورصة المصرية',
-      icon: FontAwesomeIcons.chartLine,
-      accentColor: Color(0xFF3B82F6),
-    ),
-    PlatformFeature(
-      title: 'صندوق البنك الأهلي الرابع',
-      subtitle: 'عائد يومي آمن ومستقر مع إمكانية الشراء اليومي',
-      icon: FontAwesomeIcons.landmark,
-      accentColor: Color(0xFF10B981),
-    ),
-    PlatformFeature(
-      title: 'صندوق أذون الخزانة المصرية',
-      subtitle: 'صندوق سندات ودخل ثابت بضمان حكومي وعائد ممتاز',
-      icon: FontAwesomeIcons.shieldHalved,
-      accentColor: Color(0xFF6366F1),
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchRealFunds();
+  }
+
+  Future<void> _fetchRealFunds() async {
+    try {
+      final backendFunds = await CalculatorRepository().getSponsoredBackendFunds();
+      final mapped = backendFunds.map((f) {
+        Color color = const Color(0xFF10B981);
+        dynamic icon = FontAwesomeIcons.chartLine;
+        final cat = f.category.toLowerCase();
+
+        if (cat.contains('gold') || cat.contains('ذهب')) {
+          color = const Color(0xFFF59E0B);
+          icon = FontAwesomeIcons.coins;
+        } else if (cat.contains('islamic') || cat.contains('إسلام')) {
+          color = const Color(0xFF059669);
+          icon = FontAwesomeIcons.kaaba;
+        } else if (cat.contains('money') || cat.contains('سيولة') || cat.contains('نقدي')) {
+          color = const Color(0xFF10B981);
+          icon = FontAwesomeIcons.moneyBillWave;
+        } else if (cat.contains('fixed') || cat.contains('سندات') || cat.contains('أذون')) {
+          color = const Color(0xFF6366F1);
+          icon = FontAwesomeIcons.shieldHalved;
+        }
+
+        return PlatformFeature(
+          id: f.id,
+          title: f.name,
+          subtitle: '${f.managerName} | ${f.category} | NAV: ${f.currentNav} ${f.currency}',
+          icon: icon,
+          accentColor: color,
+        );
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _funds = mapped;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -81,14 +93,15 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
     final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
 
-    final filteredFunds = _allFunds.where((fund) {
-      final matchesSearch = fund.title.contains(_searchQuery) || fund.subtitle.contains(_searchQuery);
+    final filteredFunds = _funds.where((fund) {
+      final matchesSearch = fund.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          fund.subtitle.toLowerCase().contains(_searchQuery.toLowerCase());
       if (_selectedCategoryFilter == 'الكل') return matchesSearch;
-      if (_selectedCategoryFilter == 'سيولة ونقدي') return matchesSearch && (fund.subtitle.contains('نقدي') || fund.subtitle.contains('يومي'));
-      if (_selectedCategoryFilter == 'تحوط ذهب') return matchesSearch && fund.title.contains('ذهب');
-      if (_selectedCategoryFilter == 'أسهم ونمو') return matchesSearch && (fund.title.contains('أسهم') || fund.subtitle.contains('أسهم'));
-      if (_selectedCategoryFilter == 'شريعة إسلامية') return matchesSearch && (fund.title.contains('إسلامي') || fund.subtitle.contains('الشريعة'));
-      if (_selectedCategoryFilter == 'أذون وسندات') return matchesSearch && (fund.title.contains('سندات') || fund.subtitle.contains('خزانة'));
+      if (_selectedCategoryFilter == 'سيولة ونقدي') return matchesSearch && (fund.subtitle.contains('نقدي') || fund.subtitle.contains('يومي') || fund.subtitle.contains('MoneyMarket'));
+      if (_selectedCategoryFilter == 'تحوط ذهب') return matchesSearch && (fund.title.contains('ذهب') || fund.subtitle.contains('Gold'));
+      if (_selectedCategoryFilter == 'أسهم ونمو') return matchesSearch && (fund.title.contains('أسهم') || fund.subtitle.contains('Equity'));
+      if (_selectedCategoryFilter == 'شريعة إسلامية') return matchesSearch && (fund.title.contains('إسلامي') || fund.subtitle.contains('Islamic'));
+      if (_selectedCategoryFilter == 'أذون وسندات') return matchesSearch && (fund.title.contains('سندات') || fund.subtitle.contains('Fixed'));
       return matchesSearch;
     }).toList();
 
@@ -200,7 +213,7 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
                   ),
                 ),
                 Text(
-                  'آخر تحديث: اليوم',
+                  context.tr('lastNavUpdate'),
                   style: TextStyle(
                     color: textSecondary,
                     fontSize: 11.sp,
@@ -213,58 +226,60 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
 
           // Fund List
           Expanded(
-            child: filteredFunds.isEmpty
-                ? Center(
-                    child: Text(
-                      'لا توجد صناديق تطابق الكلمة المبحوث عنها.',
-                      style: TextStyle(color: textSecondary, fontSize: 13.sp),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                    itemCount: filteredFunds.length,
-                    itemBuilder: (context, index) {
-                      final fund = filteredFunds[index];
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: 12.h),
-                        child: Material(
-                          color: surface,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14.r),
-                            side: BorderSide(color: border),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: ListTile(
-                            tileColor: Colors.transparent,
-                            leading: CircleAvatar(
-                              radius: 22.r,
-                              backgroundColor: fund.accentColor.withValues(alpha: 0.15),
-                              child: FaIcon(fund.icon, color: fund.accentColor, size: 18.r),
-                            ),
-                            title: Text(
-                              fund.title,
-                              style: TextStyle(
-                                color: textPrimary,
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(
-                              fund.subtitle,
-                              style: TextStyle(
-                                color: textSecondary,
-                                fontSize: 11.sp,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                            onTap: () => context.push(Routes.fundDetails, extra: fund),
-                          ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : filteredFunds.isEmpty
+                    ? Center(
+                        child: Text(
+                          'لا توجد صناديق تطابق الكلمة المبحوث عنها.',
+                          style: TextStyle(color: textSecondary, fontSize: 13.sp),
                         ),
-                      );
-                    },
-                  ),
+                      )
+                    : ListView.builder(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                        itemCount: filteredFunds.length,
+                        itemBuilder: (context, index) {
+                          final fund = filteredFunds[index];
+                          return Padding(
+                            padding: EdgeInsets.only(bottom: 12.h),
+                            child: Material(
+                              color: surface,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14.r),
+                                side: BorderSide(color: border),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: ListTile(
+                                tileColor: Colors.transparent,
+                                leading: CircleAvatar(
+                                  radius: 22.r,
+                                  backgroundColor: fund.accentColor.withValues(alpha: 0.15),
+                                  child: FaIcon(fund.icon, color: fund.accentColor, size: 18.r),
+                                ),
+                                title: Text(
+                                  fund.title,
+                                  style: TextStyle(
+                                    color: textPrimary,
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  fund.subtitle,
+                                  style: TextStyle(
+                                    color: textSecondary,
+                                    fontSize: 11.sp,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                                onTap: () => context.push(Routes.fundDetails, extra: fund),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),

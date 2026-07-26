@@ -14,20 +14,25 @@ class HomeCubit extends Cubit<HomeState> {
     
     // Fetch dashboard data in parallel
     final results = await Future.wait([
+      repository.getFunds(),
       repository.getRecommendedFunds(),
       repository.getTopPerformingFund(),
       repository.getRankedFunds(),
     ]);
 
-    final recommendedFunds = results[0] as List<FundModel>;
-    final topPerformingFund = results[1] as FundModel;
-    final rankedFunds = results[2] as List<FundModel>;
+    final allFunds = results[0] as List<FundModel>;
+    final recommendedFunds = results[1] as List<FundModel>;
+    final topPerformingFund = results[2] as FundModel;
+    final rankedFunds = results[3] as List<FundModel>;
 
-    final metrics = const [
-      PlatformMetric(label: 'Active Funds', value: '142'),
-      PlatformMetric(label: 'Daily NAV Updates', value: '98.6%'),
-      PlatformMetric(label: 'Advisor Accounts', value: '1,248'),
-      PlatformMetric(label: 'AI Insights', value: '24/7'),
+    // Dynamic count of active funds from Supabase database
+    final activeCount = allFunds.length.toString();
+
+    final metrics = [
+      PlatformMetric(label: 'Active Funds', value: activeCount),
+      const PlatformMetric(label: 'Daily NAV Updates', value: '98.6%'),
+      const PlatformMetric(label: 'Advisor Accounts', value: '1,248'),
+      const PlatformMetric(label: 'AI Insights', value: '24/7'),
     ];
 
     emit(HomeLoaded(

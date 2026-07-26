@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
+import '../../features/auth/presentation/screens/biometric_lock_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/admin/presentation/screens/admin_layout.dart';
 import '../../features/main_layout/presentation/screens/main_layout.dart';
@@ -20,7 +21,6 @@ import '../../features/funds/presentation/screens/wishlist_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/terms_conditions_screen.dart';
 import '../../features/settings/presentation/screens/faq_screen.dart';
-
 import '../../features/auth/presentation/screens/register_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -37,13 +37,14 @@ class AppRouter {
       final isAuthenticated = session != null;
       
       final isGoingToSplash = state.matchedLocation == Routes.splash;
+      final isGoingToBiometricLock = state.matchedLocation == Routes.biometricLock;
       final isGoingToLogin = state.matchedLocation == Routes.login;
       final isGoingToRegister = state.matchedLocation == Routes.register;
       final isGoingToOtp = state.matchedLocation == Routes.otp;
       final isAuthRoute = isGoingToLogin || isGoingToRegister || isGoingToOtp;
 
-      // Allow splash screen to show regardless of auth state
-      if (isGoingToSplash) return null;
+      // Allow splash screen & biometric lock screen to show
+      if (isGoingToSplash || isGoingToBiometricLock) return null;
 
       // If user is not authenticated and not heading to an auth route, redirect to login
       if (!isAuthenticated && !isAuthRoute) {
@@ -62,6 +63,11 @@ class AppRouter {
         path: Routes.splash,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: Routes.biometricLock,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const BiometricLockScreen(),
       ),
       GoRoute(
         path: Routes.forgotPassword,
@@ -149,7 +155,6 @@ class AppRouter {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const WishlistScreen(),
       ),
-
       GoRoute(
         path: Routes.termsConditions,
         parentNavigatorKey: _rootNavigatorKey,

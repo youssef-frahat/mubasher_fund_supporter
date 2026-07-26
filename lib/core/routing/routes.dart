@@ -16,4 +16,5 @@ class Routes {
   static const String faq = '/faq';
   static const String admin = '/admin';
   static const String adminFunds = '/admin/funds';
+  static const String biometricLock = '/biometric-lock';
 }

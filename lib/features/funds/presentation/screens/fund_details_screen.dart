@@ -8,6 +8,7 @@ import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/language/language_cubit.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/services/wishlist_service.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../../../home/data/models/platform_feature.dart';
 import '../../../portfolio/data/models/portfolio_item_model.dart';
 import '../../../portfolio/presentation/cubit/portfolio_cubit.dart';
@@ -59,15 +60,17 @@ class FundDetailsScreen extends StatelessWidget {
                 onPressed: () async {
                   final added = await sl<WishlistService>().toggleWishlist(fundId);
                   if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      duration: const Duration(seconds: 2),
-                      content: Text(
-                        added ? 'تمت إضافة "${fund.title}" للمفضلة ⭐️' : 'تم مسح "${fund.title}" من المفضلة',
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
+                  if (added) {
+                    AppSnackBar.showSuccess(
+                      context,
+                      'تمت إضافة "${fund.title}" للمفضلة ⭐️',
+                    );
+                  } else {
+                    AppSnackBar.showInfo(
+                      context,
+                      'تم إزالة "${fund.title}" من المفضلة',
+                    );
+                  }
                 },
               );
             },
@@ -129,7 +132,7 @@ class FundDetailsScreen extends StatelessWidget {
                   Divider(color: border),
                   SizedBox(height: 8.h),
 
-                  // NAV Last Updated Date Badge (Product Manager Requirement)
+                  // NAV Last Updated Date Badge
                   Wrap(
                     alignment: WrapAlignment.spaceBetween,
                     crossAxisAlignment: WrapCrossAlignment.center,
@@ -351,11 +354,14 @@ class FundDetailsScreen extends StatelessWidget {
                         currentNav: price * 1.06,
                       );
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('تمت إضافة الصفقة للمحفظة بنجاح! 🚀'),
-                          backgroundColor: AppColors.primary,
-                        ),
+                      AppSnackBar.showSuccess(
+                        context,
+                        'تمت إضافة صفقة "${fund.title}" بنجاح للمحفظة! 🚀',
+                      );
+                    } else {
+                      AppSnackBar.showWarning(
+                        context,
+                        'يرجى إدخال عدد وثائق وسعر شراء صحيح أكبر من صفر',
                       );
                     }
                   },

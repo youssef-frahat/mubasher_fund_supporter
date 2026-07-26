@@ -8,6 +8,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/widgets/social_login_button.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/services/avatar_picker_service.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
@@ -61,13 +62,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: BlocConsumer<AuthCubit, AuthState>(
               listener: (context, state) {
                 if (state is Authenticated) {
+                  AppSnackBar.showSuccess(context, 'تم إنشاء حسابك وتأمينه بنجاح! 🚀');
                   context.go(Routes.home);
                 } else if (state is OtpSent) {
+                  AppSnackBar.showInfo(context, 'تم إرسال رمز التفعيل لبريدك الإلكتروني 📩');
                   context.push(Routes.otp, extra: state.email);
                 } else if (state is AuthError) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
-                  );
+                  AppSnackBar.showError(context, state.message);
                 }
               },
               builder: (context, state) {
@@ -78,13 +79,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Header Avatar Picker (Optional)
+                      // Header Avatar Picker
                       Center(
                         child: GestureDetector(
                           onTap: () async {
                             final file = await AvatarPickerService.pickAndCropAvatar(context);
-                            if (file != null && mounted) {
+                            if (!context.mounted) return;
+                            if (file != null) {
                               setState(() => _avatarFile = file);
+                              AppSnackBar.showSuccess(context, 'تم حفظ وتعشيب الصورة الشخصية ✨');
                             }
                           },
                           child: Stack(
@@ -160,7 +163,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 prefixIcon: Icon(Icons.person_outline, color: textSecondary),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
-                              validator: (val) => val == null || val.isEmpty ? 'يرجى إدخال الاسم' : null,
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) return 'يرجى إدخال الاسم بالكامل';
+                                if (val.trim().length < 3) return 'الاسم لا يقل عن 3 أحرف';
+                                return null;
+                              },
                             ),
                             SizedBox(height: 14.h),
 
@@ -175,7 +182,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 prefixIcon: Icon(Icons.email_outlined, color: textSecondary),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
-                              validator: (val) => val == null || !val.contains('@') ? 'بريد إلكتروني غير صحيح' : null,
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) return 'يرجى إدخال البريد الإلكتروني';
+                                if (!val.contains('@') || !val.contains('.')) return 'صيغة البريد غير صحيحة';
+                                return null;
+                              },
                             ),
                             SizedBox(height: 14.h),
 
@@ -199,7 +210,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
-                              validator: (val) => (val?.length ?? 0) < 6 ? 'كلمة المرور 6 أحرف على الأقل' : null,
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) return 'يرجى كتابة كلمة المرور';
+                                if (val.length < 6) return 'كلمة المرور لا تقل عن 6 أحرف';
+                                return null;
+                              },
                             ),
                             SizedBox(height: 14.h),
 
@@ -245,11 +260,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ? null
                             : () {
                                 if (!_acceptedTerms) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('يرجى الموافقة على الشروط والأحكام للمتابعة'),
-                                      backgroundColor: AppColors.error,
-                                    ),
+                                  AppSnackBar.showWarning(
+                                    context,
+                                    'يرجى الموافقة على الشروط والأحكام للمتابعة',
                                   );
                                   return;
                                 }
@@ -259,6 +272,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         _passwordController.text,
                                         _nameController.text.trim(),
                                       );
+                                } else {
+                                  AppSnackBar.showWarning(
+                                    context,
+                                    'يرجى تصحيح وقراءة كافة البيانات المطلوبة بالنموذج',
+                                  );
                                 }
                               },
                         style: ElevatedButton.styleFrom(

@@ -15,6 +15,7 @@ import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
 import '../widgets/feature_card.dart';
 import '../widgets/ai_insight_banner.dart';
+import '../widgets/today_opportunity_card.dart';
 import '../widgets/top_performing_card.dart';
 import '../widgets/recommended_funds_list.dart';
 import '../widgets/fund_list_tile.dart';
@@ -39,9 +40,11 @@ class HomeScreen extends StatelessWidget {
           child: BlocBuilder<HomeCubit, HomeState>(
             builder: (context, state) {
               if (state is HomeLoaded) {
+                final recommendedFirst = state.recommendedFunds.isNotEmpty ? state.recommendedFunds.first : null;
+
                 return CustomScrollView(
                   slivers: [
-                    // Search Bar Widget at Top of Home Page
+                    // 1. Search Bar Widget at Top of Home Page
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
@@ -56,7 +59,14 @@ class HomeScreen extends StatelessWidget {
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.search, color: AppColors.primary, size: 20.r),
+                                Container(
+                                  padding: EdgeInsets.all(6.r),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                  child: FaIcon(FontAwesomeIcons.sliders, color: AppColors.primary, size: 13.r),
+                                ),
                                 SizedBox(width: 10.w),
                                 Expanded(
                                   child: Text(
@@ -70,14 +80,7 @@ class HomeScreen extends StatelessWidget {
                                   ),
                                 ),
                                 SizedBox(width: 8.w),
-                                Container(
-                                  padding: EdgeInsets.all(6.r),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(8.r),
-                                  ),
-                                  child: FaIcon(FontAwesomeIcons.sliders, color: AppColors.primary, size: 12.r),
-                                ),
+                                Icon(Icons.search, color: AppColors.primary, size: 20.r),
                               ],
                             ),
                           ),
@@ -85,56 +88,79 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // Top Stats Metrics Row
+                    // 2. Today's AI Opportunity Green Hero Banner (Matching Screenshots)
+                    SliverToBoxAdapter(
+                      child: TodayOpportunityCard(recommendedFund: recommendedFirst)
+                          .animate()
+                          .fadeIn(duration: 400.ms)
+                          .slideY(begin: -0.05, end: 0, curve: Curves.easeOutQuart),
+                    ),
+
+                    // 3. Top Stats Metrics 2x2 Grid (Dynamic Active Funds Count from Supabase)
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 14.h),
-                        child: Wrap(
-                          spacing: 10.w,
-                          runSpacing: 10.h,
-                          children: state.metrics
-                              .map(
-                                (metric) => ConstrainedBox(
-                                  constraints: BoxConstraints(minWidth: 140.w),
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-                                    decoration: BoxDecoration(
-                                      color: surface,
-                                      borderRadius: BorderRadius.circular(14.r),
-                                      border: Border.all(color: border),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          metric.value,
-                                          style: TextStyle(
-                                            color: AppColors.primary,
-                                            fontSize: 16.sp,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        SizedBox(height: 2.h),
-                                        Text(
-                                          context.tr(metric.label.toLowerCase().contains('active') ? 'activeFunds' : metric.label.toLowerCase().contains('nav') ? 'dailyNavUpdates' : metric.label.toLowerCase().contains('advisor') ? 'advisorAccounts' : 'aiInsights'),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: textSecondary,
-                                            fontSize: 10.sp,
-                                          ),
-                                        ),
-                                      ],
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                        child: GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 2.2,
+                            crossAxisSpacing: 10.w,
+                            mainAxisSpacing: 10.h,
+                          ),
+                          itemCount: state.metrics.length,
+                          itemBuilder: (context, index) {
+                            final metric = state.metrics[index];
+                            return Container(
+                              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                              decoration: BoxDecoration(
+                                color: surface,
+                                borderRadius: BorderRadius.circular(14.r),
+                                border: Border.all(color: border),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  FittedBox(
+                                    child: Text(
+                                      metric.value,
+                                      style: TextStyle(
+                                        color: const Color(0xFF10B981),
+                                        fontSize: 18.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              )
-                              .toList(),
+                                  SizedBox(height: 2.h),
+                                  Text(
+                                    context.tr(
+                                      metric.label.toLowerCase().contains('active')
+                                          ? 'activeFunds'
+                                          : metric.label.toLowerCase().contains('nav')
+                                              ? 'dailyNavUpdates'
+                                              : metric.label.toLowerCase().contains('advisor')
+                                                  ? 'advisorAccounts'
+                                                  : 'aiInsights',
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: textSecondary,
+                                      fontSize: 10.sp,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ),
 
-                    // AI Insight Banner
+                    // 4. AI Market Pulse Banner (Matching Screenshot 3)
                     SliverToBoxAdapter(
                       child: AiInsightBanner(insight: state.aiInsight)
                           .animate()
@@ -142,7 +168,7 @@ class HomeScreen extends StatelessWidget {
                           .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuart),
                     ),
 
-                    // Top Performing Fund Card Header
+                    // 5. Top Performing Fund Card Header & Card
                     SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,12 +180,12 @@ class HomeScreen extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    context.tr('topPerformingThisMonth'),
+                                    '🏅 ${context.tr('topPerformingThisMonth')}',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       color: textPrimary,
-                                      fontSize: 13.sp,
+                                      fontSize: 14.sp,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -168,7 +194,7 @@ class HomeScreen extends StatelessWidget {
                                 GestureDetector(
                                   onTap: () => context.push(Routes.allFunds),
                                   child: Text(
-                                    context.tr('seeAll'),
+                                    '${context.tr('seeAll')} ←',
                                     style: TextStyle(
                                       color: AppColors.primary,
                                       fontSize: 11.sp,
@@ -187,7 +213,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // Recommended Funds List with See All
+                    // 6. Recommended Funds List with See All
                     SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,12 +225,12 @@ class HomeScreen extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    context.tr('selectedFundsForYou'),
+                                    '⭐️ ${context.tr('selectedFundsForYou')}',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       color: textPrimary,
-                                      fontSize: 13.sp,
+                                      fontSize: 14.sp,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -213,7 +239,7 @@ class HomeScreen extends StatelessWidget {
                                 GestureDetector(
                                   onTap: () => context.push(Routes.allFunds),
                                   child: Text(
-                                    context.tr('seeAll'),
+                                    '${context.tr('seeAll')} ←',
                                     style: TextStyle(
                                       color: AppColors.primary,
                                       fontSize: 11.sp,
@@ -232,7 +258,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // Ranked Funds Header with See All
+                    // 7. Ranked Funds Header with See All
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 10.h),
@@ -241,12 +267,12 @@ class HomeScreen extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                context.tr('rankedByAnnualReturn'),
+                                '📈 ${context.tr('rankedByAnnualReturn')}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: textPrimary,
-                                  fontSize: 13.sp,
+                                  fontSize: 14.sp,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -255,7 +281,7 @@ class HomeScreen extends StatelessWidget {
                             GestureDetector(
                               onTap: () => context.push(Routes.allFunds),
                               child: Text(
-                                context.tr('seeAll'),
+                                '${context.tr('seeAll')} ←',
                                 style: TextStyle(
                                   color: AppColors.primary,
                                   fontSize: 11.sp,
@@ -268,11 +294,11 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // Ranked Funds List
+                    // 8. Ranked Funds List
                     SliverPadding(
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
                       sliver: SliverList.builder(
-                        itemCount: state.rankedFunds.length,
+                        itemCount: state.rankedFunds.length > 5 ? 5 : state.rankedFunds.length,
                         itemBuilder: (context, index) {
                           return FundListTile(
                             fund: state.rankedFunds[index],
@@ -282,17 +308,17 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // Platform Features Header
+                    // 9. Platform Features Header
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 10.h),
                         child: Text(
-                          context.tr('watheqaToolsAndSystem'),
+                          '⚡ ${context.tr('watheqaToolsAndSystem')}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: textPrimary,
-                            fontSize: 13.sp,
+                            fontSize: 14.sp,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -310,6 +336,7 @@ class HomeScreen extends StatelessWidget {
                         },
                       ),
                     ),
+                    SliverToBoxAdapter(child: SizedBox(height: 30.h)),
                   ],
                 );
               }
