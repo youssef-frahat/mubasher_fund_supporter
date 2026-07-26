@@ -211,8 +211,10 @@ body {
 /* Main Content Styles */
 .main-content {
   flex: 1;
-  padding: 24px 32px;
+  min-width: 0;
+  padding: 24px 28px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Header */
@@ -553,19 +555,43 @@ body {
   font-size: 12px;
 }
 
+.form-input[type="number"], input[type="number"].form-input {
+  direction: ltr !important;
+  text-align: center !important;
+  font-family: 'Roboto', 'Inter', system-ui, -apple-system, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #00E676 !important;
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  border-radius: 8px !important;
+  padding: 8px 10px !important;
+  letter-spacing: 0.5px;
+  width: 135px;
+}
+
 .form-input:focus, .form-select:focus {
   border-color: var(--primary);
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.4);
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
   text-align: right;
-  min-width: 750px;
+  min-width: 920px;
 }
 
 .data-table th, .data-table td {
-  padding: 14px 14px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border-color);
   font-size: 12px;
   vertical-align: middle;

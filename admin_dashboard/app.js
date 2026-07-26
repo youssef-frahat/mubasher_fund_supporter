@@ -686,7 +686,7 @@ function renderUsersTable() {
   tbody.innerHTML = '';
 
   if (liveUsers.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af">جاري تحميل حسابات المستخدمين...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af">لا يوجد مستخدمون مسجلون في قاعدة البيانات بعد (0)</td></tr>';
     return;
   }
 
@@ -697,19 +697,45 @@ function renderUsersTable() {
       <td>${u.phone || u.id}</td>
       <td>
         ${(u.is_verified || u.email_confirmed_at)
-          ? '<span class="badge" style="background:rgba(0,230,118,0.15); color:#00E676"><i class="fa-solid fa-circle-check"></i> موثّق 🟢</span>'
-          : '<span class="badge" style="background:rgba(245,158,11,0.15); color:#F59E0B"><i class="fa-solid fa-triangle-exclamation"></i> غير موثّق ⚠️</span>'
+          ? '<span class="badge badge-sponsored"><i class="fa-solid fa-circle-check"></i> موثّق 🟢</span>'
+          : '<span class="badge badge-recommended"><i class="fa-solid fa-triangle-exclamation"></i> غير موثّق ⚠️</span>'
         }
       </td>
       <td>${u.created_at ? u.created_at.split('T')[0] : '2026-07-26'}</td>
-      <td>
-        <button class="btn ${u.is_verified ? 'btn-secondary' : 'btn-primary'}" onclick="toggleUserVerification('${u.id}', ${!u.is_verified})">
-          ${u.is_verified ? 'إلغاء التوثيق' : 'منح شارة موثق 🟢'}
-        </button>
+      <td class="actions-cell">
+        <div class="btn-action-group">
+          <button class="btn ${u.is_verified ? 'btn-secondary' : 'btn-primary'}" onclick="toggleUserVerification('${u.id}', ${!u.is_verified})">
+            ${u.is_verified ? 'إلغاء التوثيق' : 'منح شارة موثق 🟢'}
+          </button>
+          <button class="btn btn-danger" onclick="deleteUserAccount('${u.id}')" title="مسح الحساب نهائياً">
+            <i class="fa-solid fa-trash"></i> مسح الحساب 🗑️
+          </button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
   });
+}
+
+// Delete User Account from Supabase DB
+async function deleteUserAccount(userId) {
+  const user = liveUsers.find(u => u.id === userId);
+  const name = user ? (user.full_name || user.name || userId) : userId;
+  if (confirm(`هل أنت تأكد من مسح حساب المستثمر (${name}) نهائياً من قاعدة بيانات Supabase؟`)) {
+    liveUsers = liveUsers.filter(u => u.id !== userId);
+    renderUsersTable();
+    updateMetricsAndInsights();
+
+    if (db) {
+      try {
+        await db.from('profiles').delete().eq('id', userId);
+        logMessage(`[SUPABASE DELETE USER] User account '${name}' (${userId}) deleted from DB.`, 'warning');
+        alert(`تم مسح حساب المستثمر (${name}) من الباك إند بنجاح! 🚀`);
+      } catch (err) {
+        logMessage(`[DB ERROR] Delete user failed: ${err.message}`, 'danger');
+      }
+    }
+  }
 }
 
 // Toggle Fund Flags in Supabase DB
