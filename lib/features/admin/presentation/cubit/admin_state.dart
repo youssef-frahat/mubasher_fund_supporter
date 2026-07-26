@@ -1,10 +1,13 @@
+import '../../../home/data/models/fund_model.dart';
+
 abstract class AdminState {}
 
 class AdminInitial extends AdminState {}
+
 class AdminLoading extends AdminState {}
 
 class AdminFundsLoaded extends AdminState {
-  final List<dynamic> funds;
+  final List<FundModel> funds;
   AdminFundsLoaded(this.funds);
 }
 

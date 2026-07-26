@@ -16,7 +16,7 @@ DROP TABLE IF EXISTS public.profiles CASCADE;
 
 -- =====================================================================
 -- 1. FUNDS TABLE (Investment Funds Data)
--- Supports all app repository query variants (name, name_ar, name_en, etc.)
+-- Supports all app repository query variants and full EIMA report data
 -- =====================================================================
 CREATE TABLE public.funds (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -27,16 +27,44 @@ CREATE TABLE public.funds (
     manager TEXT DEFAULT 'مباشر كابيتال',
     description_ar TEXT,
     description_en TEXT,
+    inception_date TEXT,
+    initial_value NUMERIC(12, 4) DEFAULT 100.0000,
     current_nav NUMERIC(12, 4) NOT NULL DEFAULT 100.0000,
-    ytd_return NUMERIC(6, 2) NOT NULL DEFAULT 0.00,
-    daily_change NUMERIC(6, 2) NOT NULL DEFAULT 0.00,
+    nav_date TEXT DEFAULT '09/07/26',
+    
+    -- Returns (%)
+    weekly_return NUMERIC(8, 2) DEFAULT 0.00,
+    four_weeks_return NUMERIC(8, 2) DEFAULT 0.00,
+    ytd_return NUMERIC(8, 2) NOT NULL DEFAULT 0.00,
+    last_12m_return NUMERIC(8, 2) DEFAULT 0.00,
+    return_2y NUMERIC(8, 2) DEFAULT 0.00,
+    return_3y NUMERIC(8, 2) DEFAULT 0.00,
+    return_4y NUMERIC(8, 2) DEFAULT 0.00,
+    return_5y NUMERIC(8, 2) DEFAULT 0.00,
+    return_6y NUMERIC(8, 2) DEFAULT 0.00,
+    daily_change NUMERIC(8, 2) NOT NULL DEFAULT 0.00,
+
+    -- Rankings
+    weekly_rank INTEGER,
+    four_weeks_rank INTEGER,
+    ytd_rank INTEGER,
+    last_12m_rank INTEGER,
+    rank_2y INTEGER,
+    rank_3y INTEGER,
+    rank_4y INTEGER,
+    rank_5y INTEGER,
+    rank_6y INTEGER,
+    rank INTEGER,
+
+    -- Metadata
+    currency TEXT NOT NULL DEFAULT 'EGP',
     risk_level TEXT NOT NULL DEFAULT 'Medium' CHECK (risk_level IN ('Low', 'Medium', 'High')),
     category TEXT NOT NULL DEFAULT 'Equity',
+    sub_category TEXT,
     fund_type TEXT DEFAULT 'Equity',
     logo_url TEXT,
     is_recommended BOOLEAN DEFAULT false,
     is_top_performing BOOLEAN DEFAULT false,
-    rank INTEGER,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -44,7 +72,7 @@ CREATE TABLE public.funds (
 -- RLS Policies for Funds
 ALTER TABLE public.funds ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read access to funds" ON public.funds FOR SELECT USING (true);
-CREATE POLICY "Allow authenticated admin full access to funds" ON public.funds FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow public all access to funds" ON public.funds FOR ALL USING (true);
 
 -- =====================================================================
 -- 2. USER PROFILES TABLE
@@ -139,17 +167,7 @@ ALTER TABLE public.wishlist ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow users to manage wishlist" ON public.wishlist FOR ALL USING (auth.uid() = user_id);
 
 -- =====================================================================
--- 7. SEED DATA (Demo Funds for Mubasher Fund Supporter)
--- =====================================================================
-INSERT INTO public.funds (id, name, name_ar, name_en, manager_name, manager, description_ar, description_en, current_nav, ytd_return, daily_change, risk_level, category, fund_type, is_recommended, is_top_performing, rank) VALUES
-('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'صندوق مباشر للأسهم المصرية (نمو)', 'صندوق مباشر للأسهم المصرية (نمو)', 'Mubasher Growth Equity Fund', 'مباشر كابيتال', 'مباشر كابيتال', 'صندوق أسهم مصري يهدف لتحقيق أعلى عائد استثماري', 'Egyptian equity fund aiming for high capital growth', 185.5000, 24.80, 1.25, 'High', 'Equity', 'Equity', true, true, 1),
-('b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e', 'صندوق أزيموت النقدية اليومية', 'صندوق أزيموت النقدية اليومية', 'Azimut Daily Money Market', 'أزيموت مصر', 'أزيموت مصر', 'صندوق سيولة نقدية يومية عائد يومي تراكمي', 'Daily liquidity money market fund with low risk', 12.3400, 18.50, 0.05, 'Low', 'MoneyMarket', 'MoneyMarket', true, false, 2),
-('c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f', 'صندوق أزيموت الذهب (AZG)', 'صندوق أزيموت الذهب (AZG)', 'Azimut Gold Fund (AZG)', 'أزيموت مصر', 'أزيموت مصر', 'صندوق للاستثمار في سبائك الذهب المضمونة', 'Gold bullion investment fund', 48.7500, 32.10, -0.40, 'Medium', 'Gold', 'Gold', true, false, 3),
-('d4e5f6a7-b89c-0d1e-2f3a-4b5c6d7e8f9a', 'صندوق سي أي كابيتال الشريعة الإسلامية', 'صندوق سي أي كابيتال الشريعة الإسلامية', 'CI Capital Shariah Fund', 'CI Capital', 'CI Capital', 'صندوق متوافق مع ضوابط الشريعة الإسلامية', 'Shariah-compliant investment fund', 215.0000, 21.30, 0.85, 'Medium', 'Islamic', 'Islamic', false, false, 4),
-('e5f6a7b8-9c0d-1e2f-3a4b-5c6d7e8f9a0b', 'صندوق بلتون أذون وسندات الخزانة', 'صندوق بلتون أذون وسندات الخزانة', 'Beltone Treasury Bills Fund', 'بلتون القابضة', 'بلتون القابضة', 'استثمار آمن في أذون وسندات الخزانة الحكومية', 'Government treasury bills and bonds investment fund', 104.2000, 19.80, 0.12, 'Low', 'TreasuryBills', 'TreasuryBills', true, false, 5);
-
--- =====================================================================
--- 8. AUTOMATIC PROFILE CREATION TRIGGER ON SIGN UP
+-- 7. AUTOMATIC PROFILE CREATION TRIGGER ON SIGN UP
 -- =====================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$

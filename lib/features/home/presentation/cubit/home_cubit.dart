@@ -10,12 +10,9 @@ class HomeCubit extends Cubit<HomeState> {
   HomeCubit(this.repository) : super(HomeInitial());
 
   Future<void> loadData() async {
-    // Show loading later if needed
-    // emit(HomeLoading());
-
-    final features = await repository.getFunds();
+    final features = await repository.getPlatformFeatures();
     
-    // Fetch new dashboard data in parallel
+    // Fetch dashboard data in parallel
     final results = await Future.wait([
       repository.getRecommendedFunds(),
       repository.getTopPerformingFund(),
@@ -39,7 +36,7 @@ class HomeCubit extends Cubit<HomeState> {
       recommendedFunds: recommendedFunds,
       topPerformingFund: topPerformingFund,
       rankedFunds: rankedFunds,
-      aiInsight: "The Egyptian stock market is highly active today. Consider looking at Equity funds which are up 2.4% on average.",
+      aiInsight: "أسواق الأسهم والصناديق تشهد نشاطاً كبيراً اليوم. نوصي بمراجعة صناديق الأسهم والنقدية المنوعة.",
     ));
   }
 }

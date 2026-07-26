@@ -4,11 +4,13 @@ import '../models/platform_feature.dart';
 import '../models/fund_model.dart';
 
 abstract class FundsRepository {
-  Future<List<PlatformFeature>> getFunds();
-  Future<void> addFund(PlatformFeature fund);
+  Future<List<FundModel>> getFunds();
+  Future<List<PlatformFeature>> getPlatformFeatures();
+  Future<void> addFund(FundModel fund);
+  Future<void> updateFund(FundModel fund);
   Future<void> deleteFund(String id);
 
-  // New Home Dashboard Methods
+  // Home Dashboard Methods
   Future<List<FundModel>> getRecommendedFunds();
   Future<FundModel> getTopPerformingFund();
   Future<List<FundModel>> getRankedFunds();
@@ -16,43 +18,43 @@ abstract class FundsRepository {
 
 class SupabaseFundsRepository implements FundsRepository {
   @override
-  Future<List<PlatformFeature>> getFunds() async {
+  Future<List<FundModel>> getFunds() async {
     final client = SupabaseService.client;
     if (client == null) {
-      throw Exception('Supabase client is not initialized');
+      return _getMockFunds();
     }
 
     try {
-      final response = await client.from('funds').select();
-      
-      return (response as List<dynamic>).map((fund) {
-        return PlatformFeature(
-          id: fund['id'] as String,
-          title: fund['name_en'] as String,
-          subtitle: fund['description_en'] as String,
-          icon: Icons.account_balance, // Default icon for now
-          accentColor: const Color(0xFF1E5CFF), // Default color for now
-        );
-      }).toList();
+      final response = await client.from('funds').select().order('name', ascending: true);
+      final data = response as List<dynamic>;
+      if (data.isEmpty) return _getMockFunds();
+      return data.map((item) => FundModel.fromMap(item as Map<String, dynamic>)).toList();
     } catch (e) {
-      debugPrint('Error fetching funds: $e');
-      return []; 
+      debugPrint('Error fetching funds from Supabase: $e');
+      return _getMockFunds();
     }
   }
 
   @override
-  Future<void> addFund(PlatformFeature fund) async {
+  Future<List<PlatformFeature>> getPlatformFeatures() async {
+    final funds = await getFunds();
+    return funds.map((f) => f.toPlatformFeature()).toList();
+  }
+
+  @override
+  Future<void> addFund(FundModel fund) async {
     final client = SupabaseService.client;
     if (client == null) throw Exception('Supabase client is not initialized');
 
-    await client.from('funds').insert({
-      'name_ar': fund.title,
-      'name_en': fund.title,
-      'description_ar': fund.subtitle,
-      'description_en': fund.subtitle,
-      'fund_type': 'Equity', // Default for now
-      'manager': 'Admin', // Default for now
-    });
+    await client.from('funds').insert(fund.toMap());
+  }
+
+  @override
+  Future<void> updateFund(FundModel fund) async {
+    final client = SupabaseService.client;
+    if (client == null) throw Exception('Supabase client is not initialized');
+
+    await client.from('funds').update(fund.toMap()).eq('id', fund.id);
   }
 
   @override
@@ -65,35 +67,91 @@ class SupabaseFundsRepository implements FundsRepository {
 
   @override
   Future<List<FundModel>> getRecommendedFunds() async {
-    // Mocking API call
-    await Future.delayed(const Duration(milliseconds: 500));
-    return [
-      FundModel.mock('1', 'Banque Misr First Fund', 12.5),
-      FundModel.mock('2', 'NBE Fund (Fourth)', 8.3, riskLevel: 'Low'),
-      FundModel.mock('3', 'CIB Equity Fund', 15.2, riskLevel: 'High'),
-    ];
+    final client = SupabaseService.client;
+    if (client != null) {
+      try {
+        final response = await client
+            .from('funds')
+            .select()
+            .eq('is_recommended', true)
+            .limit(10);
+        final data = response as List<dynamic>;
+        if (data.isNotEmpty) {
+          return data.map((item) => FundModel.fromMap(item as Map<String, dynamic>)).toList();
+        }
+      } catch (e) {
+        debugPrint('Error fetching recommended funds: $e');
+      }
+    }
+    final all = await getFunds();
+    return all.where((f) => f.isRecommended).take(5).toList();
   }
 
   @override
   Future<FundModel> getTopPerformingFund() async {
-    // Mocking API call
-    await Future.delayed(const Duration(milliseconds: 500));
-    return FundModel.mock('4', 'EFG Hermes Growth Fund', 24.8, riskLevel: 'High');
+    final client = SupabaseService.client;
+    if (client != null) {
+      try {
+        final response = await client
+            .from('funds')
+            .select()
+            .order('ytd_return', ascending: false)
+            .limit(1)
+            .maybeSingle();
+        if (response != null) {
+          return FundModel.fromMap(response);
+        }
+      } catch (e) {
+        debugPrint('Error fetching top performing fund: $e');
+      }
+    }
+    final all = await getFunds();
+    return all.first;
   }
 
   @override
   Future<List<FundModel>> getRankedFunds() async {
-    // Mocking API call
-    await Future.delayed(const Duration(milliseconds: 500));
-    final funds = [
-      FundModel.mock('4', 'EFG Hermes Growth Fund', 24.8, riskLevel: 'High'),
-      FundModel.mock('3', 'CIB Equity Fund', 15.2, riskLevel: 'High'),
-      FundModel.mock('1', 'Banque Misr First Fund', 12.5),
-      FundModel.mock('5', 'Faisal Islamic Fund', 10.1, category: 'Islamic'),
-      FundModel.mock('2', 'NBE Fund (Fourth)', 8.3, riskLevel: 'Low'),
+    final all = await getFunds();
+    all.sort((a, b) => b.ytdReturn.compareTo(a.ytdReturn));
+    return all;
+  }
+
+  List<FundModel> _getMockFunds() {
+    return [
+      FundModel(
+        id: '1',
+        name: 'صندوق مباشر للأسهم المصرية (نمو)',
+        managerName: 'مباشر كابيتال',
+        currentNav: 185.50,
+        ytdReturn: 24.80,
+        dailyChange: 1.25,
+        riskLevel: 'High',
+        category: 'Equity',
+        isRecommended: true,
+        isTopPerforming: true,
+      ),
+      FundModel(
+        id: '2',
+        name: 'صندوق أزيموت النقدية اليومية',
+        managerName: 'أزيموت مصر',
+        currentNav: 12.34,
+        ytdReturn: 18.50,
+        dailyChange: 0.05,
+        riskLevel: 'Low',
+        category: 'MoneyMarket',
+        isRecommended: true,
+      ),
+      FundModel(
+        id: '3',
+        name: 'صندوق أزيموت الذهب (AZG)',
+        managerName: 'أزيموت مصر',
+        currentNav: 48.75,
+        ytdReturn: 32.10,
+        dailyChange: -0.40,
+        riskLevel: 'Medium',
+        category: 'Gold',
+        isRecommended: true,
+      ),
     ];
-    // Sort by yield descending (already sorted in this mock, but just to be sure)
-    funds.sort((a, b) => b.ytdReturn.compareTo(a.ytdReturn));
-    return funds;
   }
 }

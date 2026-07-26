@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../home/data/models/platform_feature.dart';
+import '../../../home/data/models/fund_model.dart';
 import '../../../home/data/repositories/funds_repository.dart';
 import 'admin_state.dart';
 
@@ -18,10 +18,21 @@ class AdminCubit extends Cubit<AdminState> {
     }
   }
 
-  Future<void> addFund(PlatformFeature fund) async {
+  Future<void> addFund(FundModel fund) async {
     try {
+      emit(AdminLoading());
       await repository.addFund(fund);
-      loadFunds(); // Reload after adding
+      await loadFunds();
+    } catch (e) {
+      emit(AdminError(e.toString()));
+    }
+  }
+
+  Future<void> updateFund(FundModel fund) async {
+    try {
+      emit(AdminLoading());
+      await repository.updateFund(fund);
+      await loadFunds();
     } catch (e) {
       emit(AdminError(e.toString()));
     }
@@ -29,8 +40,9 @@ class AdminCubit extends Cubit<AdminState> {
 
   Future<void> deleteFund(String id) async {
     try {
+      emit(AdminLoading());
       await repository.deleteFund(id);
-      loadFunds(); // Reload after deleting
+      await loadFunds();
     } catch (e) {
       emit(AdminError(e.toString()));
     }

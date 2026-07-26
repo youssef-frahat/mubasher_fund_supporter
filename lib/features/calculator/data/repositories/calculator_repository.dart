@@ -6,7 +6,8 @@ class CalculatorRepository {
   // ignore: unused_field
   final SupabaseClient? _supabaseClient;
 
-  CalculatorRepository({SupabaseClient? supabaseClient}) : _supabaseClient = supabaseClient;
+  CalculatorRepository({SupabaseClient? supabaseClient})
+      : _supabaseClient = supabaseClient;
 
   RiskAssessmentResult calculateRiskProfile({
     required InvestmentGoal goal,
