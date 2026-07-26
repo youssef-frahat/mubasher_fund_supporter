@@ -73,18 +73,16 @@ class SupabaseFundsRepository implements FundsRepository {
         final response = await client
             .from('funds')
             .select()
-            .eq('is_recommended', true)
-            .limit(10);
+            .or('is_recommended.eq.true,is_sponsored.eq.true')
+            .order('name', ascending: true);
         final data = response as List<dynamic>;
-        if (data.isNotEmpty) {
-          return data.map((item) => FundModel.fromMap(item as Map<String, dynamic>)).toList();
-        }
+        return data.map((item) => FundModel.fromMap(item as Map<String, dynamic>)).toList();
       } catch (e) {
-        debugPrint('Error fetching recommended funds: $e');
+        debugPrint('Error fetching recommended funds from Supabase: $e');
       }
     }
     final all = await getFunds();
-    return all.where((f) => f.isRecommended).take(5).toList();
+    return all.where((f) => f.isRecommended || f.isSponsored).toList();
   }
 
   @override

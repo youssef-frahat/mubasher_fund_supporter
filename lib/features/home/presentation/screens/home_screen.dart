@@ -42,209 +42,214 @@ class HomeScreen extends StatelessWidget {
                 final recommendedFirst = state.recommendedFunds.isNotEmpty ? state.recommendedFunds.first : null;
                 final rankedFundsPreview = state.rankedFunds.take(3).toList();
 
-                return CustomScrollView(
-                  slivers: [
-                    // 1. Search Bar Widget at Top of Home Page
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
-                        child: GestureDetector(
-                          onTap: () => context.push(Routes.allFunds),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-                            decoration: BoxDecoration(
-                              color: surface,
-                              borderRadius: BorderRadius.circular(14.r),
-                              border: Border.all(color: border),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.all(6.r),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(8.r),
+                return RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: () => context.read<HomeCubit>().loadData(),
+                  child: CustomScrollView(
+                    slivers: [
+                      // 1. Search Bar Widget at Top of Home Page
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
+                          child: GestureDetector(
+                            onTap: () => context.push(Routes.allFunds),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                              decoration: BoxDecoration(
+                                color: surface,
+                                borderRadius: BorderRadius.circular(14.r),
+                                border: Border.all(color: border),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(6.r),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(8.r),
+                                    ),
+                                    child: FaIcon(FontAwesomeIcons.sliders, color: AppColors.primary, size: 13.r),
                                   ),
-                                  child: FaIcon(FontAwesomeIcons.sliders, color: AppColors.primary, size: 13.r),
-                                ),
-                                SizedBox(width: 10.w),
-                                Expanded(
-                                  child: Text(
-                                    context.tr('searchPlaceholder'),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: textSecondary,
-                                      fontSize: 12.sp,
+                                  SizedBox(width: 10.w),
+                                  Expanded(
+                                    child: Text(
+                                      context.tr('searchPlaceholder'),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: textSecondary,
+                                        fontSize: 12.sp,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                SizedBox(width: 8.w),
-                                Icon(Icons.search, color: AppColors.primary, size: 20.r),
-                              ],
+                                  SizedBox(width: 8.w),
+                                  Icon(Icons.search, color: AppColors.primary, size: 20.r),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
 
-                    // 2. Today's AI Opportunity Green Hero Banner (Matching Screenshots)
-                    SliverToBoxAdapter(
-                      child: TodayOpportunityCard(recommendedFund: recommendedFirst)
-                          .animate()
-                          .fadeIn(duration: 400.ms)
-                          .slideY(begin: -0.05, end: 0, curve: Curves.easeOutQuart),
-                    ),
-
-                    // 3. Top Performing Fund Card Header & Card (Links to Top 10 League)
-                    SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 8.h),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    '🏅 ${context.tr('topPerformingThisMonth')}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: textPrimary,
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 8.w),
-                                GestureDetector(
-                                  onTap: () => context.push(Routes.top10League),
-                                  child: Text(
-                                    '${context.tr('seeAll')} 🏆',
-                                    style: TextStyle(
-                                      color: AppColors.primary,
-                                      fontSize: 11.sp,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          TopPerformingCard(fund: state.topPerformingFund)
-                              .animate()
-                              .fadeIn(delay: 150.ms)
-                              .scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1), duration: 400.ms, curve: Curves.easeOutQuart),
-                        ],
+                      // 2. Today's AI Opportunity Green Hero Banner (Matching Screenshots)
+                      SliverToBoxAdapter(
+                        child: TodayOpportunityCard(recommendedFund: recommendedFirst)
+                            .animate()
+                            .fadeIn(duration: 400.ms)
+                            .slideY(begin: -0.05, end: 0, curve: Curves.easeOutQuart),
                       ),
-                    ),
 
-                    // 4. Recommended / Curated Sponsored Funds List with See All (Links to Sponsored Funds Screen)
-                    SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 6.h),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    '⭐️ ${context.tr('selectedFundsForYou')}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: textPrimary,
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 8.w),
-                                GestureDetector(
-                                  onTap: () => context.push(Routes.sponsoredFunds),
-                                  child: Text(
-                                    '${context.tr('seeAll')} ⭐',
-                                    style: TextStyle(
-                                      color: AppColors.primary,
-                                      fontSize: 11.sp,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          RecommendedFundsList(funds: state.recommendedFunds)
-                              .animate()
-                              .fadeIn(delay: 250.ms)
-                              .slideX(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuart),
-                        ],
-                      ),
-                    ),
-
-                    // 5. All Funds Preview Section (Limited to 3 Items + See All Button to AllFundsScreen)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 10.h),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      // 3. Top Performing Fund Card Header & Card (Links to Top 10 League)
+                      SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Text(
-                                '📋 ${context.tr('allFunds')}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: textPrimary,
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 8.h),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '🏅 ${context.tr('topPerformingThisMonth')}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: textPrimary,
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  GestureDetector(
+                                    onTap: () => context.push(Routes.top10League),
+                                    child: Text(
+                                      '${context.tr('seeAll')} 🏆',
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontSize: 11.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            SizedBox(width: 8.w),
-                            GestureDetector(
-                              onTap: () => context.push(Routes.allFunds),
-                              child: Text(
-                                '${context.tr('seeAll')} 📋',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontSize: 11.sp,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
+                            TopPerformingCard(fund: state.topPerformingFund)
+                                .animate()
+                                .fadeIn(delay: 150.ms)
+                                .scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1), duration: 400.ms, curve: Curves.easeOutQuart),
                           ],
                         ),
                       ),
-                    ),
-                    SliverPadding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w),
-                      sliver: SliverList.builder(
-                        itemCount: rankedFundsPreview.length,
-                        itemBuilder: (context, index) {
-                          return FundListTile(
-                            fund: rankedFundsPreview[index],
-                            rank: index + 1,
-                          ).animate().fadeIn(delay: (200 + (50 * index)).ms).slideY(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOutQuart);
-                        },
+
+                      // 4. Recommended / Curated Sponsored Funds List with See All (Links to Sponsored Funds Screen)
+                      SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 6.h),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '⭐️ ${context.tr('selectedFundsForYou')}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: textPrimary,
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  GestureDetector(
+                                    onTap: () => context.push(Routes.sponsoredFunds),
+                                    child: Text(
+                                      '${context.tr('seeAll')} ⭐',
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontSize: 11.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            RecommendedFundsList(funds: state.recommendedFunds)
+                                .animate()
+                                .fadeIn(delay: 250.ms)
+                                .slideX(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuart),
+                          ],
+                        ),
                       ),
-                    ),
 
-                    // 6. Final Crown Jewel: Daily Funds Market Movement Card (CardView ختام الهوم)
-                    SliverToBoxAdapter(
-                      child: MarketMovementInsightCard(funds: state.rankedFunds)
-                          .animate()
-                          .fadeIn(delay: 350.ms)
-                          .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuart),
-                    ),
+                      // 5. All Funds Preview Section (Limited to 3 Items + See All Button to AllFundsScreen)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 10.h),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '📋 ${context.tr('allFunds')}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: textPrimary,
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              GestureDetector(
+                                onTap: () => context.push(Routes.allFunds),
+                                child: Text(
+                                  '${context.tr('seeAll')} 📋',
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontSize: 11.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SliverPadding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.w),
+                        sliver: SliverList.builder(
+                          itemCount: rankedFundsPreview.length,
+                          itemBuilder: (context, index) {
+                            return FundListTile(
+                              fund: rankedFundsPreview[index],
+                              rank: index + 1,
+                            ).animate().fadeIn(delay: (200 + (50 * index)).ms).slideY(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOutQuart);
+                          },
+                        ),
+                      ),
 
-                    SliverToBoxAdapter(child: SizedBox(height: 30.h)),
-                  ],
+                      // 6. Final Crown Jewel: Daily Funds Market Movement Card (CardView ختام الهوم)
+                      SliverToBoxAdapter(
+                        child: MarketMovementInsightCard(funds: state.rankedFunds)
+                            .animate()
+                            .fadeIn(delay: 350.ms)
+                            .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuart),
+                      ),
+
+                      SliverToBoxAdapter(child: SizedBox(height: 30.h)),
+                    ],
+                  ),
                 );
+
               }
               return AppLoadingIndicator(message: context.tr('loadingFundsData'));
             },

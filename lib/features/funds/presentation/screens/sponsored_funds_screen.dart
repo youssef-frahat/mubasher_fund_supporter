@@ -75,10 +75,14 @@ class _SponsoredFundsScreenState extends State<SponsoredFundsScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          : RefreshIndicator(
+              color: AppColors.primary,
+              onRefresh: _loadSponsoredFunds,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Robo-Advisor Smart Creation Hero Banner
                   Container(
@@ -309,6 +313,7 @@ class _SponsoredFundsScreenState extends State<SponsoredFundsScreen> {
                 ],
               ),
             ),
+          ),
     );
   }
 }

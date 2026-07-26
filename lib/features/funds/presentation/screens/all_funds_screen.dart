@@ -229,16 +229,21 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
                           style: TextStyle(color: textSecondary, fontSize: 13.sp),
                         ),
                       )
-                    : ListView.builder(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                        itemCount: filteredFunds.length,
-                        itemBuilder: (context, index) {
-                          final fund = filteredFunds[index];
-                          return FundListTile(
-                            fund: fund,
-                            rank: index + 1,
-                          );
-                        },
+                    : RefreshIndicator(
+                        color: AppColors.primary,
+                        onRefresh: _fetchRealFunds,
+                        child: ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                          itemCount: filteredFunds.length,
+                          itemBuilder: (context, index) {
+                            final fund = filteredFunds[index];
+                            return FundListTile(
+                              fund: fund,
+                              rank: index + 1,
+                            );
+                          },
+                        ),
                       ),
           ),
         ],

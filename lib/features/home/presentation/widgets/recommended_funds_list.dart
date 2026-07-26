@@ -19,6 +19,36 @@ class RecommendedFundsList extends StatelessWidget {
   Widget build(BuildContext context) {
     final wishlistService = sl<WishlistService>();
 
+    if (funds.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(16.r),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: AppColors.primary, size: 22.r),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Text(
+                  'لا توجد صناديق مخصصة في التوصيات حالياً',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 12.sp,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

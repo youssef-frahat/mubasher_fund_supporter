@@ -11,9 +11,9 @@ class CalculatorRepository {
   CalculatorRepository({this._supabaseClient});
 
   Future<List<FundModel>> getSponsoredBackendFunds() async {
-    final all = await SupabaseFundsRepository().getFunds();
-    final sponsored = all.where((f) => f.isSponsored || f.isRecommended).toList();
+    final sponsored = await SupabaseFundsRepository().getRecommendedFunds();
     if (sponsored.isNotEmpty) return sponsored;
+    final all = await SupabaseFundsRepository().getFunds();
     return all.take(6).toList();
   }
 

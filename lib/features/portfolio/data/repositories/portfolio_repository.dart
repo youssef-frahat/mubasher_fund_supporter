@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../calculator/data/models/risk_profile_model.dart';
+import '../../../home/data/repositories/funds_repository.dart';
 import '../../../../core/supabase/supabase_service.dart';
 import '../models/portfolio_item_model.dart';
 import '../models/portfolio_model.dart';
@@ -337,6 +338,66 @@ class PortfolioRepository {
       totalProfitLoss: totalProfitLoss,
       totalProfitLossPercentage: totalProfitLossPercentage,
     );
+  }
+
+  /// Refresh the currentNav of every portfolio item from live Supabase data.
+  /// Called automatically on each portfolio load so P&L always reflects
+  /// the latest NAV the admin has set.
+  Future<void> refreshPortfolioNavs() async {
+    try {
+      final liveFunds = await SupabaseFundsRepository().getFunds();
+      if (liveFunds.isEmpty) return;
+
+      // Build a lookup map: fund name (lower-case trimmed) → currentNav
+      final navMap = <String, double>{};
+      for (final f in liveFunds) {
+        navMap[f.name.trim().toLowerCase()] = f.currentNav;
+        if (f.nameAr != null && f.nameAr!.isNotEmpty) {
+          navMap[f.nameAr!.trim().toLowerCase()] = f.currentNav;
+        }
+        if (f.nameEn != null && f.nameEn!.isNotEmpty) {
+          navMap[f.nameEn!.trim().toLowerCase()] = f.currentNav;
+        }
+      }
+
+      final portfolios = await getAllPortfolios();
+      bool anyUpdated = false;
+
+      final updatedPortfolios = portfolios.map((portfolio) {
+        final updatedItems = portfolio.items.map((item) {
+          final key = item.fundName.trim().toLowerCase();
+          final liveNav = navMap[key];
+          if (liveNav != null && liveNav != item.currentNav) {
+            anyUpdated = true;
+            return PortfolioItem(
+              id: item.id,
+              fundId: item.fundId,
+              fundName: item.fundName,
+              category: item.category,
+              units: item.units,
+              purchasePrice: item.purchasePrice,
+              currentNav: liveNav,
+              purchaseDate: item.purchaseDate,
+            );
+          }
+          return item;
+        }).toList();
+
+        return PortfolioModel(
+          id: portfolio.id,
+          name: portfolio.name,
+          items: updatedItems,
+          createdAt: portfolio.createdAt,
+        );
+      }).toList();
+
+      if (anyUpdated) {
+        await savePortfolios(updatedPortfolios);
+        debugPrint('✅ Portfolio NAVs refreshed from Supabase');
+      }
+    } catch (e) {
+      debugPrint('⚠️ refreshPortfolioNavs error (non-critical): $e');
+    }
   }
 
   List<PortfolioModel> _getDefaultPortfolios() {
