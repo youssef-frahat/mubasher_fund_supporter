@@ -222,7 +222,10 @@
 
         <div class="grid-2col">
           <div class="card glass-card">
-            <h3><i class="fa-solid fa-chart-area"></i> استجابة الخوادم (API Response Latency)</h3>
+            <h3 style="display:flex; align-items:center; justify-content:space-between;">
+              <span><i class="fa-solid fa-chart-area"></i> استجابة الخوادم اللحظية (API Response Latency)</span>
+              <span id="liveDevopsLatencyBadge" class="badge live" style="font-size:11px;">Live: 12 ms 🟢</span>
+            </h3>
             <canvas id="devopsTrafficChart" height="180"></canvas>
           </div>
 
