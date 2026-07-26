@@ -14,7 +14,7 @@ class FundListTile extends StatelessWidget {
   final FundModel fund;
   final int rank;
 
-  const FundListTile({super.key, required this.fund, required this.rank});
+  const FundListTile({super.key, required this.rank, required this.fund});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,7 @@ class FundListTile extends StatelessWidget {
       onTap: () => context.push(Routes.fundDetails, extra: fund.toPlatformFeature()),
       child: Container(
         margin: EdgeInsets.only(bottom: 12.h),
-        padding: EdgeInsets.all(14.r),
+        padding: EdgeInsets.all(12.r),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16.r),
@@ -35,8 +35,8 @@ class FundListTile extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 32.w,
-              height: 32.h,
+              width: 30.w,
+              height: 30.h,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: rank <= 3 
@@ -49,57 +49,70 @@ class FundListTile extends StatelessWidget {
                 style: FontStyles.labelLarge.copyWith(
                   color: rank <= 3 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
+                  fontSize: 12.sp,
                 ),
               ),
             ),
-            SizedBox(width: 12.w),
+            SizedBox(width: 10.w),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     fund.name,
-                    style: FontStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                    style: FontStyles.titleSmall.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 4.h),
+                  SizedBox(height: 2.h),
                   Text(
-                    fund.category,
+                    '${fund.managerName} | ${fund.category}',
                     style: FontStyles.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 10.sp,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            SizedBox(width: 8.w),
+            SizedBox(width: 6.w),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  "${fund.currentNav} EGP",
-                  style: FontStyles.labelLarge.copyWith(fontWeight: FontWeight.bold),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    "${fund.currentNav} ${fund.currency}",
+                    style: FontStyles.labelLarge.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12.sp,
+                    ),
+                  ),
                 ),
-                SizedBox(height: 4.h),
+                SizedBox(height: 2.h),
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                   decoration: BoxDecoration(
-                    color: Colors.greenAccent[400]!.withValues(alpha: 0.1),
+                    color: Colors.greenAccent[400]!.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                   child: Text(
                     "+${fund.ytdReturn}%",
                     style: FontStyles.labelSmall.copyWith(
-                      color: Colors.greenAccent[400],
+                      color: Colors.green[700],
                       fontWeight: FontWeight.bold,
+                      fontSize: 10.sp,
                     ),
                   ),
                 ),
               ],
             ),
             SizedBox(width: 4.w),
-            // Bookmark Toggle Button
             ValueListenableBuilder<Set<String>>(
               valueListenable: wishlistService.savedFundIds,
               builder: (context, savedIds, _) {
@@ -109,7 +122,7 @@ class FundListTile extends StatelessWidget {
                   constraints: const BoxConstraints(),
                   icon: FaIcon(
                     isSaved ? FontAwesomeIcons.solidBookmark : FontAwesomeIcons.bookmark,
-                    size: 16.r,
+                    size: 15.r,
                     color: isSaved ? AppColors.gold : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                   ),
                   onPressed: () async {

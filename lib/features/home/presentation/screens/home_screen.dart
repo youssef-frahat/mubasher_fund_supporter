@@ -58,14 +58,18 @@ class HomeScreen extends StatelessWidget {
                               children: [
                                 Icon(Icons.search, color: AppColors.primary, size: 20.r),
                                 SizedBox(width: 10.w),
-                                Text(
-                                  context.tr('searchPlaceholder'),
-                                  style: TextStyle(
-                                    color: textSecondary,
-                                    fontSize: 12.sp,
+                                Expanded(
+                                  child: Text(
+                                    context.tr('searchPlaceholder'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: textSecondary,
+                                      fontSize: 12.sp,
+                                    ),
                                   ),
                                 ),
-                                const Spacer(),
+                                SizedBox(width: 8.w),
                                 Container(
                                   padding: EdgeInsets.all(6.r),
                                   decoration: BoxDecoration(
@@ -112,7 +116,9 @@ class HomeScreen extends StatelessWidget {
                                         ),
                                         SizedBox(height: 2.h),
                                         Text(
-                                          metric.label,
+                                          context.tr(metric.label.toLowerCase().contains('active') ? 'activeFunds' : metric.label.toLowerCase().contains('nav') ? 'dailyNavUpdates' : metric.label.toLowerCase().contains('advisor') ? 'advisorAccounts' : 'aiInsights'),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
                                             color: textSecondary,
                                             fontSize: 10.sp,
@@ -136,7 +142,7 @@ class HomeScreen extends StatelessWidget {
                           .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuart),
                     ),
 
-                    // Top Performing Fund Card
+                    // Top Performing Fund Card Header
                     SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,14 +152,19 @@ class HomeScreen extends StatelessWidget {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  '🥇 الصندوق الأعلى أداءً هذا الشهر',
-                                  style: TextStyle(
-                                    color: textPrimary,
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.bold,
+                                Expanded(
+                                  child: Text(
+                                    context.tr('topPerformingThisMonth'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: textPrimary,
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
+                                SizedBox(width: 8.w),
                                 GestureDetector(
                                   onTap: () => context.push(Routes.allFunds),
                                   child: Text(
@@ -186,14 +197,19 @@ class HomeScreen extends StatelessWidget {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  '💡 صناديق استثمارية مختارة لك',
-                                  style: TextStyle(
-                                    color: textPrimary,
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.bold,
+                                Expanded(
+                                  child: Text(
+                                    context.tr('selectedFundsForYou'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: textPrimary,
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
+                                SizedBox(width: 8.w),
                                 GestureDetector(
                                   onTap: () => context.push(Routes.allFunds),
                                   child: Text(
@@ -223,14 +239,19 @@ class HomeScreen extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              '🏆 ترتيب الصناديق الأعلى عائداً سنويًا',
-                              style: TextStyle(
-                                color: textPrimary,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.bold,
+                            Expanded(
+                              child: Text(
+                                context.tr('rankedByAnnualReturn'),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: textPrimary,
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
+                            SizedBox(width: 8.w),
                             GestureDetector(
                               onTap: () => context.push(Routes.allFunds),
                               child: Text(
@@ -266,10 +287,12 @@ class HomeScreen extends StatelessWidget {
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 10.h),
                         child: Text(
-                          '⚡ أدوات ومنظومة وثيقة الذكية',
+                          context.tr('watheqaToolsAndSystem'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: textPrimary,
-                            fontSize: 14.sp,
+                            fontSize: 13.sp,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -290,7 +313,7 @@ class HomeScreen extends StatelessWidget {
                   ],
                 );
               }
-              return const AppLoadingIndicator(message: 'جاري جلب أحدث بيانات الصناديق المصرية...');
+              return AppLoadingIndicator(message: context.tr('loadingFundsData'));
             },
           ),
         ),

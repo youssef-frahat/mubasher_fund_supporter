@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/app_config/app_colors.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../../../../core/routing/routes.dart';
 import '../../data/models/fund_model.dart';
 
@@ -44,7 +45,7 @@ class TopPerformingCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // Subtle glow accent top-right
+            // Glow accent top-right
             Positioned(
               top: -30,
               right: -30,
@@ -62,24 +63,6 @@ class TopPerformingCard extends StatelessWidget {
                 ),
               ),
             ),
-            // Subtle glow accent bottom-left
-            Positioned(
-              bottom: -20,
-              left: -20,
-              child: Container(
-                width: 80.r,
-                height: 80.r,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      const Color(0xFFF59E0B).withValues(alpha: 0.08),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
 
             // Main content
             Padding(
@@ -90,7 +73,6 @@ class TopPerformingCard extends StatelessWidget {
                   // Top row: #1 Badge + Crown + Category
                   Row(
                     children: [
-                      // Premium #1 Badge
                       Container(
                         width: 44.r,
                         height: 44.r,
@@ -119,7 +101,7 @@ class TopPerformingCard extends StatelessWidget {
                                 style: TextStyle(
                                   color: const Color(0xFF1A1A2E),
                                   fontWeight: FontWeight.w900,
-                                  fontSize: 13.sp,
+                                  fontSize: 12.sp,
                                   height: 1,
                                 ),
                               ),
@@ -133,30 +115,34 @@ class TopPerformingCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'الأعلى تحقيقاً للأرباح',
+                              context.tr('topPerforming'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: const Color(0xFFFFD700),
                                 fontWeight: FontWeight.w800,
-                                fontSize: 14.sp,
+                                fontSize: 13.sp,
                                 letterSpacing: 0.3,
                               ),
                             ),
                             SizedBox(height: 2.h),
                             Text(
                               fund.category,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.45),
-                                fontSize: 11.sp,
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontSize: 10.sp,
                                 letterSpacing: 0.5,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      // Arrow indicator
+                      SizedBox(width: 8.w),
                       Container(
-                        width: 36.r,
-                        height: 36.r,
+                        width: 34.r,
+                        height: 34.r,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: Colors.white.withValues(alpha: 0.08),
@@ -166,13 +152,13 @@ class TopPerformingCard extends StatelessWidget {
                         ),
                         child: Icon(
                           Icons.arrow_forward_ios,
-                          size: 14.r,
+                          size: 13.r,
                           color: Colors.white.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 18.h),
+                  SizedBox(height: 14.h),
 
                   // Fund Name
                   Text(
@@ -180,9 +166,8 @@ class TopPerformingCard extends StatelessWidget {
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
-                      fontSize: 18.sp,
+                      fontSize: 16.sp,
                       height: 1.3,
-                      letterSpacing: -0.3,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -191,11 +176,13 @@ class TopPerformingCard extends StatelessWidget {
                   Text(
                     fund.managerName,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: Colors.white.withValues(alpha: 0.45),
                       fontSize: 11.sp,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 14.h),
 
                   // Divider line
                   Container(
@@ -210,31 +197,31 @@ class TopPerformingCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 14.h),
 
                   // Bottom stats row
                   Row(
                     children: [
-                      // YTD Return
                       _buildStat(
-                        label: 'العائد السنوي',
+                        context: context,
+                        label: context.tr('annualReturn'),
                         value: '+${fund.ytdReturn}%',
                         valueColor: AppColors.primary,
                         icon: FontAwesomeIcons.arrowTrendUp,
                       ),
-                      SizedBox(width: 16.w),
-                      // NAV Price
+                      SizedBox(width: 12.w),
                       _buildStat(
-                        label: 'سعر الوثيقة',
-                        value: '${fund.currentNav} ج.م',
+                        context: context,
+                        label: context.tr('navPrice'),
+                        value: '${fund.currentNav} ${fund.currency}',
                         valueColor: Colors.white,
                         icon: FontAwesomeIcons.coins,
                       ),
-                      SizedBox(width: 16.w),
-                      // Risk Level
+                      SizedBox(width: 12.w),
                       _buildStat(
-                        label: 'مستوى المخاطرة',
-                        value: fund.riskLevel == 'Low' ? 'منخفض' : fund.riskLevel == 'Medium' ? 'متوسط' : 'مرتفع',
+                        context: context,
+                        label: context.tr('risk'),
+                        value: fund.riskLevel,
                         valueColor: fund.riskLevel == 'Low'
                             ? AppColors.primary
                             : fund.riskLevel == 'Medium'
@@ -254,6 +241,7 @@ class TopPerformingCard extends StatelessWidget {
   }
 
   Widget _buildStat({
+    required BuildContext context,
     required String label,
     required String value,
     required Color valueColor,
@@ -265,28 +253,34 @@ class TopPerformingCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              icon is IconData ? Icon(icon, size: 10.r, color: Colors.white.withValues(alpha: 0.35)) : FaIcon(icon, size: 10.r, color: Colors.white.withValues(alpha: 0.35)),
+              icon is IconData
+                  ? Icon(icon, size: 10.r, color: Colors.white.withValues(alpha: 0.35))
+                  : FaIcon(icon, size: 10.r, color: Colors.white.withValues(alpha: 0.35)),
               SizedBox(width: 4.w),
-              Flexible(
+              Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    fontSize: 9.sp,
-                    letterSpacing: 0.3,
-                  ),
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.45),
+                    fontSize: 9.sp,
+                  ),
                 ),
               ),
             ],
           ),
-          SizedBox(height: 4.h),
-          Text(
-            value,
-            style: TextStyle(
-              color: valueColor,
-              fontWeight: FontWeight.w800,
-              fontSize: 13.sp,
+          SizedBox(height: 3.h),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                color: valueColor,
+                fontWeight: FontWeight.w800,
+                fontSize: 12.sp,
+              ),
             ),
           ),
         ],
