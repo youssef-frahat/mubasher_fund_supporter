@@ -27,10 +27,102 @@ document.addEventListener('DOMContentLoaded', () => {
   initModalEvents();
   initAdminModalEvents();
   initSponsoredModalEvents();
+  initLanguageEngine();
   
   document.getElementById('btnRefresh').addEventListener('click', refreshLiveData);
   document.getElementById('btnLogoutAdmin').addEventListener('click', logoutSuperAdmin);
 });
+
+// Internationalization (i18n) Engine
+let currentLang = localStorage.getItem('watheqa_admin_lang') || 'ar';
+
+function initLanguageEngine() {
+  const btn = document.getElementById('btnLangToggle');
+  if (btn) {
+    btn.addEventListener('click', toggleLanguage);
+  }
+  applyLanguage(currentLang);
+}
+
+function toggleLanguage() {
+  currentLang = currentLang === 'ar' ? 'en' : 'ar';
+  localStorage.setItem('watheqa_admin_lang', currentLang);
+  applyLanguage(currentLang);
+}
+
+function applyLanguage(lang) {
+  const isEn = lang === 'en';
+  document.documentElement.lang = lang;
+  document.documentElement.dir = isEn ? 'ltr' : 'rtl';
+
+  const langLabel = document.getElementById('langLabel');
+  if (langLabel) {
+    langLabel.innerText = isEn ? 'العربية 🇪🇬' : 'English 🇬🇧';
+  }
+
+  // Update search placeholders
+  const globalSearch = document.getElementById('globalSearch');
+  if (globalSearch) {
+    globalSearch.placeholder = isEn ? 'Search database, funds, or clients...' : 'بحث في قاعدة البيانات، الصناديق، أو العملاء...';
+  }
+
+  const fundSearchInput = document.getElementById('fundSearchInput');
+  if (fundSearchInput) {
+    fundSearchInput.placeholder = isEn ? 'Search by fund name or manager...' : 'بحث باسم الصندوق أو المدير...';
+  }
+
+  const quickPriceSearch = document.getElementById('quickPriceSearch');
+  if (quickPriceSearch) {
+    quickPriceSearch.placeholder = isEn ? 'Fast search by fund name...' : 'بحث سريع باسم الصندوق...';
+  }
+
+  // Update sidebar menu items
+  const navItems = document.querySelectorAll('.nav-menu .nav-item');
+  if (navItems.length >= 9) {
+    navItems[0].querySelector('span').innerText = isEn ? 'DevOps System & Status' : 'منظومة DevOps والحالة';
+    navItems[1].querySelector('span').innerText = isEn ? 'Quick NAV Price Updater ⚡' : 'تعديل الأسعار السريع ⚡';
+    navItems[2].querySelector('span').innerText = isEn ? 'All Funds (CRUD)' : 'إدارة كافة الصناديق (CRUD)';
+    navItems[3].querySelector('span').innerText = isEn ? 'Sponsored & Recommended' : 'الصناديق الرعائية والموصى بها';
+    navItems[4].querySelector('span').innerText = isEn ? 'Portfolios & Orders' : 'محافظ العملاء وطلبات التداول';
+    navItems[5].querySelector('span').innerText = isEn ? 'Users & Verification' : 'المستخدمين وتفعيل التوثيق';
+    navItems[6].querySelector('span').innerText = isEn ? 'Admin Team Management 🔑' : 'إدارة فريق الأدمن والمساعدين 🔑';
+    navItems[7].querySelector('span').innerText = isEn ? 'Analytics & Usage Insights' : 'تحليلات الاستخدام والربط';
+    navItems[8].querySelector('span').innerText = isEn ? 'Live System Audit Logs' : 'سجلات النظام Live Logs';
+  }
+
+  // Update Section Headers
+  const devopsTitle = document.querySelector('#tab-devops .section-title h2');
+  if (devopsTitle) devopsTitle.innerHTML = isEn ? '<i class="fa-solid fa-network-wired"></i> Infrastructure Status & Supabase Connection' : '<i class="fa-solid fa-network-wired"></i> حالة البنية التحتية و Supabase Connection';
+
+  const quickTitle = document.querySelector('#tab-quick-price .section-title h2');
+  if (quickTitle) quickTitle.innerHTML = isEn ? '<i class="fa-solid fa-bolt"></i> Quick Price Updater (Dynamic Return & EIMA Report)' : '<i class="fa-solid fa-bolt"></i> تعديل أسعار الوثائق المباشر (تحديث آلي لنسب الربح وثيقة بتقرير EIMA)';
+
+  const fundsTitle = document.querySelector('#tab-funds .section-title h2');
+  if (fundsTitle) fundsTitle.innerHTML = isEn ? '<i class="fa-solid fa-box-archive"></i> Mutual Funds Management 💼' : '<i class="fa-solid fa-box-archive"></i> إدارة كافة الصناديق الاستثمارية 💼';
+
+  const sponsoredTitle = document.querySelector('#tab-sponsored .section-title h2');
+  if (sponsoredTitle) sponsoredTitle.innerHTML = isEn ? '<i class="fa-solid fa-star"></i> Sponsored & Recommended Funds' : '<i class="fa-solid fa-star"></i> إدارة الصناديق الرعائية والموصى بها (Sponsored & Recommended)';
+
+  const portfoliosTitle = document.querySelector('#tab-portfolios .section-title h2');
+  if (portfoliosTitle) portfoliosTitle.innerHTML = isEn ? '<i class="fa-solid fa-wallet"></i> Client Portfolios & Trading Orders' : '<i class="fa-solid fa-wallet"></i> إدارة محافظ العملاء وطلبات التداول (Portfolios & Orders)';
+
+  const usersTitle = document.querySelector('#tab-users .section-title h2');
+  if (usersTitle) usersTitle.innerHTML = isEn ? '<i class="fa-solid fa-user-shield"></i> User Accounts & Verification Badges' : '<i class="fa-solid fa-user-shield"></i> إدارة حسابات المستخدمين وحالة التوثيق (Verified Badges)';
+
+  const adminsTitle = document.querySelector('#tab-admins .section-title h2');
+  if (adminsTitle) adminsTitle.innerHTML = isEn ? '<i class="fa-solid fa-users-gear"></i> Admin Team & Assistant Credentials' : '<i class="fa-solid fa-users-gear"></i> إدارة فريق الأدمن والمساعدين (Admin Credentials)';
+
+  const insightsTitle = document.querySelector('#tab-insights .section-title h2');
+  if (insightsTitle) insightsTitle.innerHTML = isEn ? '<i class="fa-solid fa-chart-pie"></i> Usage Analytics & Application Performance 📊' : '<i class="fa-solid fa-chart-pie"></i> تحليلات استخدام العملاء وأداء التطبيق 📊';
+
+  // Refresh tables with updated language labels
+  renderQuickPriceTable();
+  renderFundsTable();
+  renderSponsoredTable();
+  renderPortfoliosTable();
+  renderUsersTable();
+  renderAdminsTable();
+}
 
 /**
  * FIXED OFFICIAL FINANCIAL RETURN DISPLAY:
@@ -650,6 +742,38 @@ function initSponsoredModalEvents() {
     }
 
     closeModal();
+  });
+
+  // Bulk selection buttons logic
+  document.getElementById('btnToggleAllSponsored')?.addEventListener('click', async () => {
+    const anyNotSponsored = liveFunds.some(f => !f.is_sponsored);
+    liveFunds.forEach(f => f.is_sponsored = anyNotSponsored);
+    renderSponsoredTable();
+    renderFundsTable();
+    updateDynamicCharts();
+    logMessage(`[BULK SPONSORED] Set all funds is_sponsored = ${anyNotSponsored}`, 'success');
+  });
+
+  document.getElementById('btnToggleAllRecommended')?.addEventListener('click', async () => {
+    const anyNotRecommended = liveFunds.some(f => !f.is_recommended);
+    liveFunds.forEach(f => f.is_recommended = anyNotRecommended);
+    renderSponsoredTable();
+    renderFundsTable();
+    updateDynamicCharts();
+    logMessage(`[BULK RECOMMENDED] Set all funds is_recommended = ${anyNotRecommended}`, 'success');
+  });
+
+  document.getElementById('btnClearAllSponsoredFlags')?.addEventListener('click', async () => {
+    if (confirm('هل أنت تأكد من إلغاء وتفريغ القائمة الرعائية والموصى بها بالكامل؟')) {
+      liveFunds.forEach(f => {
+        f.is_sponsored = false;
+        f.is_recommended = false;
+      });
+      renderSponsoredTable();
+      renderFundsTable();
+      updateDynamicCharts();
+      logMessage('[BULK CLEAR] Cleared all sponsored and recommended flags from all funds.', 'warning');
+    }
   });
 }
 

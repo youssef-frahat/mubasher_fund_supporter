@@ -142,19 +142,7 @@ class _NavChartWidgetState extends State<NavChartWidget>
     return (((seed * 1664525 + 1013904223) & 0x7FFFFFFF) / 0x7FFFFFFF) * 2 - 1;
   }
 
-  String get _periodChangeLabel {
-    switch (_selectedPeriod) {
-      case NavChartPeriod.week:
-        return widget.fund.weeklyReturn.toStringAsFixed(2);
-      case NavChartPeriod.month:
-        return widget.fund.fourWeeksReturn.toStringAsFixed(2);
-      case NavChartPeriod.year:
-        return widget.fund.ytdReturn.toStringAsFixed(2);
-      case NavChartPeriod.allTime:
-        final init = widget.fund.initialValue ?? 100.0;
-        return (((widget.fund.currentNav - init) / init) * 100).toStringAsFixed(2);
-    }
-  }
+  String get _periodChangeLabel => _actualHistoricalReturn.toStringAsFixed(2);
 
   bool get _isPositive {
     return double.tryParse(_periodChangeLabel) != null &&
@@ -416,7 +404,7 @@ class _NavChartWidgetState extends State<NavChartWidget>
                       _statItem(
                         label: isAr ? 'التوقع السنوي المستقبلي 📈' : 'Forward Projected Yield',
                         value: '+${_forwardProjectedReturn.toStringAsFixed(2)}%',
-                        color: AppColors.accent,
+                        color: AppColors.primaryDark,
                         textSecondary: textSecondary,
                       ),
                     ],
@@ -504,25 +492,35 @@ class _NavChartWidgetState extends State<NavChartWidget>
 
   String _xLabel(int i, bool isAr) {
     switch (_selectedPeriod) {
-      case NavChartPeriod.week:
-        final days = isAr
-            ? ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
-            : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        return i < days.length ? days[i] : '';
+      case NavChartPeriod.day:
+        if (i == 0) return '00:00';
+        if (i == 12) return '12:00';
+        if (i == 24) return '24:00';
+        return '';
       case NavChartPeriod.month:
         if (i == 0) return isAr ? 'بداية' : 'Start';
         if (i == 15) return isAr ? 'منتصف' : 'Mid';
         if (i == 30) return isAr ? 'الآن' : 'Now';
         return '';
+      case NavChartPeriod.threeMonths:
+        if (i == 0) return isAr ? 'ش1' : 'M1';
+        if (i == 45) return isAr ? 'ش2' : 'M2';
+        if (i == 90) return isAr ? 'ش3' : 'M3';
+        return '';
+      case NavChartPeriod.sixMonths:
+        if (i == 0) return isAr ? 'ش1' : 'M1';
+        if (i == 90) return isAr ? 'ش3' : 'M3';
+        if (i == 180) return isAr ? 'ش6' : 'M6';
+        return '';
       case NavChartPeriod.year:
         final months = isAr
             ? ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
             : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        final mIdx = ((i / 52) * 12).round();
-        if (i % 13 == 0 && mIdx < months.length) return months[mIdx];
+        final mIdx = ((i / 365) * 11).round();
+        if (i % 30 == 0 && mIdx < months.length) return months[mIdx];
         return '';
       case NavChartPeriod.allTime:
-        if (i % 12 == 0) return 'Y${i ~/ 12 + 1}';
+        if (i % 100 == 0) return 'Y${i ~/ 100 + 1}';
         return '';
     }
   }

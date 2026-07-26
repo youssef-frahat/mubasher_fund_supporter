@@ -122,6 +122,10 @@
         </div>
 
         <div class="header-actions">
+          <button class="action-btn lang-btn" id="btnLangToggle" title="تغيير اللغة / Switch Language" style="display:flex; align-items:center; gap:6px; padding:0 12px; width:auto; font-weight:bold;">
+            <i class="fa-solid fa-globe"></i>
+            <span id="langLabel">English 🇬🇧</span>
+          </button>
           <button class="action-btn" id="btnRefresh" title="إعادة جلب البيانات من Supabase">
             <i class="fa-solid fa-arrows-rotate"></i>
           </button>
@@ -411,6 +415,19 @@
 
         <div class="card glass-card">
           <p class="section-desc">تحكم كامل في الصناديق المحددة كـ (رعائية ⭐ / موصى بها 💡 / الأعلى أداءً 🏆). قم باختيار أي صندوق وإعطائه التميز الذي تريده أو إزالته بحرية.</p>
+          
+          <div class="table-controls" style="margin-top:14px; margin-bottom:14px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <button class="btn btn-secondary" id="btnToggleAllSponsored">
+              <i class="fa-solid fa-star"></i> تحديد/إلغاء الكل رعائي ⭐
+            </button>
+            <button class="btn btn-secondary" id="btnToggleAllRecommended">
+              <i class="fa-solid fa-lightbulb"></i> تحديد/إلغاء الكل موصى به 💡
+            </button>
+            <button class="btn btn-danger" id="btnClearAllSponsoredFlags">
+              <i class="fa-solid fa-broom"></i> تفريغ القائمة الرعائية بالكامل 🧹
+            </button>
+          </div>
+
           <div class="table-responsive">
             <table class="data-table">
               <thead>
