@@ -21,6 +21,7 @@ class FundModel {
   final double? initialValue;
   final String? logoUrl;
   final bool isRecommended;
+  final bool isSponsored;
   final bool isTopPerforming;
   final int? rank;
 
@@ -44,6 +45,7 @@ class FundModel {
     this.initialValue,
     this.logoUrl,
     this.isRecommended = false,
+    this.isSponsored = false,
     this.isTopPerforming = false,
     this.rank,
   });
@@ -69,6 +71,7 @@ class FundModel {
       initialValue: (map['initial_value'] as num?)?.toDouble(),
       logoUrl: map['logo_url'],
       isRecommended: map['is_recommended'] ?? false,
+      isSponsored: map['is_sponsored'] ?? false,
       isTopPerforming: map['is_top_performing'] ?? false,
       rank: map['rank'] as int?,
     );
@@ -96,6 +99,7 @@ class FundModel {
       'initial_value': initialValue,
       'logo_url': logoUrl,
       'is_recommended': isRecommended,
+      'is_sponsored': isSponsored,
       'is_top_performing': isTopPerforming,
       'rank': rank,
     };

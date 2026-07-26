@@ -23,6 +23,7 @@ class _EditFundDialogState extends State<EditFundDialog> {
   late String _category;
   late String _currency;
   late bool _isRecommended;
+  late bool _isSponsored;
 
   final List<String> _categories = [
     'Equity',
@@ -48,6 +49,7 @@ class _EditFundDialogState extends State<EditFundDialog> {
     _category = _categories.contains(widget.fund.category) ? widget.fund.category : 'Equity';
     _currency = _currencies.contains(widget.fund.currency) ? widget.fund.currency : 'EGP';
     _isRecommended = widget.fund.isRecommended;
+    _isSponsored = widget.fund.isSponsored;
   }
 
   @override
@@ -125,6 +127,13 @@ class _EditFundDialogState extends State<EditFundDialog> {
               SizedBox(height: 8.h),
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
+                title: const Text('صندوق ترشيحي / سبونسر (Sponsored ⭐️)'),
+                subtitle: const Text('يظهر في التوصيات الرسمية والمستشار الذكي'),
+                value: _isSponsored,
+                onChanged: (val) => setState(() => _isSponsored = val ?? false),
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
                 title: const Text('صندوق موصى به (Recommended)'),
                 value: _isRecommended,
                 onChanged: (val) => setState(() => _isRecommended = val ?? false),
@@ -151,6 +160,7 @@ class _EditFundDialogState extends State<EditFundDialog> {
                 category: _category,
                 currency: _currency,
                 isRecommended: _isRecommended,
+                isSponsored: _isSponsored,
               );
               widget.onSave(updatedFund);
               Navigator.pop(context);

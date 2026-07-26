@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../calculator/data/models/risk_profile_model.dart';
+import '../../../../core/supabase/supabase_service.dart';
 import '../models/portfolio_item_model.dart';
 import '../models/portfolio_model.dart';
 
 class PortfolioRepository {
   static const String _portfoliosKey = 'multi_portfolios_v2';
   static const String _activeIdKey = 'active_portfolio_id_v2';
-// Removed unused Supabase client (not needed)
 
   Future<List<PortfolioModel>> getAllPortfolios() async {
     final prefs = await SharedPreferences.getInstance();
@@ -51,6 +52,23 @@ class PortfolioRepository {
     final prefs = await SharedPreferences.getInstance();
     final jsonList = portfolios.map((e) => e.toJson()).toList();
     await prefs.setString(_portfoliosKey, jsonEncode(jsonList));
+
+    // Optional Supabase sync for user logged in
+    final client = SupabaseService.client;
+    final userId = client?.auth.currentUser?.id;
+    if (client != null && userId != null) {
+      try {
+        for (var p in portfolios) {
+          await client.from('portfolios').upsert({
+            'id': p.id.contains('portfolio-') && p.id.length == 36 ? p.id : null,
+            'user_id': userId,
+            'name': p.name,
+          });
+        }
+      } catch (e) {
+        debugPrint('Supabase portfolio sync notice: $e');
+      }
+    }
   }
 
   Future<PortfolioModel> createPortfolio(String name) async {
@@ -67,9 +85,61 @@ class PortfolioRepository {
     return newPortfolio;
   }
 
+  /// Create a simulated portfolio directly from Robo-Advisor recommendations
+  Future<PortfolioModel> createPortfolioFromRecommendedMix({
+    required String name,
+    required RiskAssessmentResult riskResult,
+    required double totalAmount,
+  }) async {
+    final portfolios = await getAllPortfolios();
+
+    final List<PortfolioItem> items = [];
+    for (var alloc in riskResult.recommendedPortfolioMix) {
+      final allocatedEgp = alloc.getAllocatedAmount(totalAmount);
+      double mockNav = 100.0;
+      if (alloc.categoryNameAr.contains('ذهب')) mockNav = 48.5;
+      if (alloc.categoryNameAr.contains('أسهم')) mockNav = 185.0;
+      if (alloc.categoryNameAr.contains('سيولة')) mockNav = 12.5;
+
+      final units = allocatedEgp / mockNav;
+
+      items.add(
+        PortfolioItem(
+          id: 'item-${DateTime.now().millisecondsSinceEpoch}-${items.length}',
+          fundId: 'fund-${items.length}',
+          fundName: alloc.fundName,
+          category: alloc.categoryNameAr.contains('ذهب')
+              ? FundCategory.gold
+              : alloc.categoryNameAr.contains('أسهم')
+                  ? FundCategory.equity
+                  : alloc.categoryNameAr.contains('شريعة')
+                      ? FundCategory.islamic
+                      : FundCategory.moneyMarket,
+          units: units,
+          purchasePrice: mockNav,
+          currentNav: mockNav * (1 + (riskResult.expectedRoiPercentage / 100)),
+          purchaseDate: DateTime.now(),
+        ),
+      );
+    }
+
+    final newPortfolio = PortfolioModel(
+      id: 'portfolio-${DateTime.now().millisecondsSinceEpoch}',
+      name: name,
+      items: items,
+      createdAt: DateTime.now(),
+    );
+
+    portfolios.add(newPortfolio);
+    await savePortfolios(portfolios);
+    await setActivePortfolioId(newPortfolio.id);
+
+    return newPortfolio;
+  }
+
   Future<void> deletePortfolio(String portfolioId) async {
     final portfolios = await getAllPortfolios();
-    if (portfolios.length <= 1) return; // Keep at least one portfolio
+    if (portfolios.length <= 1) return;
 
     portfolios.removeWhere((p) => p.id == portfolioId);
     await savePortfolios(portfolios);

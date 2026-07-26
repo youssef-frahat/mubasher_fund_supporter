@@ -56,7 +56,7 @@ CREATE TABLE public.funds (
     rank_6y INTEGER,
     rank INTEGER,
 
-    -- Metadata
+    -- Metadata & Monetization / Sponsored Status
     currency TEXT NOT NULL DEFAULT 'EGP',
     risk_level TEXT NOT NULL DEFAULT 'Medium' CHECK (risk_level IN ('Low', 'Medium', 'High')),
     category TEXT NOT NULL DEFAULT 'Equity',
@@ -64,6 +64,7 @@ CREATE TABLE public.funds (
     fund_type TEXT DEFAULT 'Equity',
     logo_url TEXT,
     is_recommended BOOLEAN DEFAULT false,
+    is_sponsored BOOLEAN DEFAULT false,
     is_top_performing BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL

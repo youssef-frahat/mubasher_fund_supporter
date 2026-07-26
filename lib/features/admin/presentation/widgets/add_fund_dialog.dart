@@ -21,6 +21,8 @@ class _AddFundDialogState extends State<AddFundDialog> {
   String _riskLevel = 'Medium';
   String _category = 'Equity';
   String _currency = 'EGP';
+  bool _isRecommended = false;
+  bool _isSponsored = false;
 
   final List<String> _categories = [
     'Equity',
@@ -107,6 +109,20 @@ class _AddFundDialogState extends State<AddFundDialog> {
                   ),
                 ],
               ),
+              SizedBox(height: 8.h),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('صندوق ترشيحي / سبونسر (Sponsored ⭐️)'),
+                subtitle: const Text('يظهر في التوصيات الرسمية والمستشار الذكي'),
+                value: _isSponsored,
+                onChanged: (val) => setState(() => _isSponsored = val ?? false),
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('صندوق موصى به (Recommended)'),
+                value: _isRecommended,
+                onChanged: (val) => setState(() => _isRecommended = val ?? false),
+              ),
             ],
           ),
         ),
@@ -128,6 +144,8 @@ class _AddFundDialogState extends State<AddFundDialog> {
                 riskLevel: _riskLevel,
                 category: _category,
                 currency: _currency,
+                isRecommended: _isRecommended,
+                isSponsored: _isSponsored,
               );
               widget.onAdd(newFund);
               Navigator.pop(context);

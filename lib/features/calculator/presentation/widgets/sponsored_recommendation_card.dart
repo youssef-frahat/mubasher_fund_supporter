@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/app_config/app_colors.dart';
+import '../../../../core/routing/routes.dart';
+import '../../../portfolio/data/repositories/portfolio_repository.dart';
 import '../../data/models/risk_profile_model.dart';
 
-class SponsoredRecommendationCard extends StatelessWidget {
+class SponsoredRecommendationCard extends StatefulWidget {
   final RiskAssessmentResult riskResult;
   final double totalAmount;
 
@@ -13,6 +16,13 @@ class SponsoredRecommendationCard extends StatelessWidget {
     required this.riskResult,
     required this.totalAmount,
   });
+
+  @override
+  State<SponsoredRecommendationCard> createState() => _SponsoredRecommendationCardState();
+}
+
+class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCard> {
+  bool _isSaving = false;
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +74,7 @@ class SponsoredRecommendationCard extends StatelessWidget {
                     SizedBox(width: 6.w),
                     Flexible(
                       child: Text(
-                        'المستشار الذكي: ${riskResult.riskCategory}',
+                        'المستشار الذكي: ${widget.riskResult.riskCategory}',
                         style: TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.bold,
@@ -83,7 +93,7 @@ class SponsoredRecommendationCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Text(
-                  'متوسط العائد: ${riskResult.expectedRoiPercentage}% سنويًا',
+                  'متوسط العائد: ${widget.riskResult.expectedRoiPercentage}% سنويًا',
                   style: TextStyle(
                     color: AppColors.gold,
                     fontSize: 10.sp,
@@ -96,7 +106,7 @@ class SponsoredRecommendationCard extends StatelessWidget {
           SizedBox(height: 14.h),
 
           Text(
-            '🤖 المحفظة الاستثمارية المقترحة لك:',
+            '🤖 المحفظة الاستثمارية المقترحة لك من الباك إند:',
             style: TextStyle(
               color: textPrimary,
               fontSize: 15.sp,
@@ -105,7 +115,7 @@ class SponsoredRecommendationCard extends StatelessWidget {
           ),
           SizedBox(height: 4.h),
           Text(
-            riskResult.description,
+            widget.riskResult.description,
             style: TextStyle(
               color: textSecondary,
               fontSize: 11.sp,
@@ -120,7 +130,7 @@ class SponsoredRecommendationCard extends StatelessWidget {
             child: SizedBox(
               height: 10.h,
               child: Row(
-                children: riskResult.recommendedPortfolioMix.map((alloc) {
+                children: widget.riskResult.recommendedPortfolioMix.map((alloc) {
                   return Expanded(
                     flex: alloc.percentage.toInt(),
                     child: Container(color: alloc.categoryColor),
@@ -132,8 +142,8 @@ class SponsoredRecommendationCard extends StatelessWidget {
           SizedBox(height: 16.h),
 
           // List of Allocated Funds with EGP Splits
-          ...riskResult.recommendedPortfolioMix.map((alloc) {
-            final allocatedEgp = alloc.getAllocatedAmount(totalAmount);
+          ...widget.riskResult.recommendedPortfolioMix.map((alloc) {
+            final allocatedEgp = alloc.getAllocatedAmount(widget.totalAmount);
             return Container(
               margin: EdgeInsets.only(bottom: 8.h),
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
@@ -195,24 +205,62 @@ class SponsoredRecommendationCard extends StatelessWidget {
 
           SizedBox(height: 14.h),
 
-          // Action Button to Save to Portfolio
+          // Action Button to Save Portfolio directly to user account / Simulation Page
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text(
-                      'تم اعتماد وتوزيع المحفظة الذكية بنجاح! 🚀',
-                    ),
-                    backgroundColor: AppColors.primary,
-                  ),
-                );
-              },
-              icon: const FaIcon(FontAwesomeIcons.circlePlus, color: Colors.black, size: 14),
-              label: const Text(
-                'حفظ وتطبيق هذه المحفظة في حسابي',
-                style: TextStyle(
+              onPressed: _isSaving
+                  ? null
+                  : () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final router = GoRouter.of(context);
+
+                      setState(() => _isSaving = true);
+                      try {
+                        final repo = PortfolioRepository();
+                        final portfolioName = 'محفظة المستشار (${widget.riskResult.riskCategory})';
+                        final createdPortfolio = await repo.createPortfolioFromRecommendedMix(
+                          name: portfolioName,
+                          riskResult: widget.riskResult,
+                          totalAmount: widget.totalAmount,
+                        );
+
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'تم حفظ محفظة "${createdPortfolio.name}" بنجاح في صفحة المحافظ! 🚀',
+                            ),
+                            backgroundColor: AppColors.primary,
+                            action: SnackBarAction(
+                              label: 'عرض المحفظة',
+                              textColor: Colors.black,
+                              onPressed: () {
+                                router.go(Routes.portfolio);
+                              },
+                            ),
+                          ),
+                        );
+                      } catch (e) {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text('خطأ في حفظ المحفظة: $e'),
+                            backgroundColor: AppColors.error,
+                          ),
+                        );
+                      } finally {
+                        if (mounted) setState(() => _isSaving = false);
+                      }
+                    },
+              icon: _isSaving
+                  ? SizedBox(
+                      width: 14.r,
+                      height: 14.r,
+                      child: const CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
+                    )
+                  : const FaIcon(FontAwesomeIcons.circlePlus, color: Colors.black, size: 14),
+              label: Text(
+                _isSaving ? 'جاري الحفظ في حسابك...' : 'حفظ وتطبيق هذه المحفظة في صفحة المحافظ',
+                style: const TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
                 ),
