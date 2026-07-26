@@ -11,7 +11,10 @@ class CalculatorRepository {
   CalculatorRepository({this._supabaseClient});
 
   Future<List<FundModel>> getSponsoredBackendFunds() async {
-    return await SupabaseFundsRepository().getFunds();
+    final all = await SupabaseFundsRepository().getFunds();
+    final sponsored = all.where((f) => f.isSponsored || f.isRecommended).toList();
+    if (sponsored.isNotEmpty) return sponsored;
+    return all.take(6).toList();
   }
 
   RiskAssessmentResult calculateRiskProfile({
@@ -61,47 +64,18 @@ class CalculatorRepository {
             categoryColor: const Color(0xFFF59E0B),
           ),
           PortfolioFundAllocation(
-            fundName: 'صندوق الفضة الاستثماري',
-            categoryNameAr: 'صناديق الفضة',
-            percentage: 25.0,
-            badgeLabel: 'نمو معدني صناعي',
-            categoryColor: const Color(0xFF94A3B8),
-          ),
-          PortfolioFundAllocation(
-            fundName: 'صندوق مباشر اليومي للسيولة',
-            categoryNameAr: 'سيولة نقدية',
-            percentage: 25.0,
-            badgeLabel: 'سيولة وسحب فوري',
-            categoryColor: const Color(0xFF10B981),
-          ),
-        ],
-      );
-    } else if (goal == InvestmentGoal.highYield && duration == InvestmentDuration.longTerm) {
-      return RiskAssessmentResult(
-        riskCategory: 'عائد نمو متسارع (أسهم ومكاسب عالي)',
-        expectedRoiPercentage: 35.0,
-        description: 'محفظة ديناميكية تركز على الأسهم المصرية الواعدة مع حصة تحوطية.',
-        recommendedPortfolioMix: [
-          PortfolioFundAllocation(
-            fundName: 'صندوق هيرميس للأسهم المصرية',
-            categoryNameAr: 'أسهم واعدة',
-            percentage: 50.0,
-            badgeLabel: 'عائد نمو مرتفع',
+            fundName: 'صندوق إي جولد لسبائك الذهب',
+            categoryNameAr: 'معادن ومسبوكات',
+            percentage: 30.0,
+            badgeLabel: 'نمو مرتفع',
             categoryColor: const Color(0xFF3B82F6),
           ),
           PortfolioFundAllocation(
             fundName: 'صندوق بلتون للنمو الاستثماري',
             categoryNameAr: 'أدوات مركبة ومشتقات',
-            percentage: 30.0,
+            percentage: 20.0,
             badgeLabel: 'فرص مضاعفة',
             categoryColor: const Color(0xFF8B5CF6),
-          ),
-          PortfolioFundAllocation(
-            fundName: 'صندوق الذهب أزموت',
-            categoryNameAr: 'تحوط ذهبي',
-            percentage: 20.0,
-            badgeLabel: 'توازن المحفظة',
-            categoryColor: const Color(0xFFF59E0B),
           ),
         ],
       );

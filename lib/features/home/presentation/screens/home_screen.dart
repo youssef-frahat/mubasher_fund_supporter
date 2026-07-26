@@ -17,7 +17,6 @@ import '../widgets/feature_card.dart';
 import '../widgets/today_opportunity_card.dart';
 import '../widgets/top_performing_card.dart';
 import '../widgets/recommended_funds_list.dart';
-import '../widgets/fund_list_tile.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -140,7 +139,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // 4. Recommended Funds List with See All
+                    // 4. Recommended / Curated Sponsored Funds List with See All (Links to Sponsored Funds Screen)
                     SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,9 +163,9 @@ class HomeScreen extends StatelessWidget {
                                 ),
                                 SizedBox(width: 8.w),
                                 GestureDetector(
-                                  onTap: () => context.push(Routes.allFunds),
+                                  onTap: () => context.push(Routes.sponsoredFunds),
                                   child: Text(
-                                    '${context.tr('seeAll')} ←',
+                                    '${context.tr('seeAll')} ⭐',
                                     style: TextStyle(
                                       color: AppColors.primary,
                                       fontSize: 11.sp,
@@ -185,57 +184,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // 5. Ranked Funds Header with See All (Links to Top 10 League)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 10.h),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '📈 ${context.tr('rankedByAnnualReturn')}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: textPrimary,
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 8.w),
-                            GestureDetector(
-                              onTap: () => context.push(Routes.top10League),
-                              child: Text(
-                                '${context.tr('seeAll')} 🏆',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontSize: 11.sp,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // 6. Ranked Funds List
-                    SliverPadding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w),
-                      sliver: SliverList.builder(
-                        itemCount: state.rankedFunds.length > 5 ? 5 : state.rankedFunds.length,
-                        itemBuilder: (context, index) {
-                          return FundListTile(
-                            fund: state.rankedFunds[index],
-                            rank: index + 1,
-                          ).animate().fadeIn(delay: (250 + (60 * index)).ms).slideY(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOutQuart);
-                        },
-                      ),
-                    ),
-
-                    // 7. Platform Features Header
+                    // 5. Platform Features Header
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 10.h),

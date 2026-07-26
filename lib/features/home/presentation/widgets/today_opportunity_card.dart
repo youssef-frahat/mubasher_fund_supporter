@@ -43,7 +43,7 @@ class TodayOpportunityCard extends StatelessWidget {
     final borderColor = isDark ? const Color(0xFF1B4D35) : const Color(0xFFC2EBCD);
     final textPrimary = isDark ? Colors.white : const Color(0xFF0B331E);
     final textSecondary = isDark ? const Color(0xFFA3CDB5) : const Color(0xFF386B52);
-    final fundNameText = recommendedFund?.name ?? 'صندوق مباشر اليومي للسيولة النقدية';
+    final fundNameText = recommendedFund?.displayNameOnly ?? 'صندوق مباشر اليومي للسيولة النقدية';
 
     return GestureDetector(
       onTap: () => _openAiMarketSignalsSheet(context),
@@ -283,30 +283,36 @@ class _AiMarketSignalsSheetState extends State<_AiMarketSignalsSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Bar
+          // Header Bar with Overflow Fix
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(8.r),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10.r),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8.r),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: const FaIcon(FontAwesomeIcons.robot, color: AppColors.primary, size: 18),
                     ),
-                    child: const FaIcon(FontAwesomeIcons.robot, color: AppColors.primary, size: 18),
-                  ),
-                  SizedBox(width: 10.w),
-                  Text(
-                    context.tr('aiMarketSignalsTitle'),
-                    style: TextStyle(
-                      color: textPrimary,
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.bold,
+                    SizedBox(width: 10.w),
+                    Expanded(
+                      child: Text(
+                        context.tr('aiMarketSignalsTitle'),
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               IconButton(
                 icon: Icon(Icons.close, color: textSecondary),
@@ -399,6 +405,8 @@ class _AiMarketSignalsSheetState extends State<_AiMarketSignalsSheet> {
     final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
 
+    final ytdFormatted = fund.ytdReturn >= 0 ? '+${fund.ytdReturn}%' : '${fund.ytdReturn}%';
+
     return Container(
       padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
@@ -434,17 +442,28 @@ class _AiMarketSignalsSheetState extends State<_AiMarketSignalsSheet> {
           SizedBox(height: 10.h),
 
           Text(
-            fund.name,
+            fund.displayNameOnly,
             style: TextStyle(
               color: textPrimary,
               fontWeight: FontWeight.bold,
               fontSize: 14.sp,
             ),
           ),
+          if (fund.abbreviation != null) ...[
+            SizedBox(height: 1.h),
+            Text(
+              '🏷️ ${fund.abbreviation}',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
           SizedBox(height: 2.h),
 
           Text(
-            '${fund.managerName} | YTD: +${fund.ytdReturn}% | NAV: ${fund.currentNav} ${fund.currency}',
+            '${fund.managerName} | YTD: $ytdFormatted | NAV: ${fund.currentNav} ${fund.currency}',
             style: TextStyle(
               color: textSecondary,
               fontSize: 11.sp,

@@ -17,6 +17,7 @@ import 'routes.dart';
 import '../supabase/supabase_service.dart';
 import 'go_router_refresh_stream.dart';
 import '../../features/funds/presentation/screens/all_funds_screen.dart';
+import '../../features/funds/presentation/screens/sponsored_funds_screen.dart';
 import '../../features/funds/presentation/screens/wishlist_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/terms_conditions_screen.dart';
@@ -150,6 +151,11 @@ class AppRouter {
         path: Routes.allFunds,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AllFundsScreen(),
+      ),
+      GoRoute(
+        path: Routes.sponsoredFunds,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SponsoredFundsScreen(),
       ),
       GoRoute(
         path: Routes.top10League,

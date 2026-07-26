@@ -11,6 +11,7 @@ class Routes {
   static const String register = '/register';
   static const String fundDetails = '/fund-details';
   static const String allFunds = '/all-funds';
+  static const String sponsoredFunds = '/sponsored-funds';
   static const String wishlist = '/wishlist';
   static const String termsConditions = '/terms-conditions';
   static const String faq = '/faq';

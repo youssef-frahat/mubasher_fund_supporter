@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/language/language_cubit.dart';
 import '../../../../core/routing/routes.dart';
-import '../../../calculator/data/repositories/calculator_repository.dart';
 import '../../../home/data/models/fund_model.dart';
+import '../../../home/data/repositories/funds_repository.dart';
 
 class Top10LeagueScreen extends StatefulWidget {
   const Top10LeagueScreen({super.key});
@@ -17,25 +16,29 @@ class Top10LeagueScreen extends StatefulWidget {
 
 class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
   List<FundModel> _top10Funds = [];
+  List<FundModel> _bottom10Funds = [];
   bool _isLoading = true;
+  int _selectedTab = 0; // 0: Top 10 Leaders, 1: Bottom 10 Relegation
 
   @override
   void initState() {
     super.initState();
-    _loadTop10Data();
+    _loadLeagueData();
   }
 
-  Future<void> _loadTop10Data() async {
+  Future<void> _loadLeagueData() async {
     try {
-      final backendFunds = await CalculatorRepository().getSponsoredBackendFunds();
-      final sorted = List<FundModel>.from(backendFunds)
+      final backendFunds = await SupabaseFundsRepository().getFunds();
+      final sortedDesc = List<FundModel>.from(backendFunds)
         ..sort((a, b) => b.ytdReturn.compareTo(a.ytdReturn));
 
-      final top10 = sorted.take(10).toList();
+      final sortedAsc = List<FundModel>.from(backendFunds)
+        ..sort((a, b) => a.ytdReturn.compareTo(b.ytdReturn));
 
       if (mounted) {
         setState(() {
-          _top10Funds = top10;
+          _top10Funds = sortedDesc.take(10).toList();
+          _bottom10Funds = sortedAsc.take(10).toList();
           _isLoading = false;
         });
       }
@@ -46,9 +49,9 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isAr = context.watch<LanguageCubit>().isArabic;
     final bg = AppColors.getBackground(context);
     final textPrimary = AppColors.getTextPrimary(context);
+    final isAr = context.isArabic;
 
     return Scaffold(
       backgroundColor: bg,
@@ -60,12 +63,15 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
           icon: Icon(Icons.arrow_back_ios, color: textPrimary),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          context.tr('fundSupporterLeague'),
-          style: TextStyle(
-            color: textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 16.sp,
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            context.tr('fundSupporterLeague'),
+            style: TextStyle(
+              color: textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 16.sp,
+            ),
           ),
         ),
       ),
@@ -76,21 +82,27 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Banner Title & Info
+                  // Top Banner Title & Info with Dynamic Trend Arrows
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(16.r),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF0F3822), Color(0xFF062013)],
+                      gradient: LinearGradient(
+                        colors: _selectedTab == 0
+                            ? [const Color(0xFF0F3822), const Color(0xFF062013)]
+                            : [const Color(0xFF450A0A), const Color(0xFF1F0404)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(20.r),
-                      border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+                      border: Border.all(
+                        color: _selectedTab == 0
+                            ? const Color(0xFF10B981).withValues(alpha: 0.4)
+                            : AppColors.error.withValues(alpha: 0.4),
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                          color: (_selectedTab == 0 ? const Color(0xFF10B981) : AppColors.error).withValues(alpha: 0.12),
                           blurRadius: 15,
                           spreadRadius: 1,
                         ),
@@ -101,7 +113,7 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
                       children: [
                         Row(
                           children: [
-                            const Text('⚽️ 🏆', style: TextStyle(fontSize: 20)),
+                            Text(_selectedTab == 0 ? '📈 🟢 🏆' : '📉 🔴 🔻', style: const TextStyle(fontSize: 20)),
                             SizedBox(width: 8.w),
                             Expanded(
                               child: Text(
@@ -119,7 +131,7 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
                         Text(
                           context.tr('fundSupporterLeagueSub'),
                           style: TextStyle(
-                            color: const Color(0xFFA7F3D0),
+                            color: _selectedTab == 0 ? const Color(0xFFA7F3D0) : const Color(0xFFFCA5A5),
                             fontSize: 11.sp,
                             height: 1.3,
                           ),
@@ -127,42 +139,157 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 20.h),
+                  SizedBox(height: 16.h),
 
-                  // Top 3 Podium (منصة التتويج)
-                  if (_top10Funds.length >= 3) _buildPodium(context),
-                  SizedBox(height: 24.h),
-
-                  // Standings Header
-                  Text(
-                    isAr ? '📋 جدول نقاط الترتيب الكامل (Top 10):' : '📋 Full League Standings Table (Top 10):',
-                    style: TextStyle(
-                      color: textPrimary,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
+                  // Segmented Tab Selector (Top 10 Leaders vs Bottom 10 Relegation)
+                  Container(
+                    padding: EdgeInsets.all(4.r),
+                    decoration: BoxDecoration(
+                      color: AppColors.getSurface(context),
+                      borderRadius: BorderRadius.circular(14.r),
+                      border: Border.all(color: AppColors.getBorder(context)),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(() => _selectedTab = 0),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 10.h),
+                              decoration: BoxDecoration(
+                                color: _selectedTab == 0 ? AppColors.primary : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10.r),
+                              ),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  context.tr('top10Leaders'),
+                                  style: TextStyle(
+                                    color: _selectedTab == 0 ? Colors.black : textPrimary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12.sp,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(() => _selectedTab = 1),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 10.h),
+                              decoration: BoxDecoration(
+                                color: _selectedTab == 1 ? AppColors.error : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10.r),
+                              ),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  context.tr('bottom10Relegation'),
+                                  style: TextStyle(
+                                    color: _selectedTab == 1 ? Colors.white : textPrimary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12.sp,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 10.h),
+                  SizedBox(height: 20.h),
 
-                  // Table Rows List
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _top10Funds.length,
-                    itemBuilder: (context, index) {
-                      final fund = _top10Funds[index];
-                      final rank = index + 1;
-                      final movement = (index == 0)
-                          ? 2
-                          : (index == 1)
-                              ? 1
-                              : (index == 3)
-                                  ? -1
-                                  : 0;
+                  // TOP 10 LEADERS TAB CONTENT
+                  if (_selectedTab == 0) ...[
+                    if (_top10Funds.length >= 3) _buildPodium(context),
+                    SizedBox(height: 24.h),
 
-                      return _buildLeagueRow(context, fund, rank, movement);
-                    },
-                  ),
+                    Text(
+                      context.tr('fullLeaguePoints'),
+                      style: TextStyle(
+                        color: textPrimary,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 10.h),
+
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _top10Funds.length,
+                      itemBuilder: (context, index) {
+                        final fund = _top10Funds[index];
+                        final rank = index + 1;
+                        final movement = (index == 0)
+                            ? 2
+                            : (index == 1)
+                                ? 1
+                                : (index == 3)
+                                    ? -1
+                                    : 0;
+
+                        return _buildLeagueRow(context, fund, rank, movement, isTop: true);
+                      },
+                    ),
+                  ],
+
+                  // BOTTOM 10 RELEGATION TAB CONTENT
+                  if (_selectedTab == 1) ...[
+                    Container(
+                      padding: EdgeInsets.all(12.r),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(14.r),
+                        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Text('💡', style: TextStyle(fontSize: 18)),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: Text(
+                              isAr
+                                  ? 'تضم هذه القائمة الصناديق الأكثر تراجعاً في السوق، وتعتبر فرصة ممتازة لمتابعة القيعان وإعادة التجميع'
+                                  : 'This list highlights the most dipped funds, presenting potential buy-the-dip and rebalancing opportunities.',
+                              style: TextStyle(
+                                color: textPrimary,
+                                fontSize: 11.sp,
+                                height: 1.3,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 16.h),
+
+                    Text(
+                      context.tr('fullRelegationPoints'),
+                      style: TextStyle(
+                        color: textPrimary,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 10.h),
+
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _bottom10Funds.length,
+                      itemBuilder: (context, index) {
+                        final fund = _bottom10Funds[index];
+                        final rank = _bottom10Funds.length - index;
+
+                        return _buildLeagueRow(context, fund, rank, -1, isTop: false);
+                      },
+                    ),
+                  ],
+
                   SizedBox(height: 20.h),
                 ],
               ),
@@ -180,13 +307,13 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         // 2nd Place (Silver)
-        Expanded(child: _buildPodiumItem(context, second, 2, '🥈', const Color(0xFF94A3B8), 135.h)),
+        Expanded(child: _buildPodiumItem(context, second, 2, '🥈', const Color(0xFF94A3B8), 140.h)),
         SizedBox(width: 8.w),
         // 1st Place (Gold Leader)
-        Expanded(child: _buildPodiumItem(context, first, 1, '🥇', const Color(0xFFF59E0B), 160.h)),
+        Expanded(child: _buildPodiumItem(context, first, 1, '🥇', const Color(0xFFF59E0B), 165.h)),
         SizedBox(width: 8.w),
         // 3rd Place (Bronze)
-        Expanded(child: _buildPodiumItem(context, third, 3, '🥉', const Color(0xFFD97706), 120.h)),
+        Expanded(child: _buildPodiumItem(context, third, 3, '🥉', const Color(0xFFD97706), 125.h)),
       ],
     );
   }
@@ -204,7 +331,7 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
       },
       child: Container(
         height: height,
-        padding: EdgeInsets.all(8.r),
+        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 8.h),
         decoration: BoxDecoration(
           color: badgeColor.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(16.r),
@@ -215,44 +342,54 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
           children: [
             Text(medal, style: TextStyle(fontSize: rank == 1 ? 24.sp : 20.sp)),
             SizedBox(height: 2.h),
-            Text(
-              nameText,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: textPrimary,
-                fontSize: 11.sp,
-                fontWeight: FontWeight.bold,
+            Expanded(
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    nameText,
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ),
             ),
             if (abbrText != null) ...[
               SizedBox(height: 1.h),
-              Text(
-                '($abbrText)',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: badgeColor,
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.w600,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '($abbrText)',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: badgeColor,
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
             SizedBox(height: 4.h),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-              decoration: BoxDecoration(
-                color: badgeColor,
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Text(
-                '+${fund.ytdReturn}% YTD',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.bold,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: badgeColor,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Text(
+                  '+${fund.ytdReturn}% YTD',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -262,7 +399,7 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
     );
   }
 
-  Widget _buildLeagueRow(BuildContext context, FundModel fund, int rank, int movement) {
+  Widget _buildLeagueRow(BuildContext context, FundModel fund, int rank, int movement, {required bool isTop}) {
     final surface = AppColors.getSurface(context);
     final textPrimary = AppColors.getTextPrimary(context);
     final textSecondary = AppColors.getTextSecondary(context);
@@ -270,9 +407,14 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
 
     final nameText = fund.displayNameOnly;
     final abbrText = fund.abbreviation;
+    final ytdFormatted = fund.ytdReturn >= 0 ? '+${fund.ytdReturn}%' : '${fund.ytdReturn}%';
+    final badgeBg = isTop
+        ? const Color(0xFF10B981).withValues(alpha: 0.15)
+        : AppColors.error.withValues(alpha: 0.15);
+    final badgeTextColor = isTop ? const Color(0xFF10B981) : AppColors.error;
 
     Widget movementBadge;
-    if (movement > 0) {
+    if (isTop && movement > 0) {
       movementBadge = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -283,13 +425,13 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
           ),
         ],
       );
-    } else if (movement < 0) {
+    } else if (!isTop || movement < 0) {
       movementBadge = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.arrow_drop_down, color: AppColors.error, size: 18.r),
           Text(
-            '$movement',
+            '-1',
             style: TextStyle(color: AppColors.error, fontSize: 10.sp, fontWeight: FontWeight.bold),
           ),
         ],
@@ -320,18 +462,20 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: rank == 1
-                  ? const Color(0xFFF59E0B)
-                  : rank == 2
-                      ? const Color(0xFF94A3B8)
-                      : rank == 3
-                          ? const Color(0xFFD97706)
-                          : AppColors.primary.withValues(alpha: 0.15),
+              color: isTop
+                  ? (rank == 1
+                      ? const Color(0xFFF59E0B)
+                      : rank == 2
+                          ? const Color(0xFF94A3B8)
+                          : rank == 3
+                              ? const Color(0xFFD97706)
+                              : AppColors.primary.withValues(alpha: 0.15))
+                  : AppColors.error.withValues(alpha: 0.15),
             ),
             child: Text(
-              '#$rank',
+              isTop ? '#$rank' : '🔻',
               style: TextStyle(
-                color: rank <= 3 ? Colors.black : AppColors.primary,
+                color: isTop ? (rank <= 3 ? Colors.black : AppColors.primary) : AppColors.error,
                 fontWeight: FontWeight.bold,
                 fontSize: 12.sp,
               ),
@@ -344,14 +488,16 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      nameText,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: textPrimary,
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.bold,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        nameText,
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -379,18 +525,20 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
             child: Text(
               '${fund.managerName} | NAV: ${fund.currentNav} ${fund.currency}',
               style: TextStyle(color: textSecondary, fontSize: 11.sp),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           trailing: Container(
             padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
             decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withValues(alpha: 0.15),
+              color: badgeBg,
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: Text(
-              '+${fund.ytdReturn}%',
+              ytdFormatted,
               style: TextStyle(
-                color: const Color(0xFF10B981),
+                color: badgeTextColor,
                 fontWeight: FontWeight.bold,
                 fontSize: 12.sp,
               ),
