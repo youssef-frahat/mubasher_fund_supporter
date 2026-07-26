@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/risk_profile_model.dart';
+import '../../../home/data/models/fund_model.dart';
+import '../../../home/data/repositories/funds_repository.dart';
 
 class CalculatorRepository {
   // ignore: unused_field
   final SupabaseClient? _supabaseClient;
 
   CalculatorRepository({this._supabaseClient});
+
+  Future<List<FundModel>> getSponsoredBackendFunds() async {
+    return await SupabaseFundsRepository().getFunds();
+  }
 
   RiskAssessmentResult calculateRiskProfile({
     required InvestmentGoal goal,
@@ -114,7 +120,7 @@ class CalculatorRepository {
           ),
           PortfolioFundAllocation(
             fundName: 'صندوق أذون الخزانة المصرية',
-            categoryNameAr: 'أذون وسندات حكومية',
+            categoryNameAr: 'أدوات حكومية',
             percentage: 25.0,
             badgeLabel: 'ضمان حكومي',
             categoryColor: const Color(0xFF6366F1),
