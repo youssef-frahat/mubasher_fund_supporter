@@ -50,6 +50,29 @@ class FundModel {
     this.rank,
   });
 
+  /// Returns main name without parentheses e.g. "AAIB" from "AAIB (Gozoor)"
+  String get displayNameOnly {
+    if (name.contains('(') && name.contains(')')) {
+      final index = name.indexOf('(');
+      final mainPart = name.substring(0, index).trim();
+      if (mainPart.isNotEmpty) return mainPart;
+    }
+    return name;
+  }
+
+  /// Returns abbreviation/code inside parentheses e.g. "Gozoor" from "AAIB (Gozoor)"
+  String? get abbreviation {
+    if (name.contains('(') && name.contains(')')) {
+      final start = name.indexOf('(') + 1;
+      final end = name.lastIndexOf(')');
+      if (start < end) {
+        final code = name.substring(start, end).trim();
+        if (code.isNotEmpty) return code;
+      }
+    }
+    return null;
+  }
+
   factory FundModel.fromMap(Map<String, dynamic> map) {
     return FundModel(
       id: map['id']?.toString() ?? '',

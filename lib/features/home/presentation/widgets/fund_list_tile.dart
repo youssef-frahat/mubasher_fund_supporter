@@ -59,7 +59,7 @@ class FundListTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    fund.name,
+                    fund.displayNameOnly,
                     style: FontStyles.titleSmall.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 13.sp,
@@ -67,6 +67,19 @@ class FundListTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (fund.abbreviation != null) ...[
+                    SizedBox(height: 1.h),
+                    Text(
+                      '🏷️ ${fund.abbreviation}',
+                      style: FontStyles.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 10.sp,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                   SizedBox(height: 2.h),
                   Text(
                     '${fund.managerName} | ${fund.category}',

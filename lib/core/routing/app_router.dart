@@ -22,6 +22,7 @@ import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/terms_conditions_screen.dart';
 import '../../features/settings/presentation/screens/faq_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/funds/presentation/screens/top10_league_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorSettingsKey = GlobalKey<NavigatorState>();
@@ -149,6 +150,11 @@ class AppRouter {
         path: Routes.allFunds,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AllFundsScreen(),
+      ),
+      GoRoute(
+        path: Routes.top10League,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const Top10LeagueScreen(),
       ),
       GoRoute(
         path: Routes.wishlist,

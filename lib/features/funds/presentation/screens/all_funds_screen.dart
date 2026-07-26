@@ -17,18 +17,18 @@ class AllFundsScreen extends StatefulWidget {
 
 class _AllFundsScreenState extends State<AllFundsScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedCategoryFilter = 'الكل';
+  String _selectedCategoryKey = 'catAll';
   String _searchQuery = '';
   List<PlatformFeature> _funds = [];
   bool _isLoading = true;
 
-  final List<String> _categories = [
-    'الكل',
-    'سيولة ونقدي',
-    'تحوط ذهب',
-    'أسهم ونمو',
-    'شريعة إسلامية',
-    'أذون وسندات',
+  final List<String> _categoryKeys = [
+    'catAll',
+    'catLiquidity',
+    'catPreciousMetals',
+    'catEquities',
+    'catIslamic',
+    'catTreasury',
   ];
 
   @override
@@ -44,17 +44,18 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
         Color color = const Color(0xFF10B981);
         dynamic icon = FontAwesomeIcons.chartLine;
         final cat = f.category.toLowerCase();
+        final name = f.name.toLowerCase();
 
-        if (cat.contains('gold') || cat.contains('ذهب')) {
+        if (cat.contains('gold') || cat.contains('silver') || cat.contains('metal') || name.contains('ذهب') || name.contains('فضة') || name.contains('معادن')) {
           color = const Color(0xFFF59E0B);
           icon = FontAwesomeIcons.coins;
-        } else if (cat.contains('islamic') || cat.contains('إسلام')) {
+        } else if (cat.contains('islamic') || cat.contains('sharia') || name.contains('إسلام') || name.contains('شريعة') || name.contains('وفاق')) {
           color = const Color(0xFF059669);
           icon = FontAwesomeIcons.kaaba;
-        } else if (cat.contains('money') || cat.contains('سيولة') || cat.contains('نقدي')) {
+        } else if (cat.contains('money') || cat.contains('cash') || name.contains('سيولة') || name.contains('نقدي') || name.contains('يومي')) {
           color = const Color(0xFF10B981);
           icon = FontAwesomeIcons.moneyBillWave;
-        } else if (cat.contains('fixed') || cat.contains('سندات') || cat.contains('أذون')) {
+        } else if (cat.contains('fixed') || cat.contains('treasury') || cat.contains('bill') || name.contains('سند') || name.contains('أذون') || name.contains('خزانة')) {
           color = const Color(0xFF6366F1);
           icon = FontAwesomeIcons.shieldHalved;
         }
@@ -94,15 +95,33 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
     final border = AppColors.getBorder(context);
 
     final filteredFunds = _funds.where((fund) {
-      final matchesSearch = fund.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          fund.subtitle.toLowerCase().contains(_searchQuery.toLowerCase());
-      if (_selectedCategoryFilter == 'الكل') return matchesSearch;
-      if (_selectedCategoryFilter == 'سيولة ونقدي') return matchesSearch && (fund.subtitle.contains('نقدي') || fund.subtitle.contains('يومي') || fund.subtitle.contains('MoneyMarket'));
-      if (_selectedCategoryFilter == 'تحوط ذهب') return matchesSearch && (fund.title.contains('ذهب') || fund.subtitle.contains('Gold'));
-      if (_selectedCategoryFilter == 'أسهم ونمو') return matchesSearch && (fund.title.contains('أسهم') || fund.subtitle.contains('Equity'));
-      if (_selectedCategoryFilter == 'شريعة إسلامية') return matchesSearch && (fund.title.contains('إسلامي') || fund.subtitle.contains('Islamic'));
-      if (_selectedCategoryFilter == 'أذون وسندات') return matchesSearch && (fund.title.contains('سندات') || fund.subtitle.contains('Fixed'));
-      return matchesSearch;
+      final titleLower = fund.title.toLowerCase();
+      final subLower = fund.subtitle.toLowerCase();
+      final queryLower = _searchQuery.toLowerCase();
+
+      final matchesSearch = queryLower.isEmpty || titleLower.contains(queryLower) || subLower.contains(queryLower);
+
+      if (!matchesSearch) return false;
+
+      if (_selectedCategoryKey == 'catAll') return true;
+
+      if (_selectedCategoryKey == 'catLiquidity') {
+        return subLower.contains('moneymarket') || subLower.contains('liquidity') || subLower.contains('cash') || titleLower.contains('نقدي') || titleLower.contains('يومي') || titleLower.contains('سيولة') || titleLower.contains('جذور');
+      }
+      if (_selectedCategoryKey == 'catPreciousMetals') {
+        return subLower.contains('gold') || subLower.contains('silver') || subLower.contains('metal') || titleLower.contains('ذهب') || titleLower.contains('فضة') || titleLower.contains('معادن') || titleLower.contains('سبائك');
+      }
+      if (_selectedCategoryKey == 'catEquities') {
+        return subLower.contains('equity') || subLower.contains('growth') || titleLower.contains('أسهم') || titleLower.contains('نمو') || titleLower.contains('مباشر أسهم');
+      }
+      if (_selectedCategoryKey == 'catIslamic') {
+        return subLower.contains('islamic') || subLower.contains('sharia') || titleLower.contains('إسلامي') || titleLower.contains('شريعة') || titleLower.contains('وفاق');
+      }
+      if (_selectedCategoryKey == 'catTreasury') {
+        return subLower.contains('fixed') || subLower.contains('treasury') || subLower.contains('bill') || subLower.contains('bond') || titleLower.contains('أذون') || titleLower.contains('سندات') || titleLower.contains('خزانة') || titleLower.contains('دخل ثابت') || titleLower.contains('مرابحة');
+      }
+
+      return true;
     }).toList();
 
     return Scaffold(
@@ -166,13 +185,14 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.symmetric(horizontal: 16.w),
-              itemCount: _categories.length,
+              itemCount: _categoryKeys.length,
               itemBuilder: (context, index) {
-                final cat = _categories[index];
-                final isSelected = cat == _selectedCategoryFilter;
+                final catKey = _categoryKeys[index];
+                final catLabel = context.tr(catKey);
+                final isSelected = catKey == _selectedCategoryKey;
 
                 return GestureDetector(
-                  onTap: () => setState(() => _selectedCategoryFilter = cat),
+                  onTap: () => setState(() => _selectedCategoryKey = catKey),
                   child: Container(
                     margin: EdgeInsets.only(left: 8.w),
                     padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
@@ -184,7 +204,7 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
                       ),
                     ),
                     child: Text(
-                      cat,
+                      catLabel,
                       style: TextStyle(
                         color: isSelected ? Colors.black : textPrimary,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -231,7 +251,7 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
                 : filteredFunds.isEmpty
                     ? Center(
                         child: Text(
-                          'لا توجد صناديق تطابق الكلمة المبحوث عنها.',
+                          'لا توجد صناديق تطابق الفئة أو البحث.',
                           style: TextStyle(color: textSecondary, fontSize: 13.sp),
                         ),
                       )

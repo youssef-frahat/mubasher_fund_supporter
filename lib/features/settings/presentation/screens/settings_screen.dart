@@ -38,7 +38,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _toggleBiometrics(bool value) async {
     if (value) {
-      // Trigger native biometric prompt to verify
       final isAuthenticated = await BiometricService.authenticateUser(context);
       if (isAuthenticated) {
         final prefs = await SharedPreferences.getInstance();
@@ -84,7 +83,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'الإعدادات والحساب',
+          context.tr('settingsAndAccount'),
           style: TextStyle(
             color: textPrimary,
             fontWeight: FontWeight.bold,
@@ -122,11 +121,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // User Account Profile Card
             BlocBuilder<AuthCubit, AuthState>(
               builder: (context, state) {
-                String userName = 'المستثمر المحترف';
+                String userName = context.tr('proInvestor');
                 String userEmail = 'user@watheqa.eg';
 
                 if (state is Authenticated) {
-                  userName = state.user.userMetadata?['full_name'] ?? state.user.email?.split('@').first ?? 'المستثمر المحترف';
+                  userName = state.user.userMetadata?['full_name'] ?? state.user.email?.split('@').first ?? context.tr('proInvestor');
                   userEmail = state.user.email ?? 'user@watheqa.eg';
                 }
 
@@ -185,7 +184,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SizedBox(height: 24.h),
 
             // Category Title: Theme & Language Setting
-            _buildSectionHeader(context, '🎨 مظهر التطبيق واللغة'),
+            _buildSectionHeader(context, context.tr('appThemeAndLang')),
             SizedBox(height: 10.h),
             Material(
               color: surface,
@@ -199,14 +198,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   // Theme Tile
                   BlocBuilder<ThemeCubit, ThemeMode>(
                     builder: (context, themeMode) {
-                      String subtitleText = 'تلقائي (حسب نظام الجهاز)';
+                      String subtitleText = context.tr('themeSubtitleSystem');
                       dynamic themeIcon = FontAwesomeIcons.sliders;
 
                       if (themeMode == ThemeMode.dark) {
-                        subtitleText = 'المظهر الداكن (Dark Mode)';
+                        subtitleText = context.tr('themeSubtitleDark');
                         themeIcon = FontAwesomeIcons.moon;
                       } else if (themeMode == ThemeMode.light) {
-                        subtitleText = 'المظهر الفاتح (Light Mode)';
+                        subtitleText = context.tr('themeSubtitleLight');
                         themeIcon = FontAwesomeIcons.sun;
                       }
 
@@ -214,7 +213,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         tileColor: Colors.transparent,
                         leading: FaIcon(themeIcon, color: AppColors.primary, size: 18.r),
                         title: Text(
-                          'مظهر التطبيق (Theme)',
+                          context.tr('theme'),
                           style: TextStyle(color: textPrimary, fontSize: 13.sp, fontWeight: FontWeight.bold),
                         ),
                         subtitle: Text(
@@ -233,11 +232,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     tileColor: Colors.transparent,
                     leading: FaIcon(FontAwesomeIcons.language, color: AppColors.primary, size: 18.r),
                     title: Text(
-                      'لغة التطبيق (Language)',
+                      context.tr('language'),
                       style: TextStyle(color: textPrimary, fontSize: 13.sp, fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
-                      context.watch<LanguageCubit>().isArabic ? 'العربية (Arabic)' : 'English',
+                      context.watch<LanguageCubit>().isArabic ? context.tr('arabic') : context.tr('english'),
                       style: TextStyle(color: textSecondary, fontSize: 11.sp),
                     ),
                     trailing: Container(
@@ -247,7 +246,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         borderRadius: BorderRadius.circular(8.r),
                       ),
                       child: Text(
-                        context.watch<LanguageCubit>().isArabic ? 'تغيير إلى English' : 'تغيير إلى العربية',
+                        context.watch<LanguageCubit>().isArabic ? context.tr('changeToEnglish') : context.tr('changeToArabic'),
                         style: TextStyle(color: AppColors.primary, fontSize: 11.sp, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -259,7 +258,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SizedBox(height: 24.h),
 
             // Category Title: Notifications & Alerts
-            _buildSectionHeader(context, '🔔 التنبيهات وإشعارات المحفظة'),
+            _buildSectionHeader(context, '🔔 ${context.tr('notifications')}'),
             SizedBox(height: 10.h),
             Material(
               color: surface,
@@ -271,11 +270,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: SwitchListTile(
                 secondary: const FaIcon(FontAwesomeIcons.bell, color: AppColors.primary, size: 18),
                 title: Text(
-                  'تنبيهات أداء المحفظة اليومية',
+                  context.tr('dailyPortfolioAlerts'),
                   style: TextStyle(color: textPrimary, fontSize: 13.sp, fontWeight: FontWeight.bold),
                 ),
                 subtitle: Text(
-                  'إشعارات ملخص جلسة التداول والأرباح آخر اليوم',
+                  context.tr('dailyPortfolioAlertsSub'),
                   style: TextStyle(color: textSecondary, fontSize: 11.sp),
                 ),
                 activeThumbColor: AppColors.primary,
@@ -286,7 +285,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SizedBox(height: 24.h),
 
             // Category Title: Security & Biometrics
-            _buildSectionHeader(context, '🔒 الأمان والحماية'),
+            _buildSectionHeader(context, '🔒 ${context.tr('security')}'),
             SizedBox(height: 10.h),
             Material(
               color: surface,
@@ -298,11 +297,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: SwitchListTile(
                 secondary: const FaIcon(FontAwesomeIcons.fingerprint, color: AppColors.primary, size: 18),
                 title: Text(
-                  'التأمين ببصمة الاصبع / الوجه',
+                  context.tr('biometricAuthTitle'),
                   style: TextStyle(color: textPrimary, fontSize: 13.sp, fontWeight: FontWeight.bold),
                 ),
                 subtitle: Text(
-                  'طلب البصمة قبل فتح المحفظة والحساب',
+                  context.tr('biometricAuthSub'),
                   style: TextStyle(color: textSecondary, fontSize: 11.sp),
                 ),
                 activeThumbColor: AppColors.primary,
@@ -313,7 +312,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SizedBox(height: 24.h),
 
             // Category Title: Support
-            _buildSectionHeader(context, '💬 الدعم الفني والمساعدة'),
+            _buildSectionHeader(context, '💬 ${context.tr('support')}'),
             SizedBox(height: 10.h),
             Material(
               color: surface,
@@ -327,11 +326,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ListTile(
                     leading: const FaIcon(FontAwesomeIcons.circleQuestion, color: AppColors.primary, size: 18),
                     title: Text(
-                      'الأسئلة الشائعة (FAQ)',
+                      context.tr('faq'),
                       style: TextStyle(color: textPrimary, fontSize: 13.sp, fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
-                      'إجابات حول الصناديق والمحفظة والمستشار الذكي',
+                      context.tr('faqSub'),
                       style: TextStyle(color: textSecondary, fontSize: 11.sp),
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 14),
@@ -341,11 +340,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ListTile(
                     leading: const FaIcon(FontAwesomeIcons.fileContract, color: AppColors.primary, size: 18),
                     title: Text(
-                      'الشروط والأحكام وسياسة الخصوصية',
+                      context.tr('privacyPolicy'),
                       style: TextStyle(color: textPrimary, fontSize: 13.sp, fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
-                      'اتفاقية الاستخدام وحماية البيانات لحفظ حقوقك',
+                      context.tr('termsSub'),
                       style: TextStyle(color: textSecondary, fontSize: 11.sp),
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 14),
@@ -355,11 +354,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ListTile(
                     leading: const FaIcon(FontAwesomeIcons.headset, color: AppColors.primary, size: 18),
                     title: Text(
-                      'الدعم الفني والخدمة المباشرة',
+                      context.tr('liveSupportTitle'),
                       style: TextStyle(color: textPrimary, fontSize: 13.sp, fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
-                      'تواصل مع مستشاري وثيقة عبر واتساب',
+                      context.tr('liveSupportSub'),
                       style: TextStyle(color: textSecondary, fontSize: 11.sp),
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 14),
@@ -380,9 +379,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: ElevatedButton.icon(
                 onPressed: () => _confirmSignOut(context),
                 icon: const FaIcon(FontAwesomeIcons.rightFromBracket, color: Colors.white, size: 16),
-                label: const Text(
-                  'تسجيل الخروج من الحساب',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                label: Text(
+                  context.tr('signOut'),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.error,
@@ -431,7 +430,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'اختر مظهر التطبيق (Theme)',
+                context.tr('theme'),
                 style: TextStyle(
                   color: textPrimary,
                   fontSize: 16.sp,
@@ -441,7 +440,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SizedBox(height: 16.h),
               _buildThemeOptionTile(
                 context,
-                title: 'تلقائي (حسب نظام الجهاز)',
+                title: context.tr('themeSubtitleSystem'),
                 icon: FontAwesomeIcons.sliders,
                 isSelected: currentMode == ThemeMode.system,
                 onTap: () {
@@ -452,7 +451,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Divider(color: border),
               _buildThemeOptionTile(
                 context,
-                title: 'المظهر الداكن (Dark Mode)',
+                title: context.tr('themeSubtitleDark'),
                 icon: FontAwesomeIcons.moon,
                 isSelected: currentMode == ThemeMode.dark,
                 onTap: () {
@@ -463,7 +462,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Divider(color: border),
               _buildThemeOptionTile(
                 context,
-                title: 'المظهر الفاتح (Light Mode)',
+                title: context.tr('themeSubtitleLight'),
                 icon: FontAwesomeIcons.sun,
                 isSelected: currentMode == ThemeMode.light,
                 onTap: () {
@@ -509,17 +508,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.getSurface(context),
         title: Text(
-          'تأكيد تسجيل الخروج',
+          context.tr('confirmSignOut'),
           style: TextStyle(color: AppColors.getTextPrimary(context), fontWeight: FontWeight.bold),
         ),
         content: Text(
-          'هل أنت تأكد من أنك تريد تسجيل الخروج من حسابك؟',
+          context.tr('confirmSignOutMsg'),
           style: TextStyle(color: AppColors.getTextSecondary(context)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
+            child: Text(context.tr('cancel')),
           ),
           ElevatedButton(
             onPressed: () {
@@ -527,7 +526,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               context.read<AuthCubit>().signOut();
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('تسجيل الخروج', style: TextStyle(color: Colors.white)),
+            child: Text(context.tr('signOut'), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),

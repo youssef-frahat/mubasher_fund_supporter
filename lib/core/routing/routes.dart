@@ -17,4 +17,5 @@ class Routes {
   static const String admin = '/admin';
   static const String adminFunds = '/admin/funds';
   static const String biometricLock = '/biometric-lock';
+  static const String top10League = '/top10-league';
 }

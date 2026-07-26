@@ -14,7 +14,6 @@ import '../../../../core/language/language_cubit.dart';
 import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
 import '../widgets/feature_card.dart';
-import '../widgets/ai_insight_banner.dart';
 import '../widgets/today_opportunity_card.dart';
 import '../widgets/top_performing_card.dart';
 import '../widgets/recommended_funds_list.dart';
@@ -96,79 +95,7 @@ class HomeScreen extends StatelessWidget {
                           .slideY(begin: -0.05, end: 0, curve: Curves.easeOutQuart),
                     ),
 
-                    // 3. Top Stats Metrics 2x2 Grid (Dynamic Active Funds Count from Supabase)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                        child: GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 2.2,
-                            crossAxisSpacing: 10.w,
-                            mainAxisSpacing: 10.h,
-                          ),
-                          itemCount: state.metrics.length,
-                          itemBuilder: (context, index) {
-                            final metric = state.metrics[index];
-                            return Container(
-                              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
-                              decoration: BoxDecoration(
-                                color: surface,
-                                borderRadius: BorderRadius.circular(14.r),
-                                border: Border.all(color: border),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  FittedBox(
-                                    child: Text(
-                                      metric.value,
-                                      style: TextStyle(
-                                        color: const Color(0xFF10B981),
-                                        fontSize: 18.sp,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 2.h),
-                                  Text(
-                                    context.tr(
-                                      metric.label.toLowerCase().contains('active')
-                                          ? 'activeFunds'
-                                          : metric.label.toLowerCase().contains('nav')
-                                              ? 'dailyNavUpdates'
-                                              : metric.label.toLowerCase().contains('advisor')
-                                                  ? 'advisorAccounts'
-                                                  : 'aiInsights',
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: textSecondary,
-                                      fontSize: 10.sp,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-
-                    // 4. AI Market Pulse Banner (Matching Screenshot 3)
-                    SliverToBoxAdapter(
-                      child: AiInsightBanner(insight: state.aiInsight)
-                          .animate()
-                          .fadeIn(delay: 100.ms)
-                          .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuart),
-                    ),
-
-                    // 5. Top Performing Fund Card Header & Card
+                    // 3. Top Performing Fund Card Header & Card (Links to Top 10 League)
                     SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,9 +119,9 @@ class HomeScreen extends StatelessWidget {
                                 ),
                                 SizedBox(width: 8.w),
                                 GestureDetector(
-                                  onTap: () => context.push(Routes.allFunds),
+                                  onTap: () => context.push(Routes.top10League),
                                   child: Text(
-                                    '${context.tr('seeAll')} ←',
+                                    '${context.tr('seeAll')} 🏆',
                                     style: TextStyle(
                                       color: AppColors.primary,
                                       fontSize: 11.sp,
@@ -207,13 +134,13 @@ class HomeScreen extends StatelessWidget {
                           ),
                           TopPerformingCard(fund: state.topPerformingFund)
                               .animate()
-                              .fadeIn(delay: 200.ms)
+                              .fadeIn(delay: 150.ms)
                               .scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1), duration: 400.ms, curve: Curves.easeOutQuart),
                         ],
                       ),
                     ),
 
-                    // 6. Recommended Funds List with See All
+                    // 4. Recommended Funds List with See All
                     SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,13 +179,13 @@ class HomeScreen extends StatelessWidget {
                           ),
                           RecommendedFundsList(funds: state.recommendedFunds)
                               .animate()
-                              .fadeIn(delay: 300.ms)
+                              .fadeIn(delay: 250.ms)
                               .slideX(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuart),
                         ],
                       ),
                     ),
 
-                    // 7. Ranked Funds Header with See All
+                    // 5. Ranked Funds Header with See All (Links to Top 10 League)
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 10.h),
@@ -279,9 +206,9 @@ class HomeScreen extends StatelessWidget {
                             ),
                             SizedBox(width: 8.w),
                             GestureDetector(
-                              onTap: () => context.push(Routes.allFunds),
+                              onTap: () => context.push(Routes.top10League),
                               child: Text(
-                                '${context.tr('seeAll')} ←',
+                                '${context.tr('seeAll')} 🏆',
                                 style: TextStyle(
                                   color: AppColors.primary,
                                   fontSize: 11.sp,
@@ -294,7 +221,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // 8. Ranked Funds List
+                    // 6. Ranked Funds List
                     SliverPadding(
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
                       sliver: SliverList.builder(
@@ -303,12 +230,12 @@ class HomeScreen extends StatelessWidget {
                           return FundListTile(
                             fund: state.rankedFunds[index],
                             rank: index + 1,
-                          ).animate().fadeIn(delay: (300 + (80 * index)).ms).slideY(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOutQuart);
+                          ).animate().fadeIn(delay: (250 + (60 * index)).ms).slideY(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOutQuart);
                         },
                       ),
                     ),
 
-                    // 9. Platform Features Header
+                    // 7. Platform Features Header
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 10.h),
