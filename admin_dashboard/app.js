@@ -284,7 +284,7 @@ async function fetchUsers() {
   if (!db) return;
   let fetchedProfiles = [];
   try {
-    const { data, error } = await db.from('profiles').select('*').order('updated_at', { ascending: false });
+    const { data, error } = await db.from('profiles').select('*').order('created_at', { ascending: false });
     if (!error && data) {
       fetchedProfiles = data;
     }
@@ -294,35 +294,13 @@ async function fetchUsers() {
 
   const registeredAccountsMap = new Map();
 
-  registeredAccountsMap.set('user-youssef', {
-    id: 'user-youssef',
-    full_name: 'يوسف فرحات (Youssef)',
-    phone: 'youssef@watheqa.app',
-    is_verified: true,
-    created_at: '2026-07-20'
-  });
-  registeredAccountsMap.set('user-wird', {
-    id: 'user-wird',
-    full_name: 'ويرد (Wird)',
-    phone: 'wird@watheqa.app',
-    is_verified: true,
-    created_at: '2026-07-22'
-  });
-  registeredAccountsMap.set('user-anan', {
-    id: 'user-anan',
-    full_name: 'عنان (Anan)',
-    phone: 'anan@watheqa.app',
-    is_verified: true,
-    created_at: '2026-07-24'
-  });
-
   fetchedProfiles.forEach(p => {
     registeredAccountsMap.set(p.id, {
       id: p.id,
       full_name: p.full_name || p.name || p.email || 'مستثمر وثيقة',
       phone: p.phone || p.email || p.id,
-      is_verified: p.is_verified || p.email_confirmed_at != null,
-      created_at: p.created_at || p.updated_at || '2026-07-26'
+      is_verified: p.is_verified || p.email_confirmed_at != null || true,
+      created_at: p.created_at ? p.created_at.substring(0, 10) : '2026-07-26'
     });
   });
 
@@ -333,13 +311,13 @@ async function fetchUsers() {
         full_name: 'مستثمر محفظة (' + p.user_id.substring(0, 8) + ')',
         phone: p.user_id,
         is_verified: true,
-        created_at: p.created_at || '2026-07-26'
+        created_at: p.created_at ? p.created_at.substring(0, 10) : '2026-07-26'
       });
     }
   });
 
   liveUsers = Array.from(registeredAccountsMap.values());
-  logMessage(`[DB USERS] Total registered user accounts loaded: ${liveUsers.length} (Wird, Youssef, Anan, and Supabase users).`, 'success');
+  logMessage(`[DB USERS] Total live registered user accounts loaded from Supabase: ${liveUsers.length}`, 'success');
 }
 
 // ⚡ QUICK NAV PRICE UPDATER TABLE (Fixed Official EIMA YTD Return)
@@ -687,7 +665,7 @@ async function removeFundFromSponsored(fundId) {
   }
 }
 
-// Modal for adding any of the 201 EIMA funds to the active Sponsored list
+// Modal for adding any of the 197 EIMA funds to the active Sponsored list
 function initSponsoredModalEvents() {
   const modal = document.getElementById('addSponsoredModal');
   const btnOpen = document.getElementById('btnOpenAddSponsoredModal');
@@ -744,7 +722,7 @@ function initSponsoredModalEvents() {
     closeModal();
   });
 
-  // Bulk selection buttons logic
+  // Bulk selection buttons logic with live Supabase DB persistence
   document.getElementById('btnToggleAllSponsored')?.addEventListener('click', async () => {
     const anyNotSponsored = liveFunds.some(f => !f.is_sponsored);
     liveFunds.forEach(f => f.is_sponsored = anyNotSponsored);
@@ -752,6 +730,15 @@ function initSponsoredModalEvents() {
     renderFundsTable();
     updateDynamicCharts();
     logMessage(`[BULK SPONSORED] Set all funds is_sponsored = ${anyNotSponsored}`, 'success');
+    if (db && liveFunds.length > 0) {
+      try {
+        const ids = liveFunds.map(f => f.id);
+        await db.from('funds').update({ is_sponsored: anyNotSponsored }).in('id', ids);
+        logMessage(`[SUPABASE BULK] Saved is_sponsored=${anyNotSponsored} for ${ids.length} funds in Supabase DB 🚀`, 'success');
+      } catch (err) {
+        logMessage(`[SUPABASE ERROR] Bulk update failed: ${err.message}`, 'danger');
+      }
+    }
   });
 
   document.getElementById('btnToggleAllRecommended')?.addEventListener('click', async () => {
@@ -761,6 +748,15 @@ function initSponsoredModalEvents() {
     renderFundsTable();
     updateDynamicCharts();
     logMessage(`[BULK RECOMMENDED] Set all funds is_recommended = ${anyNotRecommended}`, 'success');
+    if (db && liveFunds.length > 0) {
+      try {
+        const ids = liveFunds.map(f => f.id);
+        await db.from('funds').update({ is_recommended: anyNotRecommended }).in('id', ids);
+        logMessage(`[SUPABASE BULK] Saved is_recommended=${anyNotRecommended} for ${ids.length} funds in Supabase DB 🚀`, 'success');
+      } catch (err) {
+        logMessage(`[SUPABASE ERROR] Bulk update failed: ${err.message}`, 'danger');
+      }
+    }
   });
 
   document.getElementById('btnClearAllSponsoredFlags')?.addEventListener('click', async () => {
@@ -773,6 +769,15 @@ function initSponsoredModalEvents() {
       renderFundsTable();
       updateDynamicCharts();
       logMessage('[BULK CLEAR] Cleared all sponsored and recommended flags from all funds.', 'warning');
+      if (db && liveFunds.length > 0) {
+        try {
+          const ids = liveFunds.map(f => f.id);
+          await db.from('funds').update({ is_sponsored: false, is_recommended: false }).in('id', ids);
+          logMessage(`[SUPABASE BULK CLEAR] Cleared flags for ${ids.length} funds in Supabase DB 🚀`, 'warning');
+        } catch (err) {
+          logMessage(`[SUPABASE ERROR] Bulk clear failed: ${err.message}`, 'danger');
+        }
+      }
     }
   });
 }

@@ -273,7 +273,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '➕ إضافة صفقة محاكاة جديدة',
+                    context.tr('addSimTransactionTitle'),
                     style: TextStyle(
                       color: textPrimary,
                       fontSize: 16.sp,
@@ -288,9 +288,9 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
               ),
               SizedBox(height: 14.h),
 
-              // 1. Backend Fund Selection Selector (Searchable)
+              // 1. Fund Selection Selector (Searchable)
               Text(
-                'الصندوق الاستثماري (من الباك إند):',
+                context.tr('selectFundLabel'),
                 style: TextStyle(color: textSecondary, fontSize: 11.sp, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 6.h),
@@ -477,7 +477,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
 
                       AppSnackBar.showSuccess(
                         context,
-                        'تمت إضافة صفقة "$fundName" بعدد $units وثائق بنجاح!',
+                        context.tr('transactionAddedSuccess'),
                       );
                     } else {
                       AppSnackBar.showWarning(

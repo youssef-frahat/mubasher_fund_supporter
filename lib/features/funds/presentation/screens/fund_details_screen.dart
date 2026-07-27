@@ -262,7 +262,7 @@ class FundDetailsScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '➕ صفقة جديدة: ${fund.title}',
+                    '${context.tr('newTransactionTitle')} ${fund.title}',
                     style: TextStyle(
                       color: textPrimary,
                       fontSize: 15.sp,
@@ -323,7 +323,7 @@ class FundDetailsScreen extends StatelessWidget {
                       Navigator.pop(ctx);
                       AppSnackBar.showSuccess(
                         context,
-                        'تمت إضافة صفقة "${fund.title}" بنجاح للمحفظة! 🚀',
+                        context.tr('dealSavedSuccess'),
                       );
                     } else {
                       AppSnackBar.showWarning(

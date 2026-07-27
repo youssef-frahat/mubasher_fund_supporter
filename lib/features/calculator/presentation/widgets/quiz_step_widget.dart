@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/app_config/app_colors.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../../data/models/risk_profile_model.dart';
 
 class QuizStepWidget extends StatelessWidget {
@@ -20,12 +21,13 @@ class QuizStepWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textPrimary = AppColors.getTextPrimary(context);
+    final isAr = context.isArabic;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '1. ما هو هدفك الأساسي من الاستثمار؟',
+          isAr ? '1. ما هو هدفك الأساسي من الاستثمار؟' : '1. What is your primary investment goal?',
           style: TextStyle(
             color: textPrimary,
             fontSize: 15.sp,
@@ -40,33 +42,33 @@ class QuizStepWidget extends StatelessWidget {
             _buildGoalChip(
               context: context,
               goal: InvestmentGoal.capitalPreservation,
-              label: '🛡️ أمان وحفظ رأس المال',
+              label: isAr ? '🛡️ أمان وحفظ رأس المال' : '🛡️ Safety & Capital Preservation',
             ),
             _buildGoalChip(
               context: context,
               goal: InvestmentGoal.balancedGrowth,
-              label: '⚖️ نمو متوازن بعائد ممتاز',
+              label: isAr ? '⚖️ نمو متوازن بعائد ممتاز' : '⚖️ Balanced Growth',
             ),
             _buildGoalChip(
               context: context,
               goal: InvestmentGoal.highYield,
-              label: '🚀 أقصى نمو وأرباح (أسهم)',
+              label: isAr ? '🚀 أقصى نمو وأرباح (أسهم)' : '🚀 Max Growth & Profit (Equity)',
             ),
             _buildGoalChip(
               context: context,
               goal: InvestmentGoal.islamicSharia,
-              label: '🌙 استثمار إسلامي 100%',
+              label: isAr ? '🌙 استثمار إسلامي 100%' : '🌙 100% Islamic Investment',
             ),
             _buildGoalChip(
               context: context,
               goal: InvestmentGoal.goldHedging,
-              label: '🥇 تحوط وحماية ضد التضخم (ذهب)',
+              label: isAr ? '🥇 تحوط وحماية ضد التضخم (ذهب)' : '🥇 Inflation Hedge (Gold)',
             ),
           ],
         ),
         SizedBox(height: 20.h),
         Text(
-          '2. ما هي المدة الزمنية المخططة للاستثمار؟',
+          isAr ? '2. ما هي المدة الزمنية المخططة للاستثمار؟' : '2. What is your planned investment horizon?',
           style: TextStyle(
             color: textPrimary,
             fontSize: 15.sp,
@@ -80,8 +82,8 @@ class QuizStepWidget extends StatelessWidget {
               child: _buildDurationCard(
                 context: context,
                 duration: InvestmentDuration.shortTerm,
-                title: 'قصيرة الأجل',
-                subtitle: 'أقل من سنة',
+                title: isAr ? 'قصيرة الأجل' : 'Short-Term',
+                subtitle: isAr ? 'أقل من سنة' : '< 1 year',
               ),
             ),
             SizedBox(width: 8.w),
@@ -89,8 +91,8 @@ class QuizStepWidget extends StatelessWidget {
               child: _buildDurationCard(
                 context: context,
                 duration: InvestmentDuration.mediumTerm,
-                title: 'متوسطة الأجل',
-                subtitle: '1 - 3 سنوات',
+                title: isAr ? 'متوسطة الأجل' : 'Medium-Term',
+                subtitle: isAr ? '1 - 3 سنوات' : '1 - 3 years',
               ),
             ),
             SizedBox(width: 8.w),
@@ -98,8 +100,8 @@ class QuizStepWidget extends StatelessWidget {
               child: _buildDurationCard(
                 context: context,
                 duration: InvestmentDuration.longTerm,
-                title: 'طويلة الأجل',
-                subtitle: 'أكثر من 3 سنوات',
+                title: isAr ? 'طويلة الأجل' : 'Long-Term',
+                subtitle: isAr ? 'أكثر من 3 سنوات' : '> 3 years',
               ),
             ),
           ],

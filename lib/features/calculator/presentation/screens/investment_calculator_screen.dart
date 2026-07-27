@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/app_config/app_colors.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../../data/repositories/calculator_repository.dart';
 import '../cubit/calculator_cubit.dart';
 import '../cubit/calculator_state.dart';
@@ -66,6 +67,7 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
     final textPrimary = AppColors.getTextPrimary(context);
     final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
+    final isAr = context.isArabic;
 
     return Scaffold(
       backgroundColor: bg,
@@ -74,7 +76,7 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'حاسبة ومستشار الاستثمار الذكي',
+          isAr ? 'حاسبة ومستشار الاستثمار الذكي' : 'Smart Investment Robo-Advisor',
           style: TextStyle(
             color: textPrimary,
             fontWeight: FontWeight.bold,
@@ -120,7 +122,7 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'قارن استثمارك بذكاء',
+                              isAr ? 'قارن استثمارك بذكاء' : 'Compare Your Investment Smartly',
                               style: TextStyle(
                                 color: textPrimary,
                                 fontSize: 16.sp,
@@ -129,7 +131,9 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
                             ),
                             SizedBox(height: 2.h),
                             Text(
-                              'حدد هدفك وسنحدد لك الخيار الأفضل عائداً مع المقارنة الفورية بالشهادات البنكية والذهب.',
+                              isAr
+                                  ? 'حدد هدفك وسنحدد لك الخيار الأفضل عائداً مع المقارنة الفورية بالشهادات البنكية والذهب.'
+                                  : 'Select your goal and we will recommend the top yield options compared with bank certs & gold.',
                               style: TextStyle(
                                 color: textSecondary,
                                 fontSize: 11.sp,
@@ -154,7 +158,7 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
 
                 // Step 3: Investment Amount Input & Slider
                 Text(
-                  '3. ما هو المبلغ المخطط استثماره؟',
+                  isAr ? '3. ما هو المبلغ المخطط استثماره؟' : '3. Planned Investment Amount',
                   style: TextStyle(
                     color: textPrimary,
                     fontSize: 15.sp,
@@ -176,7 +180,9 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'المبلغ الاستثماري (أدخل يدويًا أو عبر الشريط):',
+                            isAr
+                                ? 'المبلغ الاستثماري (أدخل يدويًا أو عبر الشريط):'
+                                : 'Investment Amount (Enter manually or slider):',
                             style: TextStyle(
                               color: textSecondary,
                               fontSize: 12.sp,

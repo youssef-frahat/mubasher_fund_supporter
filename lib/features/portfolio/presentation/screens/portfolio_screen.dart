@@ -124,7 +124,7 @@ class _PortfolioContentView extends StatelessWidget {
                             child: Row(
                               children: [
                                 Text(
-                                  'تبديل (${allPortfolios.length})',
+                                  '${context.tr('switchPortfolio')} (${allPortfolios.length})',
                                   style: TextStyle(color: AppColors.primary, fontSize: 11.sp, fontWeight: FontWeight.bold),
                                 ),
                                 SizedBox(width: 4.w),
@@ -435,7 +435,7 @@ class _PortfolioContentView extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '📁 منافذ المحافظ الاستثمارية الخاصّة بك',
+                    context.tr('myPrivatePortfolios'),
                     style: TextStyle(
                       color: textPrimary,
                       fontSize: 15.sp,
@@ -484,7 +484,7 @@ class _PortfolioContentView extends StatelessWidget {
                           ),
                         ),
                         subtitle: Text(
-                          '(${p.items.length}) صناديق مضافة',
+                          '(${p.items.length}) ${context.tr('fundsAdded')}',
                           style: TextStyle(color: textSecondary, fontSize: 11.sp),
                         ),
                         trailing: Row(
@@ -497,9 +497,9 @@ class _PortfolioContentView extends StatelessWidget {
                                   color: AppColors.primary,
                                   borderRadius: BorderRadius.circular(6.r),
                                 ),
-                                child: const Text(
-                                  'نشطة الان',
-                                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 10),
+                                child: Text(
+                                  context.tr('portfolioActive'),
+                                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 10),
                                 ),
                               ),
                             if (portfolios.length > 1)
@@ -508,7 +508,7 @@ class _PortfolioContentView extends StatelessWidget {
                                 onPressed: () {
                                   cubit.deletePortfolio(p.id);
                                   Navigator.pop(ctx);
-                                  AppSnackBar.showInfo(context, 'تم حذف المحفظة بنجاح');
+                                  AppSnackBar.showInfo(context, context.tr('portfolioDeletedSuccess'));
                                 },
                               ),
                           ],
