@@ -115,6 +115,78 @@ function applyLanguage(lang) {
   const insightsTitle = document.querySelector('#tab-insights .section-title h2');
   if (insightsTitle) insightsTitle.innerHTML = isEn ? '<i class="fa-solid fa-chart-pie"></i> Usage Analytics & Application Performance 📊' : '<i class="fa-solid fa-chart-pie"></i> تحليلات استخدام العملاء وأداء التطبيق 📊';
 
+  // Update Section Descriptions
+  const quickDesc = document.querySelector('#tab-quick-price .section-desc');
+  if (quickDesc) quickDesc.innerText = isEn ? 'Dedicated interface for instantly updating NAV prices (EGP) and YTD returns in one click without opening full CRUD forms.' : 'شاشة مخصصة لتغيير سعر الوثيقة (NAV EGP) والعائد السنوي فوراً بضغطة زر واحدة بدون الحاجة لفتح شاشات CRUD المعقدة.';
+
+  const sponsoredDesc = document.querySelector('#tab-sponsored .section-desc');
+  if (sponsoredDesc) sponsoredDesc.innerText = isEn ? 'Full control over Sponsored ⭐ and Recommended 💡 funds. Choose any fund to highlight or remove from active lists.' : 'تحكم كامل في الصناديق المحددة كـ (رعائية ⭐ / موصى بها 💡 / الأعلى أداءً 🏆). قم باختيار أي صندوق وإعطائه التميز الذي تريده أو إزالته بحرية.';
+
+  const adminsDesc = document.querySelector('#tab-admins .section-desc');
+  if (adminsDesc) adminsDesc.innerText = isEn ? 'As Super Admin, you can grant secondary admin credentials for assistant managers to update prices and portfolios.' : 'يمكنك بصفتك Super Admin إضافة حسابات أدمن فرعية للمساعدين لتحديث أسعار الصناديق والمحفظة.';
+
+  // Update Action Buttons
+  const btnToggleAllSponsored = document.getElementById('btnToggleAllSponsored');
+  if (btnToggleAllSponsored) btnToggleAllSponsored.innerHTML = isEn ? '<i class="fa-solid fa-star"></i> Select/Deselect All Sponsored ⭐' : '<i class="fa-solid fa-star"></i> تحديد/إلغاء الكل رعائي ⭐';
+
+  const btnToggleAllRecommended = document.getElementById('btnToggleAllRecommended');
+  if (btnToggleAllRecommended) btnToggleAllRecommended.innerHTML = isEn ? '<i class="fa-solid fa-lightbulb"></i> Select/Deselect All Recommended 💡' : '<i class="fa-solid fa-lightbulb"></i> تحديد/إلغاء الكل موصى به 💡';
+
+  const btnClearAllSponsoredFlags = document.getElementById('btnClearAllSponsoredFlags');
+  if (btnClearAllSponsoredFlags) btnClearAllSponsoredFlags.innerHTML = isEn ? '<i class="fa-solid fa-broom"></i> Clear Sponsored List 🧹' : '<i class="fa-solid fa-broom"></i> تفريغ القائمة الرعائية بالكامل 🧹';
+
+  const btnOpenAddAdminModal = document.getElementById('btnOpenAddAdminModal');
+  if (btnOpenAddAdminModal) btnOpenAddAdminModal.innerHTML = isEn ? '<i class="fa-solid fa-user-plus"></i> Add Assistant Admin' : '<i class="fa-solid fa-user-plus"></i> إضافة أدمن مساعد جديد';
+
+  const btnOpenAddFundModal = document.getElementById('btnOpenAddFundModal');
+  if (btnOpenAddFundModal) btnOpenAddFundModal.innerHTML = isEn ? '<i class="fa-solid fa-plus"></i> Add New Fund' : '<i class="fa-solid fa-plus"></i> إضافة صندوق جديد';
+
+  const btnOpenAddSponsoredModal = document.getElementById('btnOpenAddSponsoredModal');
+  if (btnOpenAddSponsoredModal) btnOpenAddSponsoredModal.innerHTML = isEn ? '<i class="fa-solid fa-plus"></i> Add to Sponsored List' : '<i class="fa-solid fa-plus"></i> إضافة صندوق للقائمة الرعائية والموصى بها';
+
+  // Update Table Headers
+  const quickPriceHead = document.querySelector('#quickPriceTableHead tr');
+  if (quickPriceHead) {
+    quickPriceHead.innerHTML = isEn
+      ? '<th>Fund Name</th><th>Official Manager</th><th>Current NAV (EGP)</th><th>New Price Update ⚡</th><th>Annual Return %</th><th>Save Live Price</th>'
+      : '<th>اسم الصندوق</th><th>المدير الرسمي</th><th>السعر الحالي (NAV EGP)</th><th>تعديل السعر الجديد ⚡</th><th>العائد السنوي %</th><th>حفظ السعر المباشر</th>';
+  }
+
+  const fundsHead = document.querySelector('#fundsTableHead tr');
+  if (fundsHead) {
+    fundsHead.innerHTML = isEn
+      ? '<th>Fund Name</th><th>Official Manager</th><th>NAV Price</th><th>YTD Return</th><th>Category</th><th>Sponsored / Recommended</th><th>Actions (CRUD)</th>'
+      : '<th>اسم الصندوق</th><th>المدير الرسمي</th><th>سعر الوثيقة (NAV)</th><th>العائد السنوي YTD</th><th>الفئة</th><th>رعائي / موصى به</th><th>الإجراءات (CRUD)</th>';
+  }
+
+  const sponsoredHead = document.querySelector('#sponsoredTableHead tr');
+  if (sponsoredHead) {
+    sponsoredHead.innerHTML = isEn
+      ? '<th>Fund Name</th><th>Official Manager</th><th>NAV Price</th><th>Sponsored ⭐</th><th>Recommended 💡</th><th>Actions (CRUD)</th>'
+      : '<th>اسم الصندوق</th><th>المدير الرسمي</th><th>سعر الوثيقة (NAV)</th><th>صندوق رعائي (Sponsored ⭐)</th><th>موصى به / مخصص لك (Recommended 💡)</th><th>الإجراءات (CRUD)</th>';
+  }
+
+  const portfoliosHead = document.querySelector('#portfoliosTableHead tr');
+  if (portfoliosHead) {
+    portfoliosHead.innerHTML = isEn
+      ? '<th>Portfolio Name</th><th>User ID</th><th>Created Date</th><th>Updated Date</th><th>Actions</th>'
+      : '<th>اسم المحفظة</th><th>معرف المستخدم (User ID)</th><th>تاريخ الإنشـاء</th><th>تاريخ التحديث</th><th>التحكم</th>';
+  }
+
+  const usersHead = document.querySelector('#usersTableHead tr');
+  if (usersHead) {
+    usersHead.innerHTML = isEn
+      ? '<th>Investor Name</th><th>Phone / Identifier</th><th>Verification Status</th><th>Updated Date</th><th>Actions</th>'
+      : '<th>اسم المستثمر</th><th>رقم الهاتف / المعرف</th><th>حالة التوثيق (Verified Badge)</th><th>تاريخ التحديث</th><th>التحكم</th>';
+  }
+
+  const adminsHead = document.querySelector('#adminsTableHead tr');
+  if (adminsHead) {
+    adminsHead.innerHTML = isEn
+      ? '<th>Admin Name</th><th>Username</th><th>Role & Position</th><th>Permissions</th><th>Actions</th>'
+      : '<th>اسم الأدمن</th><th>اسم المستخدم (Username)</th><th>الرتبة والدور</th><th>الصلاحيات</th><th>التحكم</th>';
+  }
+
   // Refresh tables with updated language labels
   renderQuickPriceTable();
   renderFundsTable();
@@ -339,14 +411,21 @@ function renderQuickPriceTable() {
     return nameAr.toLowerCase().includes(search) || nameEn.toLowerCase().includes(search);
   });
 
+  const isEn = currentLang === 'en';
+
   filtered.forEach(fund => {
     const tr = document.createElement('tr');
     const navVal = parseFloat(fund.current_nav) || 0;
     const computedYtd = getOfficialFundYtd(fund);
 
+    const displayName = isEn ? (fund.name || fund.name_ar) : (fund.name_ar || fund.name);
+    const displayManager = isEn ? (fund.manager || fund.manager_name || 'Mubasher Capital') : (fund.manager_name || fund.manager || 'مباشر كابيتال');
+    const reportBadge = isEn ? '(Official EIMA Report)' : '(تقرير EIMA الرسمي)';
+    const btnLabel = isEn ? '<i class="fa-solid fa-floppy-disk"></i> Save Live Price ⚡' : '<i class="fa-solid fa-floppy-disk"></i> حفظ السعر المباشر ⚡';
+
     tr.innerHTML = `
-      <td><strong>${fund.name_ar || fund.name}</strong></td>
-      <td>${fund.manager_name || fund.manager || 'مباشر كابيتال'}</td>
+      <td><strong>${displayName}</strong></td>
+      <td>${displayManager}</td>
       <td style="color:#00E676; font-weight:bold">${navVal.toFixed(4)} EGP</td>
       <td>
         <input type="number" step="0.0001" id="quickNavInput_${fund.id}" value="${navVal}" 
@@ -357,11 +436,11 @@ function renderQuickPriceTable() {
         <span id="quickYtdDisplay_${fund.id}" style="font-size:14px; font-weight:900; color:#3B82F6;">
           ${computedYtd >= 0 ? '+' : ''}${computedYtd.toFixed(2)}%
         </span>
-        <br><small style="color:#9ca3af; font-size:10px;">(تقرير EIMA الرسمى)</small>
+        <br><small style="color:#9ca3af; font-size:10px;">${reportBadge}</small>
       </td>
       <td>
         <button class="btn btn-primary" onclick="saveQuickPrice('${fund.id}')">
-          <i class="fa-solid fa-floppy-disk"></i> حفظ السعر المباشر ⚡
+          ${btnLabel}
         </button>
       </td>
     `;
