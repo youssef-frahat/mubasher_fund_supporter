@@ -294,7 +294,7 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
                       itemCount: _bottom10Funds.length,
                       itemBuilder: (context, index) {
                         final fund = _bottom10Funds[index];
-                        final rank = _bottom10Funds.length - index;
+                        final rank = index + 1;
 
                         return _buildLeagueRow(context, fund, rank, -1, isTop: false);
                       },
@@ -484,7 +484,7 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
                   : AppColors.error.withValues(alpha: 0.15),
             ),
             child: Text(
-              isTop ? '#$rank' : '🔻',
+              '#$rank',
               style: TextStyle(
                 color: isTop ? (rank <= 3 ? Colors.black : AppColors.primary) : AppColors.error,
                 fontWeight: FontWeight.bold,
