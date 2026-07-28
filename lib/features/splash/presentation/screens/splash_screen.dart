@@ -10,6 +10,7 @@ import '../../../../core/routing/routes.dart';
 import '../../../../core/services/biometric_service.dart';
 import '../../../../core/supabase/supabase_service.dart';
 import '../../../../core/widgets/app_loading_indicator.dart';
+import '../../../../core/language/language_cubit.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -213,7 +214,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
                   ),
                   child: Text(
-                    'منصة ومحاكي صناديق الاستثمار في مصر 📈',
+                    context.tr('splashTagline'),
                     style: TextStyle(
                       color: AppColors.primary,
                       fontSize: 11.sp,
@@ -225,7 +226,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 SizedBox(height: 30.h),
 
                 // Custom Loading Indicator
-                const AppLoadingIndicator(message: 'جاري الاتصال الآمن بالسوق المصري...'),
+                AppLoadingIndicator(message: context.tr('splashConnecting')),
 
                 SizedBox(height: 16.h),
 
@@ -236,7 +237,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     FaIcon(FontAwesomeIcons.shieldHalved, color: Colors.white38, size: 11.r),
                     SizedBox(width: 6.w),
                     Text(
-                      'تشفير بنكي آمن 256-bit | بيانات محاكاة دقيقة',
+                      context.tr('splashSecurityNotice'),
                       style: TextStyle(
                         color: Colors.white38,
                         fontSize: 10.sp,
