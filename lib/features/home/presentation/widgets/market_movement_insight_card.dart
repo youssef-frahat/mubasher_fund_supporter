@@ -13,37 +13,96 @@ class MarketMovementInsightCard extends StatelessWidget {
     required this.funds,
   });
 
-  String _getMarketInsight(double gainPct, BuildContext context) {
-    if (gainPct >= 60) {
-      return context.tr('insightHighGain');
-    } else if (gainPct >= 40) {
-      return context.tr('insightBalanced');
-    } else {
-      return context.tr('insightCaution');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final surface = AppColors.getSurface(context);
     final textPrimary = AppColors.getTextPrimary(context);
     final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
+    final isAr = context.isArabic;
 
     final total = funds.isNotEmpty ? funds.length : 1;
-    final gainedCount = funds.where((f) => f.ytdReturn > 0).length;
-    final declinedCount = funds.where((f) => f.ytdReturn < 0).length;
-    final stableCount = funds.where((f) => f.ytdReturn == 0).length;
+
+    // 1. Determine latest price update timestamp across funds
+    DateTime? latestUpdate;
+    for (var f in funds) {
+      if (f.updatedAt != null) {
+        if (latestUpdate == null || f.updatedAt!.isAfter(latestUpdate)) {
+          latestUpdate = f.updatedAt;
+        }
+      }
+    }
+
+    final now = DateTime.now();
+    final hoursSinceUpdate = latestUpdate != null ? now.difference(latestUpdate).inHours : 48;
+    final daysSinceUpdate = latestUpdate != null ? now.difference(latestUpdate).inDays : 2;
+
+    // 2. Determine if price movement actually occurred or if prices are static (> 24h / no dailyChange)
+    final movedFundsCount = funds.where((f) => f.dailyChange != 0.0).length;
+    final bool isStaticOrStale = hoursSinceUpdate >= 24 || (funds.isNotEmpty && movedFundsCount == 0);
+
+    int gainedCount = 0;
+    int declinedCount = 0;
+    int stableCount = 0;
+
+    if (isStaticOrStale) {
+      // If no price changes occurred in > 24 hours, session is 100% stable/flat
+      stableCount = funds.isNotEmpty ? funds.length : 1;
+      gainedCount = 0;
+      declinedCount = 0;
+    } else {
+      // Calculate actual movement based on real daily price changes
+      gainedCount = funds.where((f) => f.dailyChange > 0).length;
+      declinedCount = funds.where((f) => f.dailyChange < 0).length;
+      stableCount = funds.where((f) => f.dailyChange == 0).length;
+    }
 
     final gainPct = (gainedCount / total) * 100;
     final declinePct = (declinedCount / total) * 100;
     final stablePct = (stableCount / total) * 100;
 
-    final gainFlex = (gainPct * 10).round().clamp(1, 1000);
-    final declineFlex = (declinePct * 10).round().clamp(1, 1000);
+    final gainFlex = (gainPct * 10).round().clamp(0, 1000);
+    final declineFlex = (declinePct * 10).round().clamp(0, 1000);
     final stableFlex = (stablePct * 10).round().clamp(0, 1000);
 
-    final insightText = _getMarketInsight(gainPct, context);
+    // Format human-readable time elapsed
+    String timeAgoText = '';
+    if (daysSinceUpdate >= 2) {
+      timeAgoText = isAr ? 'منذ $daysSinceUpdate يوم' : '$daysSinceUpdate days ago';
+    } else if (hoursSinceUpdate >= 1) {
+      timeAgoText = isAr ? 'منذ $hoursSinceUpdate ساعة' : '$hoursSinceUpdate hours ago';
+    } else {
+      timeAgoText = isAr ? 'اليوم' : 'today';
+    }
+
+    String titleText;
+    String insightText;
+    Color insightBgColor;
+    Color insightBorderColor;
+
+    if (isStaticOrStale) {
+      titleText = context.tr('marketMovementTitleStatic');
+      insightText = isAr
+          ? '⏸️ هدوء في التداولات واستقرار في الأسعار ($timeAgoText - لم تتغير الأسعار مؤخراً).'
+          : '⏸️ Quiet session & stable prices (Last update: $timeAgoText).';
+      insightBgColor = Colors.amber.shade600.withValues(alpha: 0.12);
+      insightBorderColor = Colors.amber.shade600.withValues(alpha: 0.4);
+    } else {
+      titleText = context.tr('marketMovementTitleLive');
+      if (gainPct >= 50) {
+        insightText = context.tr('insightHighGain');
+        insightBgColor = const Color(0xFF10B981).withValues(alpha: 0.12);
+        insightBorderColor = const Color(0xFF10B981).withValues(alpha: 0.3);
+      } else if (declinePct >= 50) {
+        insightText = context.tr('insightCaution');
+        insightBgColor = AppColors.error.withValues(alpha: 0.12);
+        insightBorderColor = AppColors.error.withValues(alpha: 0.3);
+      } else {
+        insightText = context.tr('insightBalanced');
+        insightBgColor = AppColors.info.withValues(alpha: 0.12);
+        insightBorderColor = AppColors.info.withValues(alpha: 0.3);
+      }
+    }
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -70,18 +129,18 @@ class MarketMovementInsightCard extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(8.r),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                  color: (isStaticOrStale ? Colors.amber.shade600 : const Color(0xFF10B981)).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10.r),
                 ),
-                child: const Text('📊', style: TextStyle(fontSize: 16)),
+                child: Text(isStaticOrStale ? '⏸️' : '📊', style: const TextStyle(fontSize: 16)),
               ),
               SizedBox(width: 10.w),
               Expanded(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
+                  alignment: isAr ? Alignment.centerRight : Alignment.centerLeft,
                   child: Text(
-                    context.tr('marketMovementTitle'),
+                    titleText,
                     style: TextStyle(
                       color: textPrimary,
                       fontSize: 14.sp,
@@ -101,19 +160,21 @@ class MarketMovementInsightCard extends StatelessWidget {
               height: 12.h,
               child: Row(
                 children: [
-                  Expanded(
-                    flex: gainFlex,
-                    child: Container(color: const Color(0xFF10B981)),
-                  ),
+                  if (gainFlex > 0)
+                    Expanded(
+                      flex: gainFlex,
+                      child: Container(color: const Color(0xFF10B981)),
+                    ),
                   if (stableFlex > 0)
                     Expanded(
                       flex: stableFlex,
                       child: Container(color: Colors.amber.shade600),
                     ),
-                  Expanded(
-                    flex: declineFlex,
-                    child: Container(color: AppColors.error),
-                  ),
+                  if (declineFlex > 0)
+                    Expanded(
+                      flex: declineFlex,
+                      child: Container(color: AppColors.error),
+                    ),
                 ],
               ),
             ),
@@ -125,65 +186,67 @@ class MarketMovementInsightCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Gained
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8.r,
-                        height: 8.r,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Color(0xFF10B981),
+              if (gainedCount > 0 || !isStaticOrStale)
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8.r,
+                          height: 8.r,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color(0xFF10B981),
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        '📈 ${context.tr('gainLabel')}: $gainedCount (${gainPct.toStringAsFixed(0)}%)',
-                        style: TextStyle(
-                          color: const Color(0xFF10B981),
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.bold,
+                        SizedBox(width: 4.w),
+                        Text(
+                          '📈 ${context.tr('gainLabel')}: $gainedCount (${gainPct.toStringAsFixed(0)}%)',
+                          style: TextStyle(
+                            color: const Color(0xFF10B981),
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
               // Declined
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8.r,
-                        height: 8.r,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.error,
+              if (declinedCount > 0 || !isStaticOrStale)
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8.r,
+                          height: 8.r,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.error,
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        '📉 ${context.tr('declineLabel')}: $declinedCount (${declinePct.toStringAsFixed(0)}%)',
-                        style: TextStyle(
-                          color: AppColors.error,
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.bold,
+                        SizedBox(width: 4.w),
+                        Text(
+                          '📉 ${context.tr('declineLabel')}: $declinedCount (${declinePct.toStringAsFixed(0)}%)',
+                          style: TextStyle(
+                            color: AppColors.error,
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
               // Stable
-              if (stableCount > 0)
+              if (stableCount > 0 || isStaticOrStale)
                 Expanded(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
@@ -202,7 +265,7 @@ class MarketMovementInsightCard extends StatelessWidget {
                         Text(
                           '⚪ ${context.tr('stableLabel')}: $stableCount (${stablePct.toStringAsFixed(0)}%)',
                           style: TextStyle(
-                            color: textSecondary,
+                            color: Colors.amber.shade600,
                             fontSize: 11.sp,
                             fontWeight: FontWeight.bold,
                           ),
@@ -220,12 +283,10 @@ class MarketMovementInsightCard extends StatelessWidget {
             width: double.infinity,
             padding: EdgeInsets.all(12.r),
             decoration: BoxDecoration(
-              color: gainPct >= 50
-                  ? const Color(0xFF10B981).withValues(alpha: 0.12)
-                  : AppColors.error.withValues(alpha: 0.12),
+              color: insightBgColor,
               borderRadius: BorderRadius.circular(12.r),
               border: Border.all(
-                color: (gainPct >= 50 ? const Color(0xFF10B981) : AppColors.error).withValues(alpha: 0.3),
+                color: insightBorderColor,
               ),
             ),
             child: Text(

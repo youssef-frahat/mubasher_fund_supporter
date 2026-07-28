@@ -24,6 +24,7 @@ class FundModel {
   final bool isSponsored;
   final bool isTopPerforming;
   final int? rank;
+  final DateTime? updatedAt;
 
   FundModel({
     required this.id,
@@ -48,6 +49,7 @@ class FundModel {
     this.isSponsored = false,
     this.isTopPerforming = false,
     this.rank,
+    this.updatedAt,
   });
 
   /// Returns main name without parentheses e.g. "AAIB" from "AAIB (Gozoor)"
@@ -105,6 +107,7 @@ class FundModel {
       isSponsored: map['is_sponsored'] ?? false,
       isTopPerforming: map['is_top_performing'] ?? false,
       rank: map['rank'] as int?,
+      updatedAt: map['updated_at'] != null ? DateTime.tryParse(map['updated_at'].toString()) : null,
     );
   }
 
@@ -133,6 +136,7 @@ class FundModel {
       'is_sponsored': isSponsored,
       'is_top_performing': isTopPerforming,
       'rank': rank,
+      if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
     };
   }
 
