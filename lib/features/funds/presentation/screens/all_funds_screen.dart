@@ -23,6 +23,7 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
 
   final List<String> _categoryKeys = [
     'catAll',
+    'catSponsored',
     'catLiquidity',
     'catPreciousMetals',
     'catEquities',
@@ -79,6 +80,9 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
 
       if (_selectedCategoryKey == 'catAll') return true;
 
+      if (_selectedCategoryKey == 'catSponsored') {
+        return fund.isSponsored || fund.isRecommended || nameLower.contains('رعائي') || nameLower.contains('دعائي');
+      }
       if (_selectedCategoryKey == 'catLiquidity') {
         return catLower.contains('money') || catLower.contains('liquidity') || catLower.contains('cash') || nameLower.contains('نقدي') || nameLower.contains('يومي') || nameLower.contains('سيولة') || nameLower.contains('جذور');
       }
@@ -116,6 +120,23 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
             fontSize: 16.sp,
           ),
         ),
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              setState(() {
+                _searchController.clear();
+                _searchQuery = '';
+                _selectedCategoryKey = 'catAll';
+              });
+            },
+            icon: const Icon(Icons.cleaning_services_outlined, size: 16, color: AppColors.primary),
+            label: Text(
+              'تفريغ للصفحة',
+              style: TextStyle(color: AppColors.primary, fontSize: 12.sp, fontWeight: FontWeight.bold),
+            ),
+          ),
+          SizedBox(width: 8.w),
+        ],
       ),
       body: Column(
         children: [
@@ -166,7 +187,15 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
                 final isSelected = catKey == _selectedCategoryKey;
 
                 return GestureDetector(
-                  onTap: () => setState(() => _selectedCategoryKey = catKey),
+                  onTap: () {
+                    setState(() {
+                      if (_selectedCategoryKey == catKey && catKey != 'catAll') {
+                        _selectedCategoryKey = 'catAll';
+                      } else {
+                        _selectedCategoryKey = catKey;
+                      }
+                    });
+                  },
                   child: Container(
                     margin: EdgeInsets.only(left: 8.w),
                     padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),

@@ -158,13 +158,26 @@ class _SponsoredFundsScreenState extends State<SponsoredFundsScreen> {
                   SizedBox(height: 20.h),
 
                   // Header Title
-                  Text(
-                    '⭐ ${context.tr('selectedFundsForYou')}',
-                    style: TextStyle(
-                      color: textPrimary,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '⭐ ${context.tr('selectedFundsForYou')}',
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: _loadSponsoredFunds,
+                        icon: const Icon(Icons.cleaning_services_outlined, size: 16, color: AppColors.primary),
+                        label: Text(
+                          'تفريغ للصفحة',
+                          style: TextStyle(color: AppColors.primary, fontSize: 11.sp, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 10.h),
 

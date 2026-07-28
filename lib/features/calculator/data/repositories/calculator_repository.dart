@@ -10,11 +10,18 @@ class CalculatorRepository {
 
   CalculatorRepository({this._supabaseClient});
 
-  Future<List<FundModel>> getSponsoredBackendFunds() async {
+  Future<List<FundModel>> getSponsoredBackendFunds({
+    List<String> excludedFundNames = const [],
+  }) async {
     final sponsored = await SupabaseFundsRepository().getRecommendedFunds();
-    if (sponsored.isNotEmpty) return sponsored;
-    final all = await SupabaseFundsRepository().getFunds();
-    return all.take(6).toList();
+    final list = sponsored.isNotEmpty
+        ? sponsored
+        : (await SupabaseFundsRepository().getFunds()).take(6).toList();
+
+    if (excludedFundNames.isEmpty) return list;
+
+    final lowerExcluded = excludedFundNames.map((e) => e.trim().toLowerCase()).toSet();
+    return list.where((f) => !lowerExcluded.contains(f.name.trim().toLowerCase())).toList();
   }
 
   RiskAssessmentResult calculateRiskProfile({

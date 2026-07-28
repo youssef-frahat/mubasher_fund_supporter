@@ -778,12 +778,19 @@ class _PortfolioContentView extends StatelessWidget {
   void _openAddBottomSheet(BuildContext context) {
     if (!_checkVerification(context)) return;
     final cubit = context.read<PortfolioCubit>();
+    final state = cubit.state;
+    List<String> existingNames = [];
+    if (state is PortfolioLoaded) {
+      existingNames = state.items.map((e) => e.fundName).toList();
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return AddTransactionBottomSheet(
+          existingFundNames: existingNames,
           onAdd: ({
             required String fundName,
             required FundCategory category,

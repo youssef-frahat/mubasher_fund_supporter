@@ -10,8 +10,9 @@ abstract class FundsRepository {
   Future<void> updateFund(FundModel fund);
   Future<void> deleteFund(String id);
 
-  // Home Dashboard Methods
+  // Home Dashboard & Filter Methods
   Future<List<FundModel>> getRecommendedFunds();
+  Future<List<FundModel>> getSponsoredFunds();
   Future<FundModel> getTopPerformingFund();
   Future<List<FundModel>> getRankedFunds();
 }
@@ -83,6 +84,28 @@ class SupabaseFundsRepository implements FundsRepository {
     }
     final all = await getFunds();
     return all.where((f) => f.isRecommended || f.isSponsored).toList();
+  }
+
+  @override
+  Future<List<FundModel>> getSponsoredFunds() async {
+    final client = SupabaseService.client;
+    if (client != null) {
+      try {
+        final response = await client
+            .from('funds')
+            .select()
+            .eq('is_sponsored', true)
+            .order('name', ascending: true);
+        final data = response as List<dynamic>;
+        if (data.isNotEmpty) {
+          return data.map((item) => FundModel.fromMap(item as Map<String, dynamic>)).toList();
+        }
+      } catch (e) {
+        debugPrint('Error fetching sponsored funds from Supabase: $e');
+      }
+    }
+    final all = await getFunds();
+    return all.where((f) => f.isSponsored || f.isRecommended).toList();
   }
 
   @override

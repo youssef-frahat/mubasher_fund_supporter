@@ -9,6 +9,7 @@ import '../../../home/data/models/fund_model.dart';
 import '../../data/models/portfolio_item_model.dart';
 
 class AddTransactionBottomSheet extends StatefulWidget {
+  final List<String> existingFundNames;
   final Function({
     required String fundName,
     required FundCategory category,
@@ -17,7 +18,11 @@ class AddTransactionBottomSheet extends StatefulWidget {
     required double currentNav,
   }) onAdd;
 
-  const AddTransactionBottomSheet({super.key, required this.onAdd});
+  const AddTransactionBottomSheet({
+    super.key,
+    required this.onAdd,
+    this.existingFundNames = const [],
+  });
 
   @override
   State<AddTransactionBottomSheet> createState() => _AddTransactionBottomSheetState();
@@ -45,14 +50,19 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
 
   Future<void> _loadBackendFunds() async {
     try {
-      final funds = await CalculatorRepository().getSponsoredBackendFunds();
+      final availableFunds = await CalculatorRepository().getSponsoredBackendFunds(
+        excludedFundNames: widget.existingFundNames,
+      );
+
       if (mounted) {
         setState(() {
-          _backendFunds = funds;
-          _filteredFunds = funds;
+          _backendFunds = availableFunds;
+          _filteredFunds = availableFunds;
           _isLoadingFunds = false;
-          if (funds.isNotEmpty) {
-            _selectedFund = funds.first;
+          if (availableFunds.isNotEmpty) {
+            _selectedFund = availableFunds.first;
+          } else {
+            _selectedFund = null;
           }
         });
       }
@@ -168,8 +178,11 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                     child: _filteredFunds.isEmpty
                         ? Center(
                             child: Text(
-                              'لا توجد صناديق مطابقة للبحث',
-                              style: TextStyle(color: textSecondary, fontSize: 12.sp),
+                              widget.existingFundNames.isNotEmpty && _backendFunds.isEmpty
+                                  ? 'جميع الصناديق المتاحة مضافة بالفعل للمحفظة ⚠️'
+                                  : 'لا توجد صناديق مطابقة للبحث',
+                              style: TextStyle(color: textSecondary, fontSize: 12.sp, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
                             ),
                           )
                         : ListView.builder(
@@ -315,7 +328,10 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    _selectedFund?.name ?? 'اختر الصندوق من القائمة...',
+                                    _selectedFund?.name ??
+                                        (widget.existingFundNames.isNotEmpty && _backendFunds.isEmpty
+                                            ? 'جميع الصناديق المتاحة مضافة للمحفظة'
+                                            : 'اختر الصندوق من القائمة...'),
                                     style: TextStyle(
                                       color: textPrimary,
                                       fontWeight: FontWeight.bold,

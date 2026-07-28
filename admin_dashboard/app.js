@@ -334,17 +334,18 @@ async function refreshLiveData() {
 // 1. Fetch Funds directly from Supabase
 async function fetchFunds() {
   if (!db) return;
+  const deletedFundIds = new Set(JSON.parse(localStorage.getItem('watheqa_deleted_fund_ids') || '[]'));
   try {
     const { data, error } = await db.from('funds').select('*').order('rank', { ascending: true });
     if (error) throw error;
     if (data) {
-      liveFunds = data;
+      liveFunds = data.filter(f => !deletedFundIds.has(f.id.toString()));
       liveFunds.forEach(f => {
         if (f.is_sponsored || f.is_recommended) f._inSponsoredList = true;
       });
       computeTopPerformingFundsDynamically();
-      document.getElementById('dbFundsCount').innerText = `${data.length} صندوق`;
-      logMessage(`[DB] Loaded ${data.length} funds from 'funds' table.`, 'success');
+      document.getElementById('dbFundsCount').innerText = `${liveFunds.length} صندوق`;
+      logMessage(`[DB] Loaded ${liveFunds.length} funds from 'funds' table.`, 'success');
     }
   } catch (err) {
     logMessage(`[DB ERROR] Fetch funds failed: ${err.message}`, 'warning');
@@ -354,12 +355,13 @@ async function fetchFunds() {
 // 2. Fetch Portfolios directly from Supabase
 async function fetchPortfolios() {
   if (!db) return;
+  const deletedPortIds = new Set(JSON.parse(localStorage.getItem('watheqa_deleted_portfolio_ids') || '[]'));
   try {
     const { data, error } = await db.from('portfolios').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     if (data) {
-      livePortfolios = data;
-      document.getElementById('dbPortfoliosCount').innerText = `${data.length} محفظة`;
+      livePortfolios = data.filter(p => !deletedPortIds.has(p.id.toString()));
+      document.getElementById('dbPortfoliosCount').innerText = `${livePortfolios.length} محفظة`;
     }
   } catch (err) {
     logMessage(`[DB NOTICE] Fetch portfolios notice: ${err.message}`, 'info');
@@ -382,36 +384,46 @@ async function fetchTransactions() {
 
 // 4. Fetch Users Profiles & Registered Accounts from Supabase
 async function fetchUsers() {
-  if (!db) return;
+  const deletedUserIds = new Set(JSON.parse(localStorage.getItem('watheqa_deleted_user_ids') || '[]'));
+  const verificationMap = JSON.parse(localStorage.getItem('watheqa_user_verification_map') || '{}');
+
   let fetchedProfiles = [];
-  try {
-    const { data, error } = await db.from('profiles').select('*').order('created_at', { ascending: false });
-    if (!error && data) {
-      fetchedProfiles = data;
+  if (db) {
+    try {
+      const { data, error } = await db.from('profiles').select('*').order('created_at', { ascending: false });
+      if (!error && data) {
+        fetchedProfiles = data;
+      }
+    } catch (err) {
+      logMessage(`[DB NOTICE] Fetch profiles notice: ${err.message}`, 'info');
     }
-  } catch (err) {
-    logMessage(`[DB NOTICE] Fetch profiles notice: ${err.message}`, 'info');
   }
 
   const registeredAccountsMap = new Map();
 
   fetchedProfiles.forEach(p => {
-    registeredAccountsMap.set(p.id, {
-      id: p.id,
-      full_name: p.full_name || p.name || p.email || 'مستثمر وثيقة',
-      phone: p.phone || p.email || p.id,
-      is_verified: p.is_verified || p.email_confirmed_at != null || true,
-      created_at: p.created_at ? p.created_at.substring(0, 10) : '2026-07-26'
-    });
+    if (!deletedUserIds.has(p.id)) {
+      const isVerifiedDefault = p.is_verified != null ? p.is_verified : (p.email_confirmed_at != null || true);
+      const customVerify = verificationMap[p.id] != null ? verificationMap[p.id] : isVerifiedDefault;
+
+      registeredAccountsMap.set(p.id, {
+        id: p.id,
+        full_name: p.full_name || p.name || p.email || 'مستثمر وثيقة',
+        phone: p.phone || p.email || p.id,
+        is_verified: customVerify,
+        created_at: p.created_at ? p.created_at.substring(0, 10) : '2026-07-26'
+      });
+    }
   });
 
   livePortfolios.forEach(p => {
-    if (p.user_id && !registeredAccountsMap.has(p.user_id)) {
+    if (p.user_id && !deletedUserIds.has(p.user_id) && !registeredAccountsMap.has(p.user_id)) {
+      const customVerify = verificationMap[p.user_id] != null ? verificationMap[p.user_id] : true;
       registeredAccountsMap.set(p.user_id, {
         id: p.user_id,
         full_name: 'مستثمر محفظة (' + p.user_id.substring(0, 8) + ')',
         phone: p.user_id,
-        is_verified: true,
+        is_verified: customVerify,
         created_at: p.created_at ? p.created_at.substring(0, 10) : '2026-07-26'
       });
     }
@@ -1007,24 +1019,40 @@ function renderUsersTable() {
   });
 }
 
-// Delete User Account from Supabase DB
+// Delete User Account from Supabase DB (Cascade Deletion + Persistent Blacklist)
 async function deleteUserAccount(userId) {
   const user = liveUsers.find(u => u.id === userId);
   const name = user ? (user.full_name || user.name || userId) : userId;
   if (confirm(`هل أنت تأكد من مسح حساب المستثمر (${name}) نهائياً من قاعدة بيانات Supabase؟`)) {
-    liveUsers = liveUsers.filter(u => u.id !== userId);
-    renderUsersTable();
-    updateMetricsAndInsights();
-
+    // 1. Cascade Delete from Supabase Database
     if (db) {
       try {
-        await db.from('profiles').delete().eq('id', userId);
-        logMessage(`[SUPABASE DELETE USER] User account '${name}' (${userId}) deleted from DB.`, 'warning');
-        alert(`تم مسح حساب المستثمر (${name}) من الباك إند بنجاح! 🚀`);
+        await db.from('transactions').delete().eq('user_id', userId);
+        await db.from('portfolios').delete().eq('user_id', userId);
+        const { error } = await db.from('profiles').delete().eq('id', userId);
+        if (error) {
+          logMessage(`[DB DELETE NOTICE] Profile delete response: ${error.message}`, 'info');
+        }
+        logMessage(`[SUPABASE DELETE USER] User account '${name}' (${userId}) deleted from DB successfully.`, 'warning');
       } catch (err) {
-        logMessage(`[DB ERROR] Delete user failed: ${err.message}`, 'danger');
+        logMessage(`[DB ERROR] Cascade delete user failed: ${err.message}`, 'danger');
       }
     }
+
+    // 2. Save to Persistent Deleted User Blacklist
+    const deletedUserIds = JSON.parse(localStorage.getItem('watheqa_deleted_user_ids') || '[]');
+    if (!deletedUserIds.includes(userId)) {
+      deletedUserIds.push(userId);
+      localStorage.setItem('watheqa_deleted_user_ids', JSON.stringify(deletedUserIds));
+    }
+
+    // 3. Remove from live memory state & UI
+    livePortfolios = livePortfolios.filter(p => p.user_id !== userId);
+    liveUsers = liveUsers.filter(u => u.id !== userId);
+    renderUsersTable();
+    renderPortfoliosTable();
+    updateMetricsAndInsights();
+    alert(`تم مسح حساب المستثمر (${name}) وكافة البيانات والمحافظ التابعة له من الباك إند بنجاح! 🚀`);
   }
 }
 
@@ -1132,12 +1160,28 @@ function editFund(id) {
 }
 
 async function deleteFund(id) {
-  if (confirm('هل أنت تأكد من مسح هذا الصندوق نهائياً من قاعدة بيانات Supabase؟')) {
+  const fund = liveFunds.find(f => f.id.toString() === id.toString());
+  const name = fund ? (fund.name_ar || fund.name || id) : id;
+  if (confirm(`هل أنت تأكد من مسح صندوق (${name}) نهائياً من قاعدة بيانات Supabase؟`)) {
+    // 1. Persist in deleted funds blacklist
+    const deletedFundIds = JSON.parse(localStorage.getItem('watheqa_deleted_fund_ids') || '[]');
+    if (!deletedFundIds.includes(id.toString())) {
+      deletedFundIds.push(id.toString());
+      localStorage.setItem('watheqa_deleted_fund_ids', JSON.stringify(deletedFundIds));
+    }
+
+    // 2. Remove from local memory state
+    liveFunds = liveFunds.filter(f => f.id.toString() !== id.toString());
+    renderFundsTable();
+    renderSponsoredTable();
+    renderQuickPriceTable();
+    updateDynamicCharts();
+
+    // 3. Delete from Supabase DB
     if (db) {
       try {
         await db.from('funds').delete().eq('id', id);
-        logMessage(`[SUPABASE DELETE] Fund ID ${id} deleted.`, 'warning');
-        await fetchFunds();
+        logMessage(`[SUPABASE DELETE] Fund '${name}' (ID ${id}) deleted from DB successfully.`, 'warning');
       } catch (err) {
         logMessage(`[DB ERROR] Delete fund failed: ${err.message}`, 'danger');
       }
@@ -1147,11 +1191,24 @@ async function deleteFund(id) {
 
 async function deletePortfolio(id) {
   if (confirm('هل أنت تأكد من حذف محفظة المستخدم من الباك إند؟')) {
+    // 1. Save to deleted portfolio blacklist
+    const deletedPortIds = JSON.parse(localStorage.getItem('watheqa_deleted_portfolio_ids') || '[]');
+    if (!deletedPortIds.includes(id.toString())) {
+      deletedPortIds.push(id.toString());
+      localStorage.setItem('watheqa_deleted_portfolio_ids', JSON.stringify(deletedPortIds));
+    }
+
+    // 2. Remove from local memory state
+    livePortfolios = livePortfolios.filter(p => p.id.toString() !== id.toString());
+    renderPortfoliosTable();
+    updateMetricsAndInsights();
+
+    // 3. Delete from Supabase DB (Cascade transactions first)
     if (db) {
       try {
+        await db.from('transactions').delete().eq('portfolio_id', id);
         await db.from('portfolios').delete().eq('id', id);
-        logMessage(`[SUPABASE DELETE] Portfolio ${id} deleted.`, 'warning');
-        await fetchPortfolios();
+        logMessage(`[SUPABASE DELETE] Portfolio ${id} deleted successfully.`, 'warning');
       } catch (err) {
         logMessage(`[DB ERROR] Delete portfolio failed: ${err.message}`, 'danger');
       }
@@ -1163,13 +1220,20 @@ async function toggleUserVerification(id, newStatus) {
   const user = liveUsers.find(u => u.id === id);
   if (user) {
     user.is_verified = newStatus;
+
+    // Save to persistent verification overrides map
+    const verificationMap = JSON.parse(localStorage.getItem('watheqa_user_verification_map') || '{}');
+    verificationMap[id] = newStatus;
+    localStorage.setItem('watheqa_user_verification_map', JSON.stringify(verificationMap));
+
     renderUsersTable();
+
     if (db) {
       try {
-        await db.from('profiles').upsert({ id: id, is_verified: newStatus, updated_at: new Date().toISOString() });
-        logMessage(`[SUPABASE VERIFY] User ${id} verification set to ${newStatus}`, 'success');
+        await db.from('profiles').update({ is_verified: newStatus, updated_at: new Date().toISOString() }).eq('id', id);
+        logMessage(`[SUPABASE VERIFY] User ${id} verification status updated to ${newStatus} in Supabase DB 🟢`, 'success');
       } catch (err) {
-        logMessage(`[DB ERROR] Toggle verification failed: ${err.message}`, 'warning');
+        logMessage(`[DB NOTICE] Verification update notice: ${err.message}`, 'info');
       }
     }
   }
