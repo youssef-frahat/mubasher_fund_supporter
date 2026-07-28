@@ -588,139 +588,154 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.all(24.r),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                  color: textSecondary.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(10.r),
-                ),
-              ),
-              SizedBox(height: 16.h),
-              Text(
-                context.tr('liveSupportTitle'),
-                style: TextStyle(
-                  color: textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.sp,
-                ),
-              ),
-              SizedBox(height: 6.h),
-              Text(
-                context.tr('liveSupportSub'),
-                style: TextStyle(color: textSecondary, fontSize: 11.sp),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 20.h),
-
-              // 1. Direct Phone Call Option (1111)
-              ListTile(
-                leading: Container(
-                  padding: EdgeInsets.all(8.r),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10.r),
+        return SafeArea(
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: textSecondary.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
                   ),
-                  child: const FaIcon(FontAwesomeIcons.phone, color: Color(0xFF10B981), size: 18),
-                ),
-                title: Text(
-                  context.tr('callSupportBtn'),
-                  style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 13.sp),
-                ),
-                subtitle: Text(
-                  context.tr('callSupportSub'),
-                  style: TextStyle(color: textSecondary, fontSize: 11.sp),
-                ),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _launchContactUrl(context, 'tel:1111');
-                },
-              ),
-              Divider(color: border),
-
-              // 2. Email Support Option (Watheqa@support.com)
-              ListTile(
-                leading: Container(
-                  padding: EdgeInsets.all(8.r),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10.r),
+                  SizedBox(height: 14.h),
+                  Text(
+                    context.tr('liveSupportTitle'),
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.sp,
+                    ),
                   ),
-                  child: const FaIcon(FontAwesomeIcons.envelope, color: AppColors.primary, size: 18),
-                ),
-                title: Text(
-                  context.tr('emailSupportBtn'),
-                  style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 13.sp),
-                ),
-                subtitle: Text(
-                  context.tr('emailSupportSub'),
-                  style: TextStyle(color: textSecondary, fontSize: 11.sp),
-                ),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  final subject = Uri.encodeComponent(isAr ? 'طلب دعم واستفسار - منصة وثيقة' : 'Support Request - Watheqa Platform');
-                  _launchContactUrl(context, 'mailto:Watheqa@support.com?subject=$subject');
-                },
-              ),
-              Divider(color: border),
-
-              // 3. WhatsApp Fast Chat Option
-              ListTile(
-                leading: Container(
-                  padding: EdgeInsets.all(8.r),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF25D366).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10.r),
+                  SizedBox(height: 4.h),
+                  Text(
+                    context.tr('liveSupportSub'),
+                    style: TextStyle(color: textSecondary, fontSize: 11.sp),
+                    textAlign: TextAlign.center,
                   ),
-                  child: const FaIcon(FontAwesomeIcons.whatsapp, color: Color(0xFF25D366), size: 18),
-                ),
-                title: Text(
-                  context.tr('whatsappSupportBtn'),
-                  style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 13.sp),
-                ),
-                subtitle: Text(
-                  context.tr('whatsappSupportSub'),
-                  style: TextStyle(color: textSecondary, fontSize: 11.sp),
-                ),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _launchContactUrl(context, 'https://wa.me/201111111111');
-                },
-              ),
-              Divider(color: border),
+                  SizedBox(height: 16.h),
 
-              // 4. Developer Portfolio
-              ListTile(
-                leading: Container(
-                  padding: EdgeInsets.all(8.r),
-                  decoration: BoxDecoration(
-                    color: AppColors.gold.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10.r),
+                  // 1. Direct Phone Call Option (1111)
+                  ListTile(
+                    contentPadding: EdgeInsets.symmetric(horizontal: 4.w),
+                    leading: Container(
+                      padding: EdgeInsets.all(8.r),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: const FaIcon(FontAwesomeIcons.phone, color: Color(0xFF10B981), size: 16),
+                    ),
+                    title: Text(
+                      context.tr('callSupportBtn'),
+                      style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 12.sp),
+                    ),
+                    subtitle: Text(
+                      context.tr('callSupportSub'),
+                      style: TextStyle(color: textSecondary, fontSize: 10.sp),
+                    ),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _launchContactUrl(context, 'tel:1111');
+                    },
                   ),
-                  child: const FaIcon(FontAwesomeIcons.laptopCode, color: AppColors.gold, size: 18),
-                ),
-                title: Text(
-                  isAr ? 'بورتفوليو مبرمج التطبيق 👨‍💻' : 'Developer Portfolio 👨‍💻',
-                  style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 13.sp),
-                ),
-                subtitle: const Text('https://v0-youssef-farahat.vercel.app/', style: TextStyle(color: AppColors.gold)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _launchContactUrl(context, 'https://v0-youssef-farahat.vercel.app/');
-                },
+                  Divider(color: border, height: 1),
+
+                  // 2. Email Support Option (Watheqa@support.com)
+                  ListTile(
+                    contentPadding: EdgeInsets.symmetric(horizontal: 4.w),
+                    leading: Container(
+                      padding: EdgeInsets.all(8.r),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: const FaIcon(FontAwesomeIcons.envelope, color: AppColors.primary, size: 16),
+                    ),
+                    title: Text(
+                      context.tr('emailSupportBtn'),
+                      style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 12.sp),
+                    ),
+                    subtitle: Text(
+                      context.tr('emailSupportSub'),
+                      style: TextStyle(color: textSecondary, fontSize: 10.sp),
+                    ),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      final subject = Uri.encodeComponent(isAr ? 'طلب دعم واستفسار - منصة وثيقة' : 'Support Request - Watheqa Platform');
+                      _launchContactUrl(context, 'mailto:Watheqa@support.com?subject=$subject');
+                    },
+                  ),
+                  Divider(color: border, height: 1),
+
+                  // 3. WhatsApp Fast Chat Option
+                  ListTile(
+                    contentPadding: EdgeInsets.symmetric(horizontal: 4.w),
+                    leading: Container(
+                      padding: EdgeInsets.all(8.r),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF25D366).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: const FaIcon(FontAwesomeIcons.whatsapp, color: Color(0xFF25D366), size: 16),
+                    ),
+                    title: Text(
+                      context.tr('whatsappSupportBtn'),
+                      style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 12.sp),
+                    ),
+                    subtitle: Text(
+                      context.tr('whatsappSupportSub'),
+                      style: TextStyle(color: textSecondary, fontSize: 10.sp),
+                    ),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _launchContactUrl(context, 'https://wa.me/201111111111');
+                    },
+                  ),
+                  Divider(color: border, height: 1),
+
+                  // 4. Developer Portfolio
+                  ListTile(
+                    contentPadding: EdgeInsets.symmetric(horizontal: 4.w),
+                    leading: Container(
+                      padding: EdgeInsets.all(8.r),
+                      decoration: BoxDecoration(
+                        color: AppColors.gold.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: const FaIcon(FontAwesomeIcons.laptopCode, color: AppColors.gold, size: 16),
+                    ),
+                    title: Text(
+                      context.tr('devPortfolioBtn'),
+                      style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 12.sp),
+                    ),
+                    subtitle: Text(
+                      context.tr('devPortfolioSub'),
+                      style: TextStyle(color: AppColors.gold, fontSize: 10.sp),
+                    ),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _launchContactUrl(context, 'https://v0-youssef-farahat.vercel.app/');
+                    },
+                  ),
+                  SizedBox(height: 8.h),
+                ],
               ),
-              SizedBox(height: 10.h),
-            ],
+            ),
           ),
         );
       },
