@@ -82,8 +82,22 @@ class AuthCubit extends Cubit<AuthState> {
           emit(OtpSent(email));
         }
       }
+    } on AuthException catch (e) {
+      String msg = e.message;
+      if (msg.contains('invalid') || msg.contains('validate email') || msg.contains('Unable to validate')) {
+        msg = 'يرجى استخدام بريد إلكتروني حقيقي ونشط (مثل Gmail أو Outlook أو Yahoo)';
+      } else if (msg.contains('already registered') || msg.contains('already exists')) {
+        msg = 'هذا البريد الإلكتروني مسجل بالفعل، يرجى تسجيل الدخول أو استخدام بريد آخر';
+      }
+      emit(AuthError(msg));
+      emit(Unauthenticated());
     } catch (e) {
-      emit(AuthError('فشل إنشاء الحساب: $e'));
+      final errStr = e.toString();
+      if (errStr.contains('AuthRetryableFetchException') || errStr.contains('SocketException') || errStr.contains('Failed host lookup')) {
+        emit(AuthError('يرجى التأكد من الاتصال بالإنترنت واستخدام بريد إلكتروني رسمي حقيقي'));
+      } else {
+        emit(AuthError('حدث خطأ في التسجيل، يرجى إدخال بريد إلكتروني صحيح ونشط'));
+      }
       emit(Unauthenticated());
     }
   }
