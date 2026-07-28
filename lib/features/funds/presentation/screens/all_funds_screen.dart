@@ -37,28 +37,6 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
     'catTreasury',
   ];
 
-  final List<String> _popularTermsAr = [
-    'ذهب',
-    'أزيموت',
-    'البنك الأهلي',
-    'مباشر',
-    'مرابحة',
-    'سيولة',
-    'فيصل',
-    'بلتون',
-  ];
-
-  final List<String> _popularTermsEn = [
-    'Gold',
-    'Azimut',
-    'NBE',
-    'Mubasher',
-    'Murabaha',
-    'Liquidity',
-    'Faisal',
-    'Beltone',
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -176,8 +154,6 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
 
       return true;
     }).toList();
-
-    final popularTerms = isAr ? _popularTermsAr : _popularTermsEn;
 
     return Scaffold(
       backgroundColor: bg,
@@ -427,46 +403,10 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
                                   );
                                 }).toList(),
                               ),
-                              SizedBox(height: 24.h),
+                              SizedBox(height: 12.h),
                             ],
 
-                            // 2. Popular Search Suggestions
-                            Text(
-                              context.tr('popularSearchTerms'),
-                              style: TextStyle(
-                                color: textPrimary,
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 10.h),
-                            Wrap(
-                              spacing: 8.w,
-                              runSpacing: 8.h,
-                              children: popularTerms.map((term) {
-                                return ActionChip(
-                                  avatar: FaIcon(FontAwesomeIcons.bolt, size: 11.r, color: AppColors.gold),
-                                  label: Text(
-                                    term,
-                                    style: TextStyle(
-                                      color: textPrimary,
-                                      fontSize: 11.5.sp,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  backgroundColor: AppColors.primary.withValues(alpha: 0.08),
-                                  side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-                                  onPressed: () {
-                                    _searchController.text = term;
-                                    _onSearchSubmitted(term);
-                                  },
-                                );
-                              }).toList(),
-                            ),
-                            SizedBox(height: 36.h),
-
-                            // 3. Elegant Search Placeholder Illustration & Prompt
+                            // 2. Elegant Search Placeholder Illustration & Prompt
                             Center(
                               child: Container(
                                 padding: EdgeInsets.all(20.r),
