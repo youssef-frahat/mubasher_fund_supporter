@@ -119,6 +119,7 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
             fontWeight: FontWeight.bold,
             fontSize: 16.sp,
           ),
+        ),
       ),
       body: Column(
         children: [
