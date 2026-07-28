@@ -502,8 +502,11 @@
 
       <!-- TAB: USERS MANAGEMENT & VERIFICATION -->
       <section id="tab-users" class="tab-content">
-        <div class="section-title">
-          <h2><i class="fa-solid fa-user-shield"></i> إدارة حسابات المستخدمين وحالة التوثيق</h2>
+        <div class="section-title" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <h2><i class="fa-solid fa-user-shield"></i> <span id="usersSectionTitleText">إدارة حسابات المستخدمين وحالة التوثيق</span></h2>
+          <button class="btn btn-primary" id="btnOpenAddUserModal">
+            <i class="fa-solid fa-user-plus"></i> <span id="btnAddUserBtnText">إضافة مستثمر / عميل جديد 👤</span>
+          </button>
         </div>
 
         <div class="card glass-card">
@@ -607,6 +610,36 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" id="btnCancelAdminModal">إلغاء</button>
           <button type="submit" class="btn btn-primary" id="btnSubmitAdminModal">إضافة الأدمن فوراً</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD USER / INVESTOR MODAL -->
+  <div class="modal-overlay" id="addUserModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="addUserModalTitle">إضافة مستثمر / عميل جديد في الباك إند 👤</h3>
+        <button class="close-btn" id="btnCloseUserModal">&times;</button>
+      </div>
+      <form id="addUserForm">
+        <div class="form-group">
+          <label id="lblNewUserName">اسم المستثمر الثلاثي</label>
+          <input type="text" id="newUserName" required class="form-input" placeholder="مثال: أحمد محمود علي">
+        </div>
+        <div class="form-group">
+          <label id="lblNewUserPhone">رقم الهاتف / البريد الإلكتروني</label>
+          <input type="text" id="newUserPhone" required class="form-input" placeholder="مثال: 01012345678 أو client@watheqa.eg">
+        </div>
+        <div class="form-group" style="margin-top:12px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="chkUserVerified" checked>
+            <span id="lblChkUserVerified">تفعيل كـ <strong>حساب موثّق مباشرة (Verified Investor 🟢)</strong></span>
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btnCancelUserModal">إلغاء</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitUserModal">إضافة وحفظ في الداتا بيز 🚀</button>
         </div>
       </form>
     </div>

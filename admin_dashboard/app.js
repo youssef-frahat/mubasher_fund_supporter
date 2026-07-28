@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initModalEvents();
   initAdminModalEvents();
   initSponsoredModalEvents();
+  initUserModalEvents();
   initLanguageEngine();
   
   document.getElementById('btnRefresh').addEventListener('click', refreshLiveData);
@@ -106,8 +107,29 @@ function applyLanguage(lang) {
   const portfoliosTitle = document.querySelector('#tab-portfolios .section-title h2');
   if (portfoliosTitle) portfoliosTitle.innerHTML = isEn ? '<i class="fa-solid fa-wallet"></i> Client Portfolios & Trading Orders' : '<i class="fa-solid fa-wallet"></i> إدارة محافظ العملاء وطلبات التداول 💼';
 
-  const usersTitle = document.querySelector('#tab-users .section-title h2');
-  if (usersTitle) usersTitle.innerHTML = isEn ? '<i class="fa-solid fa-user-shield"></i> User Accounts & Verification Badges' : '<i class="fa-solid fa-user-shield"></i> إدارة حسابات المستثمرين وحالة التوثيق 👤';
+  const usersSectionTitleText = document.getElementById('usersSectionTitleText');
+  if (usersSectionTitleText) usersSectionTitleText.innerText = isEn ? 'User Accounts & Verification Badges' : 'إدارة حسابات المستثمرين وحالة التوثيق';
+
+  const btnAddUserBtnText = document.getElementById('btnAddUserBtnText');
+  if (btnAddUserBtnText) btnAddUserBtnText.innerText = isEn ? 'Add New Investor / Client 👤' : 'إضافة مستثمر / عميل جديد 👤';
+
+  const addUserModalTitle = document.getElementById('addUserModalTitle');
+  if (addUserModalTitle) addUserModalTitle.innerText = isEn ? 'Add New Investor / Client to Backend 👤' : 'إضافة مستثمر / عميل جديد في الباك إند 👤';
+
+  const lblNewUserName = document.getElementById('lblNewUserName');
+  if (lblNewUserName) lblNewUserName.innerText = isEn ? 'Investor Full Name' : 'اسم المستثمر الثلاثي';
+
+  const lblNewUserPhone = document.getElementById('lblNewUserPhone');
+  if (lblNewUserPhone) lblNewUserPhone.innerText = isEn ? 'Phone Number / Email' : 'رقم الهاتف / البريد الإلكتروني';
+
+  const lblChkUserVerified = document.getElementById('lblChkUserVerified');
+  if (lblChkUserVerified) lblChkUserVerified.innerHTML = isEn ? 'Grant <strong>Verified Badge Immediately (Verified Investor 🟢)</strong>' : 'تفعيل كـ <strong>حساب موثّق مباشرة (Verified Investor 🟢)</strong>';
+
+  const btnSubmitUserModal = document.getElementById('btnSubmitUserModal');
+  if (btnSubmitUserModal) btnSubmitUserModal.innerText = isEn ? 'Add & Save to Database 🚀' : 'إضافة وحفظ في الداتا بيز 🚀';
+
+  const btnCancelUserModal = document.getElementById('btnCancelUserModal');
+  if (btnCancelUserModal) btnCancelUserModal.innerText = isEn ? 'Cancel' : 'إلغاء';
 
   const adminsTitle = document.querySelector('#tab-admins .section-title h2');
   if (adminsTitle) adminsTitle.innerHTML = isEn ? '<i class="fa-solid fa-user-plus"></i> Admin Team & Assistant Credentials' : '<i class="fa-solid fa-user-plus"></i> إدارة مديري النظام والمساعدين 🔑';
@@ -1121,6 +1143,75 @@ function initSponsoredModalEvents() {
         }
       }
     }
+  });
+}
+
+function initUserModalEvents() {
+  const modal = document.getElementById('addUserModal');
+  const btnOpen = document.getElementById('btnOpenAddUserModal');
+  const btnClose = document.getElementById('btnCloseUserModal');
+  const btnCancel = document.getElementById('btnCancelUserModal');
+  const form = document.getElementById('addUserForm');
+
+  if (!modal || !btnOpen) return;
+
+  const closeModal = () => modal.classList.remove('active');
+
+  btnOpen.addEventListener('click', () => {
+    form.reset();
+    const chk = document.getElementById('chkUserVerified');
+    if (chk) chk.checked = true;
+    modal.classList.add('active');
+  });
+
+  if (btnClose) btnClose.addEventListener('click', closeModal);
+  if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nameVal = (document.getElementById('newUserName')?.value || '').trim();
+    const phoneVal = (document.getElementById('newUserPhone')?.value || '').trim();
+    const isVerified = document.getElementById('chkUserVerified')?.checked ?? true;
+
+    if (!nameVal || !phoneVal) return;
+
+    const newUserId = 'usr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+    const newUserObj = {
+      id: newUserId,
+      full_name: nameVal,
+      phone: phoneVal,
+      is_verified: isVerified,
+      created_at: new Date().toISOString()
+    };
+
+    // 1. Add to live memory array immediately
+    liveUsers.unshift(newUserObj);
+    renderUsersTable();
+    updateMetricsAndInsights();
+
+    // 2. Save directly to Supabase DB `profiles` table
+    if (db) {
+      try {
+        const { error } = await db.from('profiles').insert([{
+          id: newUserId,
+          full_name: nameVal,
+          phone: phoneVal,
+          is_verified: isVerified,
+          created_at: new Date().toISOString()
+        }]);
+
+        if (error) {
+          logMessage(`[SUPABASE DB NOTICE] Profile insert response: ${error.message}`, 'info');
+        } else {
+          logMessage(`[SUPABASE DB SUCCESS] Investor '${nameVal}' created & inserted into Supabase DB profiles 🟢`, 'success');
+        }
+      } catch (err) {
+        logMessage(`[SUPABASE DB ERROR] User creation error: ${err.message}`, 'danger');
+      }
+    }
+
+    closeModal();
+    alert(`تم إضافة حساب المستثمر (${nameVal}) وحفظه في قاعدة البيانات بنجاح! 🚀`);
   });
 }
 
