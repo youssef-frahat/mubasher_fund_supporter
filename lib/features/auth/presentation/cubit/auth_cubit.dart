@@ -74,11 +74,13 @@ class AuthCubit extends Cubit<AuthState> {
         data: {'full_name': fullName},
       );
 
-      if (response.session != null && response.user != null) {
+      if (response.user != null) {
         await _syncUserProfileToSupabase(response.user!);
-        emit(Authenticated(response.user!));
-      } else if (response.user != null) {
-        emit(OtpSent(email));
+        if (response.session != null) {
+          emit(Authenticated(response.user!));
+        } else {
+          emit(OtpSent(email));
+        }
       }
     } catch (e) {
       emit(AuthError('فشل إنشاء الحساب: $e'));
