@@ -612,9 +612,18 @@ function updateDynamicCharts() {
   const catCounts = Object.values(categories);
 
   const diversePalette = [
-    '#00E676', '#3B82F6', '#F59E0B', '#A855F7', '#EC4899', 
-    '#06B6D4', '#10B981', '#6366F1', '#F43F5E', '#D97706', 
-    '#14B8A6', '#8B5CF6', '#E11D48', '#38BDF8', '#84CC16'
+    '#00E676', // Bright Neon Lime Green
+    '#2563EB', // Deep Royal Blue
+    '#FFB300', // Bright Amber Yellow
+    '#9333EA', // Vivid Purple
+    '#FF1744', // Electric Hot Pink/Red
+    '#00E5FF', // Cyan / Aqua
+    '#FF9100', // Pure Bright Orange
+    '#7C4DFF', // Deep Indigo Violet
+    '#10B981', // Emerald Mint Green
+    '#F43F5E', // Rose Coral
+    '#84CC16', // Chartreuse
+    '#38BDF8'  // Sky Blue
   ];
 
   if (categoryPieChartInstance) {
