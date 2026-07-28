@@ -15,6 +15,38 @@ class RecommendedFundsList extends StatelessWidget {
 
   const RecommendedFundsList({super.key, required this.funds});
 
+  IconData _getCategoryIcon(String category, String name) {
+    final cat = category.toLowerCase();
+    final n = name.toLowerCase();
+
+    if (cat.contains('gold') || cat.contains('silver') || cat.contains('metal') || n.contains('ذهب') || n.contains('فضة') || n.contains('معادن')) {
+      return FontAwesomeIcons.coins;
+    } else if (cat.contains('islamic') || cat.contains('sharia') || n.contains('إسلام') || n.contains('شريعة') || n.contains('وفاق')) {
+      return FontAwesomeIcons.kaaba;
+    } else if (cat.contains('money') || cat.contains('cash') || n.contains('سيولة') || n.contains('نقدي') || n.contains('يومي') || n.contains('جذور')) {
+      return FontAwesomeIcons.moneyBill1Wave;
+    } else if (cat.contains('fixed') || cat.contains('treasury') || cat.contains('bill') || n.contains('سند') || n.contains('أذون') || n.contains('خزانة')) {
+      return FontAwesomeIcons.landmark;
+    }
+    return FontAwesomeIcons.chartLine;
+  }
+
+  Color _getCategoryColor(String category, String name) {
+    final cat = category.toLowerCase();
+    final n = name.toLowerCase();
+
+    if (cat.contains('gold') || cat.contains('silver') || cat.contains('metal') || n.contains('ذهب') || n.contains('فضة') || n.contains('معادن')) {
+      return const Color(0xFFF59E0B);
+    } else if (cat.contains('islamic') || cat.contains('sharia') || n.contains('إسلام') || n.contains('شريعة') || n.contains('وفاق')) {
+      return const Color(0xFF059669);
+    } else if (cat.contains('money') || cat.contains('cash') || n.contains('سيولة') || n.contains('نقدي') || n.contains('يومي') || n.contains('جذور')) {
+      return const Color(0xFF10B981);
+    } else if (cat.contains('fixed') || cat.contains('treasury') || cat.contains('bill') || n.contains('سند') || n.contains('أذون') || n.contains('خزانة')) {
+      return const Color(0xFF6366F1);
+    }
+    return const Color(0xFF3B82F6);
+  }
+
   @override
   Widget build(BuildContext context) {
     final wishlistService = sl<WishlistService>();
@@ -58,6 +90,7 @@ class RecommendedFundsList extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             itemCount: funds.length,
+            itemBuilder: (context, index) {
               final fund = funds[index];
               final categoryIcon = _getCategoryIcon(fund.category, fund.name);
               final categoryColor = _getCategoryColor(fund.category, fund.name);
@@ -154,42 +187,11 @@ class RecommendedFundsList extends StatelessWidget {
                     ],
                   ),
                 ),
+              );
             },
           ),
         ),
       ],
     );
-  }
-
-  IconData _getCategoryIcon(String category, String name) {
-    final cat = category.toLowerCase();
-    final n = name.toLowerCase();
-
-    if (cat.contains('gold') || cat.contains('silver') || cat.contains('metal') || n.contains('ذهب') || n.contains('فضة') || n.contains('معادن')) {
-      return FontAwesomeIcons.coins;
-    } else if (cat.contains('islamic') || cat.contains('sharia') || n.contains('إسلام') || n.contains('شريعة') || n.contains('وفاق')) {
-      return FontAwesomeIcons.kaaba;
-    } else if (cat.contains('money') || cat.contains('cash') || n.contains('سيولة') || n.contains('نقدي') || n.contains('يومي') || n.contains('جذور')) {
-      return FontAwesomeIcons.moneyBill1Wave;
-    } else if (cat.contains('fixed') || cat.contains('treasury') || cat.contains('bill') || n.contains('سند') || n.contains('أذون') || n.contains('خزانة')) {
-      return FontAwesomeIcons.landmark;
-    }
-    return FontAwesomeIcons.chartLine;
-  }
-
-  Color _getCategoryColor(String category, String name) {
-    final cat = category.toLowerCase();
-    final n = name.toLowerCase();
-
-    if (cat.contains('gold') || cat.contains('silver') || cat.contains('metal') || n.contains('ذهب') || n.contains('فضة') || n.contains('معادن')) {
-      return const Color(0xFFF59E0B);
-    } else if (cat.contains('islamic') || cat.contains('sharia') || n.contains('إسلام') || n.contains('شريعة') || n.contains('وفاق')) {
-      return const Color(0xFF059669);
-    } else if (cat.contains('money') || cat.contains('cash') || n.contains('سيولة') || n.contains('نقدي') || n.contains('يومي') || n.contains('جذور')) {
-      return const Color(0xFF10B981);
-    } else if (cat.contains('fixed') || cat.contains('treasury') || cat.contains('bill') || n.contains('سند') || n.contains('أذون') || n.contains('خزانة')) {
-      return const Color(0xFF6366F1);
-    }
-    return const Color(0xFF3B82F6);
   }
 }
