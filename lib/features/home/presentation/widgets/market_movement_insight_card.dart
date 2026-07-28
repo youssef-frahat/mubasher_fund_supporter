@@ -17,7 +17,6 @@ class MarketMovementInsightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final surface = AppColors.getSurface(context);
     final textPrimary = AppColors.getTextPrimary(context);
-    final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
     final isAr = context.isArabic;
 
@@ -99,8 +98,8 @@ class MarketMovementInsightCard extends StatelessWidget {
         insightBorderColor = AppColors.error.withValues(alpha: 0.3);
       } else {
         insightText = context.tr('insightBalanced');
-        insightBgColor = AppColors.info.withValues(alpha: 0.12);
-        insightBorderColor = AppColors.info.withValues(alpha: 0.3);
+        insightBgColor = Colors.blue.withValues(alpha: 0.12);
+        insightBorderColor = Colors.blue.withValues(alpha: 0.3);
       }
     }
 
