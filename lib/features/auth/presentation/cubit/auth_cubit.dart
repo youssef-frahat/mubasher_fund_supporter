@@ -55,31 +55,27 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  // --- OTP Auth (Email) ---
-  Future<void> sendOtp(String email) async {
+  // --- Email & Password Sign In ---
+  Future<void> signInWithEmailAndPassword(String email, String password) async {
     emit(AuthLoading());
     try {
       final client = SupabaseService.client;
       if (client == null) throw Exception('Supabase not initialized');
-      
-      await client.auth.signInWithOtp(email: email);
-      emit(OtpSent(email));
-    } catch (e) {
-      emit(AuthError(e.toString()));
-      emit(Unauthenticated());
-    }
-  }
 
-  Future<void> verifyOtp(String email, String token) async {
-    emit(AuthLoading());
-    try {
-      final client = SupabaseService.client;
-      if (client == null) throw Exception('Supabase not initialized');
-      
-      await client.auth.verifyOTP(email: email, token: token, type: OtpType.magiclink);
+      final response = await client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (response.user != null) {
+        emit(Authenticated(response.user!));
+      } else {
+        emit(AuthError('يرجى التحقق من البريد الإلكتروني وكلمة المرور'));
+        emit(Unauthenticated());
+      }
     } catch (e) {
-      emit(AuthError(e.toString()));
-      emit(OtpSent(email));
+      emit(AuthError('خطأ في تسجيل الدخول: بيانات الدخول غير صحيحة أو الحساب غير مفعل بعد'));
+      emit(Unauthenticated());
     }
   }
 

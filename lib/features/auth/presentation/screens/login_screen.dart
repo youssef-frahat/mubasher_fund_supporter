@@ -84,9 +84,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (state is Authenticated) {
                   AppSnackBar.showSuccess(context, 'أهلاً بك مجدداً في منصة وثيقة! 🚀');
                   context.go(Routes.home);
-                } else if (state is OtpSent) {
-                  AppSnackBar.showInfo(context, 'تم إرسال رمز التحقق إلى بريدك الإلكتروني 📩');
-                  context.push(Routes.otp, extra: state.email);
                 } else if (state is AuthError) {
                   AppSnackBar.showError(context, state.message);
                 }
@@ -218,7 +215,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             : () {
                                 if (_formKey.currentState!.validate()) {
                                   final email = _emailController.text.trim();
-                                  context.read<AuthCubit>().sendOtp(email);
+                                  final password = _passwordController.text;
+                                  context.read<AuthCubit>().signInWithEmailAndPassword(email, password);
                                 } else {
                                   AppSnackBar.showWarning(
                                     context,

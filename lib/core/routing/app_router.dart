@@ -10,7 +10,6 @@ import '../../features/funds/presentation/screens/fund_details_screen.dart';
 import '../../features/home/data/models/platform_feature.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/profile_screen.dart';
-import '../../features/auth/presentation/screens/otp_screen.dart';
 import '../../features/portfolio/presentation/screens/portfolio_screen.dart';
 import '../../features/calculator/presentation/screens/investment_calculator_screen.dart';
 import 'routes.dart';
@@ -43,7 +42,6 @@ class AppRouter {
       final isGoingToBiometricLock = state.matchedLocation == Routes.biometricLock;
       final isGoingToLogin = state.matchedLocation == Routes.login;
       final isGoingToRegister = state.matchedLocation == Routes.register;
-      final isGoingToOtp = state.matchedLocation == Routes.otp;
       final isGoingToForgotPassword = state.matchedLocation == Routes.forgotPassword;
       final isGoingToTerms = state.matchedLocation == Routes.termsConditions;
       final isGoingToFaq = state.matchedLocation == Routes.faq;
@@ -53,7 +51,6 @@ class AppRouter {
           isGoingToBiometricLock ||
           isGoingToLogin ||
           isGoingToRegister ||
-          isGoingToOtp ||
           isGoingToForgotPassword ||
           isGoingToTerms ||
           isGoingToFaq ||
@@ -68,7 +65,7 @@ class AppRouter {
       }
 
       // If user is authenticated and heading to pure auth login/register, redirect to home
-      if (isAuthenticated && (isGoingToLogin || isGoingToRegister || isGoingToOtp)) {
+      if (isAuthenticated && (isGoingToLogin || isGoingToRegister)) {
         return Routes.home;
       }
 
@@ -144,14 +141,6 @@ class AppRouter {
         path: Routes.register,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const RegisterScreen(),
-      ),
-      GoRoute(
-        path: Routes.otp,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
-          final email = state.extra as String;
-          return OtpScreen(email: email);
-        },
       ),
       GoRoute(
         path: Routes.fundDetails,

@@ -313,6 +313,9 @@ async function fetchFunds() {
     if (error) throw error;
     if (data) {
       liveFunds = data;
+      liveFunds.forEach(f => {
+        if (f.is_sponsored || f.is_recommended) f._inSponsoredList = true;
+      });
       computeTopPerformingFundsDynamically();
       document.getElementById('dbFundsCount').innerText = `${data.length} صندوق`;
       logMessage(`[DB] Loaded ${data.length} funds from 'funds' table.`, 'success');
@@ -608,9 +611,16 @@ function updateDynamicCharts() {
   });
   const catCounts = Object.values(categories);
 
+  const diversePalette = [
+    '#00E676', '#3B82F6', '#F59E0B', '#A855F7', '#EC4899', 
+    '#06B6D4', '#10B981', '#6366F1', '#F43F5E', '#D97706', 
+    '#14B8A6', '#8B5CF6', '#E11D48', '#38BDF8', '#84CC16'
+  ];
+
   if (categoryPieChartInstance) {
     categoryPieChartInstance.data.labels = catLabels;
     categoryPieChartInstance.data.datasets[0].data = catCounts;
+    categoryPieChartInstance.data.datasets[0].backgroundColor = diversePalette.slice(0, catCounts.length);
     categoryPieChartInstance.update();
   }
 
@@ -622,6 +632,7 @@ function updateDynamicCharts() {
   if (topBarChartInstance) {
     topBarChartInstance.data.labels = topNames;
     topBarChartInstance.data.datasets[0].data = topYtds;
+    topBarChartInstance.data.datasets[0].backgroundColor = ['#00E676', '#3B82F6', '#F59E0B', '#A855F7', '#EC4899'];
     topBarChartInstance.update();
   }
 }
@@ -685,7 +696,7 @@ function renderSponsoredTable() {
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  const activeSponsoredFunds = liveFunds.filter(f => f.is_sponsored || f.is_recommended);
+  const activeSponsoredFunds = liveFunds.filter(f => f.is_sponsored || f.is_recommended || f._inSponsoredList);
 
   if (activeSponsoredFunds.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:#9ca3af">لا توجد صناديق مخصصة في القائمة الرعائية حالياً.<br>اضغط على زر <strong>"إضافة صندوق للقائمة"</strong> بالأعلى لاختيار صندوقك المفضل إدارياً ⭐</td></tr>';
@@ -728,6 +739,7 @@ async function removeFundFromSponsored(fundId) {
   if (fund && confirm(`هل أنت تأكد من إزالة (${fund.name_ar || fund.name}) من القائمة الرعائية والموصى بها؟`)) {
     fund.is_sponsored = false;
     fund.is_recommended = false;
+    fund._inSponsoredList = false;
 
     renderSponsoredTable();
     renderFundsTable();
@@ -757,12 +769,23 @@ function initSponsoredModalEvents() {
 
   btnOpen.addEventListener('click', () => {
     selectFund.innerHTML = '';
-    liveFunds.forEach(f => {
-      const opt = document.createElement('option');
-      opt.value = f.id;
-      opt.innerText = `${f.name_ar || f.name} (${f.manager_name || f.manager || 'مباشر'}) - NAV: ${f.current_nav} EGP`;
-      selectFund.appendChild(opt);
-    });
+    const availableFunds = liveFunds.filter(f => !f.is_sponsored && !f.is_recommended && !f._inSponsoredList);
+    if (availableFunds.length === 0) {
+      selectFund.innerHTML = '<option value="" disabled selected>جميع الصناديق مضافة بالفعل للقائمة</option>';
+    } else {
+      availableFunds.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.id;
+        opt.innerText = `${f.name_ar || f.name} (${f.manager_name || f.manager || 'مباشر'}) - NAV: ${f.current_nav} EGP`;
+        selectFund.appendChild(opt);
+      });
+    }
+    const countLabel = document.getElementById('sponsoredModalFundCountLabel');
+    if (countLabel) {
+      countLabel.innerText = currentLang === 'en'
+        ? `Select Fund from Database (${availableFunds.length} available out of ${liveFunds.length} total)`
+        : `اختر الصندوق من قاعدة البيانات (متاح ${availableFunds.length} من إجمالي ${liveFunds.length} صندوق)`;
+    }
     modal.classList.add('active');
   });
 
@@ -773,6 +796,7 @@ function initSponsoredModalEvents() {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fundId = selectFund.value;
+    if (!fundId) return;
     const isSponsored = document.getElementById('chkSponsored').checked;
     const isRecommended = document.getElementById('chkRecommended').checked;
 
@@ -780,6 +804,7 @@ function initSponsoredModalEvents() {
     if (fund) {
       fund.is_sponsored = isSponsored;
       fund.is_recommended = isRecommended;
+      fund._inSponsoredList = true;
 
       renderSponsoredTable();
       renderFundsTable();
@@ -803,17 +828,22 @@ function initSponsoredModalEvents() {
 
   // Bulk selection buttons logic with live Supabase DB persistence
   document.getElementById('btnToggleAllSponsored')?.addEventListener('click', async () => {
-    const anyNotSponsored = liveFunds.some(f => !f.is_sponsored);
-    liveFunds.forEach(f => f.is_sponsored = anyNotSponsored);
+    const targetFunds = liveFunds.filter(f => f.is_sponsored || f.is_recommended || f._inSponsoredList);
+    if (targetFunds.length === 0) return;
+    const anyNotSponsored = targetFunds.some(f => !f.is_sponsored);
+    targetFunds.forEach(f => {
+      f.is_sponsored = anyNotSponsored;
+      f._inSponsoredList = true;
+    });
     renderSponsoredTable();
     renderFundsTable();
     updateDynamicCharts();
-    logMessage(`[BULK SPONSORED] Set all funds is_sponsored = ${anyNotSponsored}`, 'success');
-    if (db && liveFunds.length > 0) {
+    logMessage(`[BULK SPONSORED] Set active list items is_sponsored = ${anyNotSponsored}`, 'success');
+    if (db && targetFunds.length > 0) {
       try {
-        const ids = liveFunds.map(f => f.id);
+        const ids = targetFunds.map(f => f.id);
         await db.from('funds').update({ is_sponsored: anyNotSponsored }).in('id', ids);
-        logMessage(`[SUPABASE BULK] Saved is_sponsored=${anyNotSponsored} for ${ids.length} funds in Supabase DB 🚀`, 'success');
+        logMessage(`[SUPABASE BULK] Saved is_sponsored=${anyNotSponsored} for ${ids.length} items in Supabase DB 🚀`, 'success');
       } catch (err) {
         logMessage(`[SUPABASE ERROR] Bulk update failed: ${err.message}`, 'danger');
       }
@@ -821,17 +851,22 @@ function initSponsoredModalEvents() {
   });
 
   document.getElementById('btnToggleAllRecommended')?.addEventListener('click', async () => {
-    const anyNotRecommended = liveFunds.some(f => !f.is_recommended);
-    liveFunds.forEach(f => f.is_recommended = anyNotRecommended);
+    const targetFunds = liveFunds.filter(f => f.is_sponsored || f.is_recommended || f._inSponsoredList);
+    if (targetFunds.length === 0) return;
+    const anyNotRecommended = targetFunds.some(f => !f.is_recommended);
+    targetFunds.forEach(f => {
+      f.is_recommended = anyNotRecommended;
+      f._inSponsoredList = true;
+    });
     renderSponsoredTable();
     renderFundsTable();
     updateDynamicCharts();
-    logMessage(`[BULK RECOMMENDED] Set all funds is_recommended = ${anyNotRecommended}`, 'success');
-    if (db && liveFunds.length > 0) {
+    logMessage(`[BULK RECOMMENDED] Set active list items is_recommended = ${anyNotRecommended}`, 'success');
+    if (db && targetFunds.length > 0) {
       try {
-        const ids = liveFunds.map(f => f.id);
+        const ids = targetFunds.map(f => f.id);
         await db.from('funds').update({ is_recommended: anyNotRecommended }).in('id', ids);
-        logMessage(`[SUPABASE BULK] Saved is_recommended=${anyNotRecommended} for ${ids.length} funds in Supabase DB 🚀`, 'success');
+        logMessage(`[SUPABASE BULK] Saved is_recommended=${anyNotRecommended} for ${ids.length} items in Supabase DB 🚀`, 'success');
       } catch (err) {
         logMessage(`[SUPABASE ERROR] Bulk update failed: ${err.message}`, 'danger');
       }
@@ -843,6 +878,7 @@ function initSponsoredModalEvents() {
       liveFunds.forEach(f => {
         f.is_sponsored = false;
         f.is_recommended = false;
+        f._inSponsoredList = false;
       });
       renderSponsoredTable();
       renderFundsTable();
@@ -1143,7 +1179,7 @@ function initCharts() {
       labels: [],
       datasets: [{
         data: [],
-        backgroundColor: ['#00E676', '#3B82F6', '#F59E0B', '#8B5CF6', '#EC4899'],
+        backgroundColor: ['#00E676', '#3B82F6', '#F59E0B', '#A855F7', '#EC4899', '#06B6D4', '#10B981', '#6366F1', '#F43F5E', '#D97706'],
         borderWidth: 0
       }]
     },
@@ -1161,7 +1197,7 @@ function initCharts() {
       datasets: [{
         label: 'العائد السنوي YTD %',
         data: [],
-        backgroundColor: '#00E676',
+        backgroundColor: ['#00E676', '#3B82F6', '#F59E0B', '#A855F7', '#EC4899'],
         borderRadius: 8
       }]
     },
@@ -1178,6 +1214,10 @@ function initCharts() {
   initLiveDevopsMonitoring();
 }
 
+let maxChartInstance = null;
+let devopsIntervalId = null;
+window.devopsLatencyArchive = [];
+
 function getLiveTimeString() {
   const now = new Date();
   return now.getHours().toString().padStart(2, '0') + ':' + 
@@ -1192,22 +1232,70 @@ function initLiveDevopsMonitoring() {
   const initialLabels = [];
   const initialData = [];
 
+  // Initialize with past 5-minute slots (5 mins = 300,000 ms)
   for (let i = 5; i >= 0; i--) {
-    const past = new Date(now.getTime() - i * 4000);
-    initialLabels.push(
-      past.getHours().toString().padStart(2, '0') + ':' + 
-      past.getMinutes().toString().padStart(2, '0') + ':' + 
-      past.getSeconds().toString().padStart(2, '0')
-    );
-    initialData.push(Math.floor(11 + Math.random() * 7));
+    const past = new Date(now.getTime() - i * 300000);
+    const timeStr = past.getHours().toString().padStart(2, '0') + ':' + 
+                    past.getMinutes().toString().padStart(2, '0') + ':' + 
+                    past.getSeconds().toString().padStart(2, '0');
+    const latency = Math.floor(11 + Math.random() * 7);
+    initialLabels.push(timeStr);
+    initialData.push(latency);
+
+    window.devopsLatencyArchive.unshift({
+      timestamp: timeStr,
+      date: past.toLocaleDateString(),
+      latency: latency,
+      status: latency <= 30 ? 'ممتاز 🟢 (Optimal)' : 'جيد 🟡',
+      dbHealth: 'Supabase OK / Active'
+    });
   }
 
   trafficLineChartInstance.data.labels = initialLabels;
   trafficLineChartInstance.data.datasets[0].data = initialData;
   trafficLineChartInstance.update();
 
-  // Run live pulse micro-ping to Supabase DB every 3 seconds
-  setInterval(async () => {
+  // Start ping timer (Default: Every 5 minutes = 300,000 ms)
+  startDevopsPingTimer(300000);
+
+  // Interval selector event
+  document.getElementById('devopsPingIntervalSelect')?.addEventListener('change', (e) => {
+    const intervalMs = parseInt(e.target.value, 10) || 300000;
+    startDevopsPingTimer(intervalMs);
+    logMessage(`[DEVOPS TIMER] Changed latency test interval to ${intervalMs / 1000} seconds.`, 'info');
+  });
+
+  // Minimize toggle event
+  let isMinimized = false;
+  document.getElementById('btnToggleMinimizeChart')?.addEventListener('click', () => {
+    const body = document.getElementById('devopsChartCardBody');
+    const icon = document.getElementById('iconMinimizeChart');
+    if (!body || !icon) return;
+    isMinimized = !isMinimized;
+    body.style.display = isMinimized ? 'none' : 'block';
+    icon.className = isMinimized ? 'fa-solid fa-expand-arrows-alt' : 'fa-solid fa-compress';
+  });
+
+  // Maximize Modal event
+  const maxModal = document.getElementById('maximizedChartModal');
+  const btnMax = document.getElementById('btnMaximizeChartModal');
+  const btnCloseMax = document.getElementById('btnCloseMaxChartModal');
+  const btnCancelMax = document.getElementById('btnCancelMaxChartModal');
+
+  if (btnMax && maxModal) {
+    btnMax.addEventListener('click', () => {
+      maxModal.classList.add('active');
+      renderMaximizedHistory();
+    });
+    const closeMax = () => maxModal.classList.remove('active');
+    btnCloseMax?.addEventListener('click', closeMax);
+    btnCancelMax?.addEventListener('click', closeMax);
+  }
+}
+
+function startDevopsPingTimer(intervalMs) {
+  if (devopsIntervalId) clearInterval(devopsIntervalId);
+  devopsIntervalId = setInterval(async () => {
     const timeStr = getLiveTimeString();
     let latencyMs = 12;
 
@@ -1226,18 +1314,85 @@ function initLiveDevopsMonitoring() {
 
     trafficLineChartInstance.data.labels.shift();
     trafficLineChartInstance.data.labels.push(timeStr);
-
     trafficLineChartInstance.data.datasets[0].data.shift();
     trafficLineChartInstance.data.datasets[0].data.push(latencyMs);
-
     trafficLineChartInstance.data.datasets[0].borderColor = latencyMs > 30 ? '#F59E0B' : '#00E676';
     trafficLineChartInstance.update('none');
 
     const badge = document.getElementById('liveDevopsLatencyBadge');
-    if (badge) {
-      badge.innerText = `Live: ${latencyMs} ms 🟢`;
+    if (badge) badge.innerText = `Live: ${latencyMs} ms 🟢`;
+
+    // Save to historical archive
+    window.devopsLatencyArchive.unshift({
+      timestamp: timeStr,
+      date: new Date().toLocaleDateString(),
+      latency: latencyMs,
+      status: latencyMs <= 30 ? 'ممتاز 🟢 (Optimal)' : (latencyMs <= 80 ? 'جيد 🟡 (Good)' : 'بطيء 🟠 (Slow)'),
+      dbHealth: 'Supabase OK / Active'
+    });
+    if (window.devopsLatencyArchive.length > 200) window.devopsLatencyArchive.pop();
+
+    if (document.getElementById('maximizedChartModal')?.classList.contains('active')) {
+      renderMaximizedHistory();
     }
-  }, 3000);
+  }, intervalMs);
+}
+
+function renderMaximizedHistory() {
+  const tableBody = document.getElementById('historicalLatencyTableBody');
+  if (tableBody && window.devopsLatencyArchive) {
+    tableBody.innerHTML = '';
+    window.devopsLatencyArchive.forEach(item => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong style="color:#00E676;">${item.timestamp}</strong></td>
+        <td>${item.date}</td>
+        <td><span class="badge" style="background:rgba(0,230,118,0.15); color:#00E676; font-weight:bold;">${item.latency} ms</span></td>
+        <td>${item.status}</td>
+        <td><code style="color:#3B82F6;">${item.dbHealth}</code></td>
+      `;
+      tableBody.appendChild(tr);
+    });
+  }
+
+  const canvas = document.getElementById('maximizedTrafficChart');
+  if (!canvas) return;
+
+  const labels = window.devopsLatencyArchive.slice(0, 30).reverse().map(x => x.timestamp);
+  const data = window.devopsLatencyArchive.slice(0, 30).reverse().map(x => x.latency);
+
+  if (maxChartInstance) {
+    maxChartInstance.data.labels = labels;
+    maxChartInstance.data.datasets[0].data = data;
+    maxChartInstance.update();
+  } else {
+    const ctx = canvas.getContext('2d');
+    maxChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'زمن استجابة Supabase (مللي ثانية - ms)',
+          data: data,
+          borderColor: '#00E676',
+          backgroundColor: 'rgba(0, 230, 118, 0.15)',
+          borderWidth: 2,
+          pointBackgroundColor: '#00E676',
+          pointRadius: 4,
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'top', labels: { color: '#f9fafb', font: { family: 'Cairo' } } } },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } },
+          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' }, beginAtZero: true }
+        }
+      }
+    });
+  }
 }
 
 function logMessage(msg, type = 'info') {

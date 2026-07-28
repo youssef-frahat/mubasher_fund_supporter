@@ -221,12 +221,35 @@
         </div>
 
         <div class="grid-2col">
-          <div class="card glass-card">
-            <h3 style="display:flex; align-items:center; justify-content:space-between;">
-              <span><i class="fa-solid fa-chart-area"></i> استجابة الخوادم اللحظية (API Response Latency)</span>
-              <span id="liveDevopsLatencyBadge" class="badge live" style="font-size:11px;">Live: 12 ms 🟢</span>
-            </h3>
-            <canvas id="devopsTrafficChart" height="180"></canvas>
+          <div class="card glass-card" id="devopsChartCard">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+              <h3 style="margin:0; display:flex; align-items:center; gap:6px; font-size:15px;">
+                <i class="fa-solid fa-chart-area" style="color:#00E676;"></i> 
+                <span>استجابة الخوادم اللحظية (API Latency)</span>
+                <span id="liveDevopsLatencyBadge" class="badge live" style="font-size:11px;">12 ms 🟢</span>
+              </h3>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <!-- Interval Selector -->
+                <select id="devopsPingIntervalSelect" class="form-select" style="padding:3px 8px; font-size:11px; width:auto; height:28px;">
+                  <option value="300000" selected>⏱️ كل 5 دقائق (5 Mins)</option>
+                  <option value="60000">⏱️ كل دقيقة (1 Min)</option>
+                  <option value="3000">⚡ كل 3 ثواني (Live 3s)</option>
+                </select>
+
+                <!-- Minimize Button -->
+                <button class="btn btn-secondary" id="btnToggleMinimizeChart" title="طي / توسيع (Minimize/Expand)" style="padding:4px 8px; font-size:11px; height:28px;">
+                  <i class="fa-solid fa-compress" id="iconMinimizeChart"></i>
+                </button>
+
+                <!-- Maximize Button -->
+                <button class="btn btn-primary" id="btnMaximizeChartModal" title="تكبير وعرض الأرشيف التاريخي (Maximize & History)" style="padding:4px 8px; font-size:11px; height:28px;">
+                  <i class="fa-solid fa-expand"></i> تكبير والأرشيف
+                </button>
+              </div>
+            </div>
+            <div id="devopsChartCardBody">
+              <canvas id="devopsTrafficChart" height="180"></canvas>
+            </div>
           </div>
 
           <div class="card glass-card terminal-card">
@@ -528,7 +551,7 @@
       </div>
       <form id="addSponsoredForm">
         <div class="form-group">
-          <label>اختر الصندوق من قاعدة البيانات (201 صندوق)</label>
+          <label id="sponsoredModalFundCountLabel">اختر الصندوق من قاعدة البيانات (197 صندوق من تقرير EIMA)</label>
           <select id="selectFundForSponsored" class="form-select" required style="width:100%;">
             <!-- Dynamically populated -->
           </select>
@@ -645,6 +668,52 @@
           <button type="submit" class="btn btn-primary">حفظ وتعديل الباك إند</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MAXIMIZED CHART & HISTORICAL LOGS MODAL -->
+  <div class="modal-overlay" id="maximizedChartModal">
+    <div class="modal-card" style="max-width:920px; width:96%;">
+      <div class="modal-header">
+        <h3 style="display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-chart-line" style="color:#00E676;"></i>
+          <span>السجل التاريخي لاستجابة الخوادم وأرشيف الفحص (Historical Latency Archive)</span>
+        </h3>
+        <button class="close-btn" id="btnCloseMaxChartModal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+          <span style="color:#9ca3af; font-size:13px;">متابعة أداء قاعدة بيانات Supabase والفترات الزمنية السابقة (تخزين كل 5 دقائق لمراجعة الأرشيف)</span>
+          <span id="maxLiveBadge" class="badge live" style="font-size:12px;">Live: 12 ms 🟢</span>
+        </div>
+        
+        <div style="background:rgba(15,23,42,0.9); border:1px solid #334155; border-radius:12px; padding:14px; margin-bottom:18px;">
+          <canvas id="maximizedTrafficChart" height="200"></canvas>
+        </div>
+
+        <h4 style="color:#00E676; margin-bottom:10px; font-size:15px; display:flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-history"></i> جدول سجل الأرشيف اللحظي والتاريخي (Audit Log Table)
+        </h4>
+        <div class="table-responsive" style="max-height:260px; overflow-y:auto; border:1px solid rgba(255,255,255,0.08); border-radius:8px;">
+          <table class="data-table">
+            <thead>
+              <tr id="maxModalTableHead">
+                <th>الوقت (Timestamp)</th>
+                <th>التاريخ (Date)</th>
+                <th>زمن الاستجابة (Latency)</th>
+                <th>حالة السيرفر (Server Status)</th>
+                <th>تفاصيل الفحص (Diagnostic Result)</th>
+              </tr>
+            </thead>
+            <tbody id="historicalLatencyTableBody">
+              <!-- Dynamically populated from latency archive -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding-top:12px;">
+        <button type="button" class="btn btn-secondary" id="btnCancelMaxChartModal"><i class="fa-solid fa-times"></i> إغلاق النافذة</button>
+      </div>
     </div>
   </div>
 

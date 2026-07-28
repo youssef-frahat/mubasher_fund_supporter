@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -14,13 +15,27 @@ class AboutUsScreen extends StatelessWidget {
 
   Future<void> _launchUrl(BuildContext context, String url) async {
     final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      if (context.mounted) {
-        AppSnackBar.showWarning(context, context.isArabic ? 'تعذر فتح الرابط' : 'Could not open link');
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      try {
+        await launchUrl(uri, mode: LaunchMode.inAppWebView);
+      } catch (err) {
+        if (context.mounted) {
+          AppSnackBar.showWarning(context, context.isArabic ? 'تعذر فتح الرابط في المتصفح' : 'Could not open link in browser');
+        }
       }
     }
+  }
+
+  void _copyUrl(BuildContext context, String url) {
+    Clipboard.setData(ClipboardData(text: url));
+    AppSnackBar.showSuccess(
+      context,
+      context.isArabic ? 'تم نسخ رابط بورتفوليو المطور بنجاح 📋 🚀' : 'Developer portfolio URL copied successfully! 📋 🚀',
+    );
   }
 
   @override
@@ -223,27 +238,58 @@ class AboutUsScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 16.h),
 
-                  // Portfolio Link Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _launchUrl(context, _developerPortfolioUrl),
-                      icon: FaIcon(FontAwesomeIcons.globe, color: Colors.black, size: 16.r),
-                      label: Text(
-                        isAr ? '🔗 استعرض بورتفوليو المطوّر' : '🔗 View Developer Portfolio',
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 5,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _launchUrl(context, _developerPortfolioUrl),
+                          icon: FaIcon(FontAwesomeIcons.globe, color: Colors.black, size: 15.r),
+                          label: Text(
+                            isAr ? '🔗 فتح البورتفوليو' : '🔗 Open Portfolio',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12.sp,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: EdgeInsets.symmetric(vertical: 13.h, horizontal: 8.w),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                          ),
                         ),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: EdgeInsets.symmetric(vertical: 13.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        flex: 4,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _copyUrl(context, _developerPortfolioUrl),
+                          icon: FaIcon(FontAwesomeIcons.copy, color: Colors.white, size: 15.r),
+                          label: Text(
+                            isAr ? '📋 نسخ الرابط' : '📋 Copy Link',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12.sp,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.gold,
+                            padding: EdgeInsets.symmetric(vertical: 13.h, horizontal: 8.w),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                   SizedBox(height: 8.h),
 
