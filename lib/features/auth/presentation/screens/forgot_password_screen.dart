@@ -94,10 +94,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         ? null
                         : () {
                             final email = _emailController.text.trim();
-                            if (email.isNotEmpty) {
-                              context.read<AuthCubit>().resetPassword(email);
-                            } else {
+                            final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+                            if (email.isEmpty) {
                               AppSnackBar.showWarning(context, context.tr('enterEmailErr'));
+                            } else if (!emailRegex.hasMatch(email)) {
+                              AppSnackBar.showWarning(context, context.tr('invalidEmailErr'));
+                            } else {
+                              context.read<AuthCubit>().resetPassword(email);
                             }
                           },
                     style: ElevatedButton.styleFrom(
