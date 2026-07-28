@@ -57,7 +57,7 @@ function applyLanguage(lang) {
 
   const langLabel = document.getElementById('langLabel');
   if (langLabel) {
-    langLabel.innerText = isEn ? 'العربية 🇪🇬' : 'English 🇬🇧';
+    langLabel.innerText = isEn ? '🌐 English (US)' : '🌐 العربية (مصر)';
   }
 
   // Update search placeholders
@@ -81,56 +81,56 @@ function applyLanguage(lang) {
   if (navItems.length >= 9) {
     navItems[0].querySelector('span').innerText = isEn ? 'DevOps System & Status' : 'منظومة DevOps والحالة';
     navItems[1].querySelector('span').innerText = isEn ? 'Quick NAV Price Updater ⚡' : 'تعديل الأسعار السريع ⚡';
-    navItems[2].querySelector('span').innerText = isEn ? 'All Funds (CRUD)' : 'إدارة كافة الصناديق (CRUD)';
+    navItems[2].querySelector('span').innerText = isEn ? 'All Mutual Funds (CRUD)' : 'إدارة كافة الصناديق الاستثمارية';
     navItems[3].querySelector('span').innerText = isEn ? 'Sponsored & Recommended' : 'الصناديق الرعائية والموصى بها';
-    navItems[4].querySelector('span').innerText = isEn ? 'Portfolios & Orders' : 'محافظ العملاء وطلبات التداول';
+    navItems[4].querySelector('span').innerText = isEn ? 'Portfolios & Trading Orders' : 'محافظ العملاء وطلبات التداول';
     navItems[5].querySelector('span').innerText = isEn ? 'Users & Verification' : 'المستخدمين وتفعيل التوثيق';
     navItems[6].querySelector('span').innerText = isEn ? 'Admin Team Management 🔑' : 'إدارة فريق الأدمن والمساعدين 🔑';
     navItems[7].querySelector('span').innerText = isEn ? 'Analytics & Usage Insights' : 'تحليلات الاستخدام والربط';
-    navItems[8].querySelector('span').innerText = isEn ? 'Live System Audit Logs' : 'سجلات النظام Live Logs';
+    navItems[8].querySelector('span').innerText = isEn ? 'Live System Audit Logs' : 'سجلات النظام الفورية Live Logs';
   }
 
-  // Update Section Headers
+  // Update Section Headers (Pure English when isEn, Pure Arabic when !isEn)
   const devopsTitle = document.querySelector('#tab-devops .section-title h2');
-  if (devopsTitle) devopsTitle.innerHTML = isEn ? '<i class="fa-solid fa-network-wired"></i> Infrastructure Status & Supabase Connection' : '<i class="fa-solid fa-network-wired"></i> حالة البنية التحتية و Supabase Connection';
+  if (devopsTitle) devopsTitle.innerHTML = isEn ? '<i class="fa-solid fa-network-wired"></i> Infrastructure Status & Server Connection' : '<i class="fa-solid fa-network-wired"></i> حالة البنية التحتية واتصال الخوادم';
 
   const quickTitle = document.querySelector('#tab-quick-price .section-title h2');
-  if (quickTitle) quickTitle.innerHTML = isEn ? '<i class="fa-solid fa-bolt"></i> Quick Price Updater (Dynamic Return & EIMA Report)' : '<i class="fa-solid fa-bolt"></i> تعديل أسعار الوثائق المباشر (تحديث آلي لنسب الربح وثيقة بتقرير EIMA)';
+  if (quickTitle) quickTitle.innerHTML = isEn ? '<i class="fa-solid fa-bolt" style="color:#F59E0B"></i> Quick NAV Price Updater' : '<i class="fa-solid fa-bolt" style="color:#F59E0B"></i> لوحة تعديل أسعار الوثائق السريعة';
 
   const fundsTitle = document.querySelector('#tab-funds .section-title h2');
   if (fundsTitle) fundsTitle.innerHTML = isEn ? '<i class="fa-solid fa-box-archive"></i> Mutual Funds Management 💼' : '<i class="fa-solid fa-box-archive"></i> إدارة كافة الصناديق الاستثمارية 💼';
 
   const sponsoredTitle = document.querySelector('#tab-sponsored .section-title h2');
-  if (sponsoredTitle) sponsoredTitle.innerHTML = isEn ? '<i class="fa-solid fa-star"></i> Sponsored & Recommended Funds' : '<i class="fa-solid fa-star"></i> إدارة الصناديق الرعائية والموصى بها (Sponsored & Recommended)';
+  if (sponsoredTitle) sponsoredTitle.innerHTML = isEn ? '<i class="fa-solid fa-star"></i> Sponsored & Recommended Funds' : '<i class="fa-solid fa-star"></i> إدارة الصناديق الرعائية والموصى بها ⭐';
 
   const portfoliosTitle = document.querySelector('#tab-portfolios .section-title h2');
-  if (portfoliosTitle) portfoliosTitle.innerHTML = isEn ? '<i class="fa-solid fa-wallet"></i> Client Portfolios & Trading Orders' : '<i class="fa-solid fa-wallet"></i> إدارة محافظ العملاء وطلبات التداول (Portfolios & Orders)';
+  if (portfoliosTitle) portfoliosTitle.innerHTML = isEn ? '<i class="fa-solid fa-wallet"></i> Client Portfolios & Trading Orders' : '<i class="fa-solid fa-wallet"></i> إدارة محافظ العملاء وطلبات التداول 💼';
 
   const usersTitle = document.querySelector('#tab-users .section-title h2');
-  if (usersTitle) usersTitle.innerHTML = isEn ? '<i class="fa-solid fa-user-shield"></i> User Accounts & Verification Badges' : '<i class="fa-solid fa-user-shield"></i> إدارة حسابات المستخدمين وحالة التوثيق (Verified Badges)';
+  if (usersTitle) usersTitle.innerHTML = isEn ? '<i class="fa-solid fa-user-shield"></i> User Accounts & Verification Badges' : '<i class="fa-solid fa-user-shield"></i> إدارة حسابات المستثمرين وحالة التوثيق 👤';
 
   const adminsTitle = document.querySelector('#tab-admins .section-title h2');
-  if (adminsTitle) adminsTitle.innerHTML = isEn ? '<i class="fa-solid fa-users-gear"></i> Admin Team & Assistant Credentials' : '<i class="fa-solid fa-users-gear"></i> إدارة فريق الأدمن والمساعدين (Admin Credentials)';
+  if (adminsTitle) adminsTitle.innerHTML = isEn ? '<i class="fa-solid fa-user-plus"></i> Admin Team & Assistant Credentials' : '<i class="fa-solid fa-user-plus"></i> إدارة مديري النظام والمساعدين 🔑';
 
   const insightsTitle = document.querySelector('#tab-insights .section-title h2');
-  if (insightsTitle) insightsTitle.innerHTML = isEn ? '<i class="fa-solid fa-chart-pie"></i> Usage Analytics & Application Performance 📊' : '<i class="fa-solid fa-chart-pie"></i> تحليلات استخدام العملاء وأداء التطبيق 📊';
+  if (insightsTitle) insightsTitle.innerHTML = isEn ? '<i class="fa-solid fa-chart-pie"></i> Usage Analytics & Performance 📊' : '<i class="fa-solid fa-chart-pie"></i> تحليلات استخدام العملاء وأداء التطبيق 📊';
 
   // Update Section Descriptions
   const quickDesc = document.querySelector('#tab-quick-price .section-desc');
-  if (quickDesc) quickDesc.innerText = isEn ? 'Dedicated interface for instantly updating NAV prices (EGP) and YTD returns in one click without opening full CRUD forms.' : 'شاشة مخصصة لتغيير سعر الوثيقة (NAV EGP) والعائد السنوي فوراً بضغطة زر واحدة بدون الحاجة لفتح شاشات CRUD المعقدة.';
+  if (quickDesc) quickDesc.innerText = isEn ? 'Dedicated interface for instantly updating NAV prices and YTD returns in one click.' : 'شاشة مخصصة لتغيير سعر الوثيقة والعائد السنوي فوراً بضغطة زر واحدة بدون الحاجة لفتح شاشات CRUD المعقدة.';
 
   const sponsoredDesc = document.querySelector('#tab-sponsored .section-desc');
-  if (sponsoredDesc) sponsoredDesc.innerText = isEn ? 'Full control over Sponsored ⭐ and Recommended 💡 funds. Choose any fund to highlight or remove from active lists.' : 'تحكم كامل في الصناديق المحددة كـ (رعائية ⭐ / موصى بها 💡 / الأعلى أداءً 🏆). قم باختيار أي صندوق وإعطائه التميز الذي تريده أو إزالته بحرية.';
+  if (sponsoredDesc) sponsoredDesc.innerText = isEn ? 'Full control over Sponsored and Recommended funds. Add or remove any fund anytime.' : 'تحكم كامل في الصناديق المحددة كـ رعائية أو موصى بها مع إمكانية إضافة أي صندوق أو إزالته بحرية.';
 
   const adminsDesc = document.querySelector('#tab-admins .section-desc');
-  if (adminsDesc) adminsDesc.innerText = isEn ? 'As Super Admin, you can grant secondary admin credentials for assistant managers to update prices and portfolios.' : 'يمكنك بصفتك Super Admin إضافة حسابات أدمن فرعية للمساعدين لتحديث أسعار الصناديق والمحفظة.';
+  if (adminsDesc) adminsDesc.innerText = isEn ? 'Manage secondary assistant admin credentials to update prices and portfolios.' : 'يمكنك بفتحتك كـ Super Admin إضافة حسابات أدمن فرعية للمساعدين لتحديث أسعار الصناديق والمحفظة.';
 
   // Update Action Buttons
   const btnToggleAllSponsored = document.getElementById('btnToggleAllSponsored');
-  if (btnToggleAllSponsored) btnToggleAllSponsored.innerHTML = isEn ? '<i class="fa-solid fa-star"></i> Select/Deselect All Sponsored ⭐' : '<i class="fa-solid fa-star"></i> تحديد/إلغاء الكل رعائي ⭐';
+  if (btnToggleAllSponsored) btnToggleAllSponsored.innerHTML = isEn ? '<i class="fa-solid fa-star"></i> Select / Deselect All Sponsored ⭐' : '<i class="fa-solid fa-star"></i> تحديد/إلغاء الكل رعائي ⭐';
 
   const btnToggleAllRecommended = document.getElementById('btnToggleAllRecommended');
-  if (btnToggleAllRecommended) btnToggleAllRecommended.innerHTML = isEn ? '<i class="fa-solid fa-lightbulb"></i> Select/Deselect All Recommended 💡' : '<i class="fa-solid fa-lightbulb"></i> تحديد/إلغاء الكل موصى به 💡';
+  if (btnToggleAllRecommended) btnToggleAllRecommended.innerHTML = isEn ? '<i class="fa-solid fa-lightbulb"></i> Select / Deselect All Recommended 💡' : '<i class="fa-solid fa-lightbulb"></i> تحديد/إلغاء الكل موصى به 💡';
 
   const btnClearAllSponsoredFlags = document.getElementById('btnClearAllSponsoredFlags');
   if (btnClearAllSponsoredFlags) btnClearAllSponsoredFlags.innerHTML = isEn ? '<i class="fa-solid fa-broom"></i> Clear Sponsored List 🧹' : '<i class="fa-solid fa-broom"></i> تفريغ القائمة الرعائية بالكامل 🧹';
@@ -142,7 +142,7 @@ function applyLanguage(lang) {
   if (btnOpenAddFundModal) btnOpenAddFundModal.innerHTML = isEn ? '<i class="fa-solid fa-plus"></i> Add New Fund' : '<i class="fa-solid fa-plus"></i> إضافة صندوق جديد';
 
   const btnOpenAddSponsoredModal = document.getElementById('btnOpenAddSponsoredModal');
-  if (btnOpenAddSponsoredModal) btnOpenAddSponsoredModal.innerHTML = isEn ? '<i class="fa-solid fa-plus"></i> Add to Sponsored List' : '<i class="fa-solid fa-plus"></i> إضافة صندوق للقائمة الرعائية والموصى بها';
+  if (btnOpenAddSponsoredModal) btnOpenAddSponsoredModal.innerHTML = isEn ? '<i class="fa-solid fa-plus"></i> Add Fund to Sponsored List' : '<i class="fa-solid fa-plus"></i> إضافة صندوق للقائمة الرعائية والموصى بها';
 
   // Update Table Headers
   const quickPriceHead = document.querySelector('#quickPriceTableHead tr');
@@ -156,35 +156,35 @@ function applyLanguage(lang) {
   if (fundsHead) {
     fundsHead.innerHTML = isEn
       ? '<th>Fund Name</th><th>Official Manager</th><th>NAV Price</th><th>YTD Return</th><th>Category</th><th>Sponsored / Recommended</th><th>Actions (CRUD)</th>'
-      : '<th>اسم الصندوق</th><th>المدير الرسمي</th><th>سعر الوثيقة (NAV)</th><th>العائد السنوي YTD</th><th>الفئة</th><th>رعائي / موصى به</th><th>الإجراءات (CRUD)</th>';
+      : '<th>اسم الصندوق</th><th>المدير الرسمي</th><th>سعر الوثيقة (NAV)</th><th>العائد السنوي</th><th>الفئة</th><th>رعائي / موصى به</th><th>الإجراءات</th>';
   }
 
   const sponsoredHead = document.querySelector('#sponsoredTableHead tr');
   if (sponsoredHead) {
     sponsoredHead.innerHTML = isEn
-      ? '<th>Fund Name</th><th>Official Manager</th><th>NAV Price</th><th>Sponsored ⭐</th><th>Recommended 💡</th><th>Actions (CRUD)</th>'
-      : '<th>اسم الصندوق</th><th>المدير الرسمي</th><th>سعر الوثيقة (NAV)</th><th>صندوق رعائي (Sponsored ⭐)</th><th>موصى به / مخصص لك (Recommended 💡)</th><th>الإجراءات (CRUD)</th>';
+      ? '<th>Fund Name</th><th>Official Manager</th><th>NAV Price</th><th>Sponsored ⭐</th><th>Recommended 💡</th><th>Actions</th>'
+      : '<th>اسم الصندوق</th><th>المدير الرسمي</th><th>سعر الوثيقة (NAV)</th><th>صندوق رعائي ⭐</th><th>موصى به لك 💡</th><th>الإجراءات</th>';
   }
 
   const portfoliosHead = document.querySelector('#portfoliosTableHead tr');
   if (portfoliosHead) {
     portfoliosHead.innerHTML = isEn
-      ? '<th>Portfolio Name</th><th>User ID</th><th>Created Date</th><th>Updated Date</th><th>Actions</th>'
-      : '<th>اسم المحفظة</th><th>معرف المستخدم (User ID)</th><th>تاريخ الإنشـاء</th><th>تاريخ التحديث</th><th>التحكم</th>';
+      ? '<th>Portfolio Name</th><th>User ID</th><th>Created Date</th><th>Updated Date</th><th>Control</th>'
+      : '<th>اسم المحفظة</th><th>معرف المستخدم</th><th>تاريخ الإنشاء</th><th>تاريخ التحديث</th><th>التحكم</th>';
   }
 
   const usersHead = document.querySelector('#usersTableHead tr');
   if (usersHead) {
     usersHead.innerHTML = isEn
-      ? '<th>Investor Name</th><th>Phone / Identifier</th><th>Verification Status</th><th>Updated Date</th><th>Actions</th>'
-      : '<th>اسم المستثمر</th><th>رقم الهاتف / المعرف</th><th>حالة التوثيق (Verified Badge)</th><th>تاريخ التحديث</th><th>التحكم</th>';
+      ? '<th>Investor Name</th><th>Phone / Identifier</th><th>Verification Status</th><th>Updated Date</th><th>Control</th>'
+      : '<th>اسم المستثمر</th><th>رقم الهاتف / المعرف</th><th>حالة التوثيق</th><th>تاريخ التحديث</th><th>التحكم</th>';
   }
 
   const adminsHead = document.querySelector('#adminsTableHead tr');
   if (adminsHead) {
     adminsHead.innerHTML = isEn
-      ? '<th>Admin Name</th><th>Username</th><th>Role & Position</th><th>Permissions</th><th>Actions</th>'
-      : '<th>اسم الأدمن</th><th>اسم المستخدم (Username)</th><th>الرتبة والدور</th><th>الصلاحيات</th><th>التحكم</th>';
+      ? '<th>Admin Name</th><th>Username</th><th>Role & Position</th><th>Permissions</th><th>Control</th>'
+      : '<th>اسم الأدمن</th><th>اسم المستخدم</th><th>الرتبة والدور</th><th>الصلاحيات</th><th>التحكم</th>';
   }
 
   // Refresh tables with updated language labels
@@ -194,6 +194,7 @@ function applyLanguage(lang) {
   renderPortfoliosTable();
   renderUsersTable();
   renderAdminsTable();
+  updateDynamicCharts();
 }
 
 /**
