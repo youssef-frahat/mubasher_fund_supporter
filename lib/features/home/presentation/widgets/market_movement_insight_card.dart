@@ -67,11 +67,11 @@ class MarketMovementInsightCard extends StatelessWidget {
     // Format human-readable time elapsed
     String timeAgoText = '';
     if (daysSinceUpdate >= 2) {
-      timeAgoText = isAr ? 'منذ $daysSinceUpdate يوم' : '$daysSinceUpdate days ago';
+      timeAgoText = context.tr('insightStaticDays').replaceAll('{n}', daysSinceUpdate.toString());
     } else if (hoursSinceUpdate >= 1) {
-      timeAgoText = isAr ? 'منذ $hoursSinceUpdate ساعة' : '$hoursSinceUpdate hours ago';
+      timeAgoText = context.tr('insightStaticHours').replaceAll('{n}', hoursSinceUpdate.toString());
     } else {
-      timeAgoText = isAr ? 'اليوم' : 'today';
+      timeAgoText = context.tr('insightStaticRecent');
     }
 
     String titleText;
@@ -81,9 +81,7 @@ class MarketMovementInsightCard extends StatelessWidget {
 
     if (isStaticOrStale) {
       titleText = context.tr('marketMovementTitleStatic');
-      insightText = isAr
-          ? '⏸️ هدوء في التداولات واستقرار في الأسعار ($timeAgoText - لم تتغير الأسعار مؤخراً).'
-          : '⏸️ Quiet session & stable prices (Last update: $timeAgoText).';
+      insightText = context.tr('insightStaticText').replaceAll('{time}', timeAgoText);
       insightBgColor = Colors.amber.shade600.withValues(alpha: 0.12);
       insightBorderColor = Colors.amber.shade600.withValues(alpha: 0.4);
     } else {

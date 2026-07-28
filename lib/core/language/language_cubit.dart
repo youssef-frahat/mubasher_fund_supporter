@@ -214,6 +214,10 @@ class AppTranslation {
       'insightHighGain': '🔥 زخم شرائي قوي يسيطر على أغلب الصناديق اليوم.',
       'insightBalanced': '⚖️ توازن نسبي بين الصناديق الرابحة والمتراجعة.',
       'insightCaution': '⚠️ تحركات تصحيحية وحذر عام في معظم الصناديق.',
+      'insightStaticDays': 'منذ {n} يوم',
+      'insightStaticHours': 'منذ {n} ساعة',
+      'insightStaticRecent': 'اليوم',
+      'insightStaticText': '⏸️ هدوء في التداولات واستقرار في الأسعار ({time} - لم تتغير الأسعار مؤخراً).',
       // Portfolio strings
       'myPrivatePortfolios': '📁 منافذ المحافظ الاستثمارية الخاصّة بك',
       'switchPortfolio': 'تبديل',
@@ -456,6 +460,10 @@ class AppTranslation {
       'insightHighGain': '🔥 Strong bullish momentum dominating most funds today.',
       'insightBalanced': '⚖️ Relative balance between gaining and declining funds.',
       'insightCaution': '⚠️ Corrective moves & general caution across most funds.',
+      'insightStaticDays': '{n} days ago',
+      'insightStaticHours': '{n} hours ago',
+      'insightStaticRecent': 'today',
+      'insightStaticText': '⏸️ Quiet session & stable prices (Last update: {time}).',
       // Portfolio strings
       'myPrivatePortfolios': '📁 Your Private Investment Portfolios',
       'switchPortfolio': 'Switch',
