@@ -569,12 +569,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         if (context.mounted) {
-          AppSnackbar.showError(context, context.tr('launchError'));
+          AppSnackBar.showError(context, context.tr('launchError'));
         }
       }
     } catch (_) {
       if (context.mounted) {
-        AppSnackbar.showError(context, context.tr('launchError'));
+        AppSnackBar.showError(context, context.tr('launchError'));
       }
     }
   }
