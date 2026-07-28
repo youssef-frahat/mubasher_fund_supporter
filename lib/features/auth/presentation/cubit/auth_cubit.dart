@@ -98,6 +98,8 @@ class AuthCubit extends Cubit<AuthState> {
         emit(AuthError('هذا البريد الإلكتروني مسجل بالفعل! يرجى الانتقال لتسجيل الدخول أو استخدام بريد آخر ⚠️'));
       } else if (errStr.contains('invalid') || errStr.contains('validate email') || errStr.contains('unable to validate')) {
         emit(AuthError('يرجى استخدام بريد إلكتروني حقيقي ونشط (مثل Gmail أو Outlook أو Yahoo) ⚠️'));
+      } else if (errStr.contains('database error') || errStr.contains('unexpected_failure')) {
+        emit(AuthError('حدث تضارب في سيرفر سوبابيز عند حفظ المستخدم، يرجى المحاولة مجدداً ⚠️'));
       } else if (errStr.contains('authretryablefetchexception') || errStr.contains('socketexception') || errStr.contains('failed host lookup')) {
         emit(AuthError('يرجى التأكد من الاتصال بالإنترنت واستخدام بريد إلكتروني حقيقي ⚠️'));
       } else {
