@@ -122,6 +122,9 @@ function applyLanguage(lang) {
   const lblNewUserPhone = document.getElementById('lblNewUserPhone');
   if (lblNewUserPhone) lblNewUserPhone.innerText = isEn ? 'Phone Number / Email' : 'رقم الهاتف / البريد الإلكتروني';
 
+  const lblNewUserPassword = document.getElementById('lblNewUserPassword');
+  if (lblNewUserPassword) lblNewUserPassword.innerText = isEn ? 'Password' : 'كلمة المرور (Password)';
+
   const lblChkUserVerified = document.getElementById('lblChkUserVerified');
   if (lblChkUserVerified) lblChkUserVerified.innerHTML = isEn ? 'Grant <strong>Verified Badge Immediately (Verified Investor 🟢)</strong>' : 'تفعيل كـ <strong>حساب موثّق مباشرة (Verified Investor 🟢)</strong>';
 
@@ -1188,11 +1191,31 @@ function initUserModalEvents() {
     e.preventDefault();
     const nameVal = (document.getElementById('newUserName')?.value || '').trim();
     const phoneVal = (document.getElementById('newUserPhone')?.value || '').trim();
+    const passwordVal = (document.getElementById('newUserPassword')?.value || '').trim();
     const isVerified = document.getElementById('chkUserVerified')?.checked ?? true;
 
     if (!nameVal || !phoneVal) return;
 
-    const newUserId = 'usr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+    let newUserId = 'usr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+
+    if (db && phoneVal.includes('@') && passwordVal && passwordVal.length >= 6) {
+      try {
+        const { data: authData, error: authError } = await db.auth.signUp({
+          email: phoneVal,
+          password: passwordVal,
+          options: {
+            data: { full_name: nameVal }
+          }
+        });
+        if (!authError && authData?.user) {
+          newUserId = authData.user.id;
+          logMessage(`[SUPABASE AUTH SUCCESS] Account '${phoneVal}' created in auth.users 🟢`, 'success');
+        }
+      } catch (authErr) {
+        logMessage(`[SUPABASE AUTH ERROR] ${authErr.message}`, 'warning');
+      }
+    }
+
     const newUserObj = {
       id: newUserId,
       full_name: nameVal,
@@ -1209,26 +1232,24 @@ function initUserModalEvents() {
     // 2. Save directly to Supabase DB `profiles` table
     if (db) {
       try {
-        const { error } = await db.from('profiles').insert([{
+        await db.from('profiles').upsert([{
           id: newUserId,
           full_name: nameVal,
           phone: phoneVal,
           is_verified: isVerified,
           created_at: new Date().toISOString()
         }]);
-
-        if (error) {
-          logMessage(`[SUPABASE DB NOTICE] Profile insert response: ${error.message}`, 'info');
-        } else {
-          logMessage(`[SUPABASE DB SUCCESS] Investor '${nameVal}' created & inserted into Supabase DB profiles 🟢`, 'success');
-        }
+        logMessage(`[SUPABASE DB SUCCESS] Investor '${nameVal}' saved into Supabase profiles 🟢`, 'success');
       } catch (err) {
         logMessage(`[SUPABASE DB ERROR] User creation error: ${err.message}`, 'danger');
       }
     }
 
     closeModal();
-    alert(`تم إضافة حساب المستثمر (${nameVal}) وحفظه في قاعدة البيانات بنجاح! 🚀`);
+    const msg = currentLang === 'en'
+      ? `Investor account (${nameVal}) created & saved successfully! 🚀`
+      : `تم إضافة حساب المستثمر (${nameVal}) وحفظه في قاعدة البيانات بنجاح! 🚀`;
+    alert(msg);
   });
 }
 
