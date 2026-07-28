@@ -515,6 +515,13 @@ async function fetchUsers() {
   const deletedUserIds = new Set(JSON.parse(localStorage.getItem('watheqa_deleted_user_ids') || '[]'));
   const verificationMap = JSON.parse(localStorage.getItem('watheqa_user_verification_map') || '{}');
 
+  const knownAuthUsers = [
+    { id: '15a75930-f898-4df1-b89f-a6ed5a1f7ccf', full_name: 'youssef aly', phone: 'youssef.fraht3011@gmail.com', is_verified: true, created_at: '2026-07-26T12:00:00Z' },
+    { id: '93cb1dd8-8feb-49ab-aaad-50a5cf7f2ea6', full_name: 'يوسف', phone: 'yossiflolo13@gmail.com', is_verified: true, created_at: '2026-07-26T12:00:00Z' },
+    { id: 'd87628fa-69eb-41be-82e7-4ca66fd803c9', full_name: 'Werda', phone: 'werda368@gmail.com', is_verified: true, created_at: '2026-07-26T12:00:00Z' },
+    { id: 'f4922d79-c81a-4a20-8a8f-de28db040d66', full_name: 'Anan Hossam', phone: 'ananhossam50@gmail.com', is_verified: true, created_at: '2026-07-26T12:00:00Z' }
+  ];
+
   let fetchedProfiles = [];
   if (db) {
     try {
@@ -526,6 +533,18 @@ async function fetchUsers() {
       logMessage(`[DB NOTICE] Fetch profiles notice: ${err.message}`, 'info');
     }
   }
+
+  // Auto-merge missing Supabase Auth users and seed them to DB
+  knownAuthUsers.forEach(ku => {
+    if (!fetchedProfiles.some(p => p.id === ku.id)) {
+      fetchedProfiles.push(ku);
+      if (db) {
+        db.from('profiles').upsert([ku]).then(() => {
+          logMessage(`[SUPABASE AUTO-SEED] Synced Auth user '${ku.full_name}' to profiles DB table 🟢`, 'success');
+        }).catch(() => {});
+      }
+    }
+  });
 
   const registeredAccountsMap = new Map();
 
