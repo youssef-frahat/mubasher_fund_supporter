@@ -234,7 +234,7 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                isAr ? 'التفاصيل' : 'Details',
+                                context.tr('details'),
                                 style: TextStyle(color: textSecondary, fontSize: 9.sp),
                               ),
                               Icon(Icons.chevron_right, size: 12.r, color: textSecondary),
