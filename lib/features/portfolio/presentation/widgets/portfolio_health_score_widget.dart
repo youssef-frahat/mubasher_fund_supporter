@@ -96,11 +96,11 @@ class PortfolioHealthScoreWidget extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'مؤشر صحة وتنويع المحفظة',
+                        context.isArabic ? 'مؤشر صحة وتنويع المحفظة' : 'Portfolio Health & Diversification',
                         style: TextStyle(
                           color: textPrimary,
                           fontWeight: FontWeight.bold,
-                          fontSize: 14.sp,
+                          fontSize: 13.sp,
                         ),
                       ),
                       FaIcon(
@@ -112,7 +112,7 @@ class PortfolioHealthScoreWidget extends StatelessWidget {
                   ),
                   SizedBox(height: 4.h),
                   Text(
-                    healthSummary.ratingText,
+                    healthSummary.getRatingText(context.isArabic),
                     style: TextStyle(
                       color: healthSummary.scoreColor,
                       fontWeight: FontWeight.w600,
@@ -121,7 +121,9 @@ class PortfolioHealthScoreWidget extends StatelessWidget {
                   ),
                   SizedBox(height: 4.h),
                   Text(
-                    'اضغط هنا لاستعراض التحليل التفصيلي ورادار المخاطر 📊',
+                    context.isArabic
+                        ? 'اضغط هنا لاستعراض التحليل التفصيلي ورادار المخاطر 📊'
+                        : 'Tap to view detailed breakdown & risk radar 📊',
                     style: TextStyle(
                       color: textSecondary,
                       fontSize: 10.sp,

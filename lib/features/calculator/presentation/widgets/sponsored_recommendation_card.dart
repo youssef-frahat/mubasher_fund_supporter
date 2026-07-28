@@ -77,8 +77,8 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
                     Flexible(
                       child: Text(
                         isAr
-                            ? 'المستشار الذكي: ${widget.riskResult.riskCategory}'
-                            : 'Robo-Advisor: ${widget.riskResult.riskCategory}',
+                            ? 'المستشار الذكي: ${widget.riskResult.getRiskCategory(isAr)}'
+                            : 'Robo-Advisor: ${widget.riskResult.getRiskCategory(isAr)}',
                         style: TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.bold,
@@ -123,7 +123,7 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
           ),
           SizedBox(height: 4.h),
           Text(
-            widget.riskResult.description,
+            widget.riskResult.getDescription(isAr),
             style: TextStyle(
               color: textSecondary,
               fontSize: 11.sp,
@@ -191,7 +191,7 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
                         ),
                         SizedBox(height: 2.h),
                         Text(
-                          '${alloc.categoryNameAr} • ${alloc.badgeLabel}',
+                          '${alloc.getCategoryName(isAr)} • ${alloc.getBadgeLabel(isAr)}',
                           style: TextStyle(
                             color: textSecondary,
                             fontSize: 10.sp,

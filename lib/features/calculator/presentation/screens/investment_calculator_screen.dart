@@ -206,10 +206,8 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 18.sp,
-                                ),
-                                decoration: InputDecoration(
-                                  prefixIcon: Icon(Icons.edit_note, color: AppColors.primary, size: 20.r),
-                                  suffixText: 'ج.م',
+                                                            prefixIcon: Icon(Icons.edit_note, color: AppColors.primary, size: 20.r),
+                                  suffixText: isAr ? 'ج.م' : 'EGP',
                                   suffixStyle: TextStyle(
                                     color: textSecondary,
                                     fontWeight: FontWeight.bold,
@@ -261,7 +259,7 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
                 // Results Section
                 if (calculatedState != null) ...[
                   Text(
-                    '📊 نتائج وتوصية الاستثمار:',
+                    isAr ? '📊 نتائج وتوصية الاستثمار:' : '📊 Investment Results & Recommendation:',
                     style: TextStyle(
                       color: textPrimary,
                       fontSize: 16.sp,
@@ -279,7 +277,7 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
 
                   // ROI Comparison Breakdown Cards
                   Text(
-                    'مقارنة العائد المتوقع بنهاية المدة:',
+                    isAr ? 'مقارنة العائد المتوقع بنهاية المدة:' : 'Expected Return Comparison at Maturity:',
                     style: TextStyle(
                       color: textSecondary,
                       fontSize: 13.sp,
@@ -289,7 +287,9 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
 
                   _buildComparisonTile(
                     context: context,
-                    title: 'الصندوق الموصى به (${calculatedState.riskResult.expectedRoiPercentage}% سنويًا)',
+                    title: isAr
+                        ? 'الصندوق الموصى به (${calculatedState.riskResult.expectedRoiPercentage}% سنويًا)'
+                        : 'Recommended Fund (${calculatedState.riskResult.expectedRoiPercentage}% p.a.)',
                     amount: calculatedState.fundEstimatedReturn,
                     color: AppColors.primary,
                     icon: FontAwesomeIcons.chartLine,
@@ -298,7 +298,7 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
                   SizedBox(height: 8.h),
                   _buildComparisonTile(
                     context: context,
-                    title: 'شهادة بنكية تقليدية (23.5% سنويًا)',
+                    title: isAr ? 'شهادة بنكية تقليدية (23.5% سنويًا)' : 'Traditional Bank Certificate (23.5% p.a.)',
                     amount: calculatedState.bankCertificateReturn,
                     color: Colors.blueAccent,
                     icon: FontAwesomeIcons.landmark,
@@ -306,7 +306,7 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
                   SizedBox(height: 8.h),
                   _buildComparisonTile(
                     context: context,
-                    title: 'صناديق/أصول الذهب (28% سنويًا متوقع)',
+                    title: isAr ? 'صناديق/أصول الذهب (28% سنوياً متوقع)' : 'Gold Funds / Assets (28% p.a. est.)',
                     amount: calculatedState.goldEstimatedReturn,
                     color: AppColors.gold,
                     icon: FontAwesomeIcons.coins,
@@ -333,6 +333,7 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
     final textPrimary = AppColors.getTextPrimary(context);
     final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
+    final isAr = context.isArabic;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
@@ -366,7 +367,7 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
                 ),
                 SizedBox(height: 2.h),
                 Text(
-                  'المبلغ الإجمالي المتوقع',
+                  isAr ? 'المبلغ الإجمالي المتوقع' : 'Total Expected Amount',
                   style: TextStyle(
                     color: textSecondary,
                     fontSize: 10.sp,
@@ -376,7 +377,7 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
             ),
           ),
           Text(
-            '${amount.toStringAsFixed(0)} ج.م',
+            '${amount.toStringAsFixed(0)} ${isAr ? 'ج.م' : 'EGP'}',
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,

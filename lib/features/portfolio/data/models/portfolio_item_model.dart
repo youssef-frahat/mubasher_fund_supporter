@@ -17,7 +17,7 @@ extension FundCategoryExtension on FundCategory {
       case FundCategory.moneyMarket:
         return 'نقدية وسيولة يومية';
       case FundCategory.equity:
-        return 'أسهم ومحتفظ استثمارية';
+        return 'أسهم ومحفظة استثمارية';
       case FundCategory.islamic:
         return 'استثمار إسلامي (شريعة)';
       case FundCategory.gold:
@@ -32,6 +32,29 @@ extension FundCategoryExtension on FundCategory {
         return 'مشتقات وأدوات مركبة';
     }
   }
+
+  String get displayNameEn {
+    switch (this) {
+      case FundCategory.moneyMarket:
+        return 'Money Market & Daily Liquidity';
+      case FundCategory.equity:
+        return 'Equities & Stocks';
+      case FundCategory.islamic:
+        return 'Sharia Compliant (Islamic)';
+      case FundCategory.gold:
+        return 'Gold Funds';
+      case FundCategory.silver:
+        return 'Silver Funds';
+      case FundCategory.usd:
+        return 'USD & Foreign Currency';
+      case FundCategory.treasuryBills:
+        return 'Treasury Bills & Bonds';
+      case FundCategory.derivatives:
+        return 'Derivatives & Hybrid Instruments';
+    }
+  }
+
+  String getDisplayName(bool isAr) => isAr ? displayNameAr : displayNameEn;
 
   Color get color {
     switch (this) {
@@ -135,16 +158,21 @@ class PortfolioItem {
 class PortfolioHealthSummary {
   final int score; // 0 - 100
   final Color scoreColor; // Red (<50), Yellow (50-85), Green (>85)
-  final String ratingText; // "محفظة غير متوازنة", "توزيع متوسط", "توزيع استثماري مثالي"
+  final String ratingTextAr;
+  final String ratingTextEn;
   final Map<FundCategory, double> categoryPercentages;
   final double totalPortfolioValue;
   final double totalProfitLoss;
   final double totalProfitLossPercentage;
 
+  String getRatingText(bool isAr) => isAr ? ratingTextAr : ratingTextEn;
+  String get ratingText => ratingTextAr;
+
   PortfolioHealthSummary({
     required this.score,
     required this.scoreColor,
-    required this.ratingText,
+    required this.ratingTextAr,
+    required this.ratingTextEn,
     required this.categoryPercentages,
     required this.totalPortfolioValue,
     required this.totalProfitLoss,

@@ -218,6 +218,7 @@ class _FundTransactionHistorySheetState extends State<FundTransactionHistoryShee
     final textPrimary = AppColors.getTextPrimary(context);
     final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
+    final isAr = context.isArabic;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.8,
@@ -295,7 +296,7 @@ class _FundTransactionHistorySheetState extends State<FundTransactionHistoryShee
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      '${widget.item.units.toStringAsFixed(1)} وثيقة',
+                      '${widget.item.units.toStringAsFixed(1)} ${context.tr('units')}',
                       style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 13.sp),
                     ),
                   ],
@@ -309,7 +310,7 @@ class _FundTransactionHistorySheetState extends State<FundTransactionHistoryShee
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      '${widget.item.currentValue.toStringAsFixed(0)} ج.م',
+                      '${widget.item.currentValue.toStringAsFixed(0)} ${isAr ? 'ج.م' : 'EGP'}',
                       style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13.sp),
                     ),
                   ],
@@ -320,7 +321,7 @@ class _FundTransactionHistorySheetState extends State<FundTransactionHistoryShee
           SizedBox(height: 16.h),
 
           Text(
-            'سجل الأوامر والعمليات 📋',
+            isAr ? '📋 سجل الأوامر والعمليات' : '📋 Order History & Transactions',
             style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 13.sp),
           ),
           SizedBox(height: 10.h),
@@ -379,7 +380,7 @@ class _FundTransactionHistorySheetState extends State<FundTransactionHistoryShee
                                       ),
                                       SizedBox(height: 2.h),
                                       Text(
-                                        'تاريخ الأمر: $dateStr',
+                                        '${isAr ? 'تاريخ الأمر:' : 'Order Date:'} $dateStr',
                                         style: TextStyle(color: textSecondary, fontSize: 10.sp),
                                       ),
                                     ],
@@ -389,7 +390,7 @@ class _FundTransactionHistorySheetState extends State<FundTransactionHistoryShee
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      '${isBuy ? '+' : '-'}${units.toStringAsFixed(1)} وثيقة',
+                                      '${isBuy ? '+' : '-'}${units.toStringAsFixed(1)} ${context.tr('units')}',
                                       style: TextStyle(
                                         color: textPrimary,
                                         fontWeight: FontWeight.bold,
@@ -398,7 +399,7 @@ class _FundTransactionHistorySheetState extends State<FundTransactionHistoryShee
                                     ),
                                     SizedBox(height: 2.h),
                                     Text(
-                                      'بسعر: ${price.toStringAsFixed(1)} ج.م',
+                                      '${isAr ? 'بسعر:' : 'Price:'} ${price.toStringAsFixed(1)} ${isAr ? 'ج.م' : 'EGP'}',
                                       style: TextStyle(color: textSecondary, fontSize: 10.sp),
                                     ),
                                   ],
@@ -424,7 +425,7 @@ class _FundTransactionHistorySheetState extends State<FundTransactionHistoryShee
                   ),
                   icon: const Icon(Icons.add_shopping_cart, color: Colors.white, size: 16),
                   label: Text(
-                    'أمر شراء 🟢',
+                    isAr ? 'أمر شراء 🟢' : 'Buy Order 🛒',
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.sp),
                   ),
                 ),
@@ -440,7 +441,7 @@ class _FundTransactionHistorySheetState extends State<FundTransactionHistoryShee
                   ),
                   icon: const Icon(Icons.sell_outlined, color: AppColors.error, size: 16),
                   label: Text(
-                    'أمر بيع 🔴',
+                    isAr ? 'أمر بيع 🔴' : 'Sell Order 🔴',
                     style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold, fontSize: 12.sp),
                   ),
                 ),

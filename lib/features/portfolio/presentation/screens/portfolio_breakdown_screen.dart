@@ -17,6 +17,8 @@ class PortfolioBreakdownScreen extends StatelessWidget {
     final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
 
+    final isAr = context.isArabic;
+
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
@@ -24,7 +26,7 @@ class PortfolioBreakdownScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'تحليل صحة وتنويع المحفظة',
+          isAr ? 'تحليل صحة وتنويع المحفظة' : 'Portfolio Health & Diversification',
           style: TextStyle(
             color: textPrimary,
             fontWeight: FontWeight.bold,
@@ -65,7 +67,7 @@ class PortfolioBreakdownScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          healthSummary.ratingText,
+                          healthSummary.getRatingText(isAr),
                           style: TextStyle(
                             color: healthSummary.scoreColor,
                             fontSize: 15.sp,
@@ -74,7 +76,7 @@ class PortfolioBreakdownScreen extends StatelessWidget {
                         ),
                         SizedBox(height: 4.h),
                         Text(
-                          'إجمالي قيمة المحفظة: ${healthSummary.totalPortfolioValue.toStringAsFixed(0)} ج.م',
+                          '${isAr ? 'إجمالي قيمة المحفظة' : 'Total Portfolio Value'}: ${healthSummary.totalPortfolioValue.toStringAsFixed(0)} ${isAr ? 'ج.م' : 'EGP'}',
                           style: TextStyle(
                             color: textSecondary,
                             fontSize: 12.sp,
@@ -90,7 +92,7 @@ class PortfolioBreakdownScreen extends StatelessWidget {
 
             // Donut Chart Asset Allocation
             Text(
-              '📊 توزيع الأصول المالي (Asset Allocation)',
+              isAr ? '📊 توزيع الأصول المالي (Asset Allocation)' : '📊 Asset Allocation Breakdown',
               style: TextStyle(
                 color: textPrimary,
                 fontSize: 15.sp,
@@ -110,7 +112,7 @@ class PortfolioBreakdownScreen extends StatelessWidget {
               child: healthSummary.categoryPercentages.isEmpty
                   ? Center(
                       child: Text(
-                        'لا توجد بيانات للعرض',
+                        isAr ? 'لا توجد بيانات للعرض' : 'No data available',
                         style: TextStyle(color: textSecondary, fontSize: 13.sp),
                       ),
                     )
@@ -140,7 +142,7 @@ class PortfolioBreakdownScreen extends StatelessWidget {
 
             // Detailed Breakdown List per Category
             Text(
-              '📑 تفاصيل النسب حسب الفئة:',
+              isAr ? '📑 تفاصيل النسب حسب الفئة:' : '📑 Percentage Breakdown by Category:',
               style: TextStyle(
                 color: textPrimary,
                 fontSize: 15.sp,
@@ -166,7 +168,7 @@ class PortfolioBreakdownScreen extends StatelessWidget {
                     SizedBox(width: 12.w),
                     Expanded(
                       child: Text(
-                        category.displayNameAr,
+                        category.getDisplayName(isAr),
                         style: TextStyle(
                           color: textPrimary,
                           fontSize: 13.sp,

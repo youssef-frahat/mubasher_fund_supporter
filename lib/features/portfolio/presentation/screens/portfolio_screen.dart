@@ -73,6 +73,7 @@ class _PortfolioContentView extends StatelessWidget {
             final items = state.items;
             final activePortfolio = state.activePortfolio;
             final allPortfolios = state.allPortfolios;
+            final isAr = context.isArabic;
 
             return SingleChildScrollView(
               padding: EdgeInsets.all(16.r),
@@ -152,7 +153,9 @@ class _PortfolioContentView extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          '💼 وثائق ${activePortfolio.name} (${items.length})',
+                          isAr
+                              ? '💼 وثائق ${activePortfolio.name} (${items.length})'
+                              : '💼 Holdings: ${activePortfolio.name} (${items.length})',
                           style: TextStyle(
                             color: textPrimary,
                             fontSize: 14.sp,
@@ -193,7 +196,7 @@ class _PortfolioContentView extends StatelessWidget {
                           FaIcon(FontAwesomeIcons.wallet, color: textSecondary, size: 36.r),
                           SizedBox(height: 10.h),
                           Text(
-                            'هذه المحفظة خالية، يمكنك إضافة وثائق إليها الآن.',
+                            context.tr('portfolioEmpty'),
                             style: TextStyle(color: textSecondary, fontSize: 12.sp),
                           ),
                         ],
@@ -243,7 +246,7 @@ class _PortfolioContentView extends StatelessWidget {
                                       ),
                                       SizedBox(height: 2.h),
                                       Text(
-                                        '${item.units.toStringAsFixed(0)} وثائق | بسعر ${item.purchasePrice.toStringAsFixed(1)} ج.م',
+                                        '${item.units.toStringAsFixed(0)} ${context.tr('units')} | ${isAr ? 'بسعر' : 'at'} ${item.purchasePrice.toStringAsFixed(1)} ${isAr ? 'ج.م' : 'EGP'}',
                                         style: TextStyle(
                                           color: textSecondary,
                                           fontSize: 10.sp,
@@ -256,7 +259,7 @@ class _PortfolioContentView extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      '${item.currentValue.toStringAsFixed(0)} ج.م',
+                                      '${item.currentValue.toStringAsFixed(0)} ${isAr ? 'ج.م' : 'EGP'}',
                                       style: TextStyle(
                                         color: textPrimary,
                                         fontWeight: FontWeight.bold,
@@ -332,6 +335,7 @@ class _PortfolioContentView extends StatelessWidget {
     final textPrimary = AppColors.getTextPrimary(context);
     final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
+    final isAr = context.isArabic;
 
     return Container(
       width: double.infinity,
@@ -353,7 +357,7 @@ class _PortfolioContentView extends StatelessWidget {
           ),
           SizedBox(height: 4.h),
           Text(
-            '${health.totalPortfolioValue.toStringAsFixed(0)} ج.م',
+            '${health.totalPortfolioValue.toStringAsFixed(0)} ${isAr ? 'ج.م' : 'EGP'}',
             style: TextStyle(
               color: textPrimary,
               fontWeight: FontWeight.bold,
@@ -378,7 +382,7 @@ class _PortfolioContentView extends StatelessWidget {
                     ),
                     SizedBox(width: 6.w),
                     Text(
-                      '${isProfit ? '+' : ''}${health.totalProfitLoss.toStringAsFixed(0)} ج.م (${health.totalProfitLossPercentage.toStringAsFixed(1)}%)',
+                      '${isProfit ? '+' : ''}${health.totalProfitLoss.toStringAsFixed(0)} ${isAr ? 'ج.م' : 'EGP'} (${health.totalProfitLossPercentage.toStringAsFixed(1)}%)',
                       style: TextStyle(
                         color: isProfit ? AppColors.success : AppColors.error,
                         fontWeight: FontWeight.bold,

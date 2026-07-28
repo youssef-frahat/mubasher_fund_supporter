@@ -274,7 +274,8 @@ class PortfolioRepository {
       return PortfolioHealthSummary(
         score: 0,
         scoreColor: const Color(0xFFEF4444),
-        ratingText: 'لا توجد أصول في هذه المحفظة حالياً',
+        ratingTextAr: 'لا توجد أصول في هذه المحفظة حالياً',
+        ratingTextEn: 'No assets in this portfolio currently',
         categoryPercentages: {},
         totalPortfolioValue: 0,
         totalProfitLoss: 0,
@@ -316,23 +317,28 @@ class PortfolioRepository {
     score = score.clamp(0, 100);
 
     Color scoreColor;
-    String ratingText;
+    String ratingTextAr;
+    String ratingTextEn;
 
     if (score < 50) {
       scoreColor = const Color(0xFFEF4444);
-      ratingText = 'محفظة غير متوازنة (مخاطرة عالية)';
+      ratingTextAr = 'محفظة غير متوازنة (مخاطرة عالية)';
+      ratingTextEn = 'Unbalanced Portfolio (High Risk)';
     } else if (score <= 85) {
       scoreColor = const Color(0xFFF59E0B);
-      ratingText = 'توزيع متوسط (توازن مقبول)';
+      ratingTextAr = 'توزيع متوسط (توازن مقبول)';
+      ratingTextEn = 'Moderate Distribution (Acceptable Balance)';
     } else {
       scoreColor = const Color(0xFF10B981);
-      ratingText = 'توزيع استثماري مثالي وسليم';
+      ratingTextAr = 'توزيع استثماري مثالي وسليم';
+      ratingTextEn = 'Optimal Balanced Portfolio';
     }
 
     return PortfolioHealthSummary(
       score: score,
       scoreColor: scoreColor,
-      ratingText: ratingText,
+      ratingTextAr: ratingTextAr,
+      ratingTextEn: ratingTextEn,
       categoryPercentages: categoryPercentages,
       totalPortfolioValue: totalValue,
       totalProfitLoss: totalProfitLoss,
