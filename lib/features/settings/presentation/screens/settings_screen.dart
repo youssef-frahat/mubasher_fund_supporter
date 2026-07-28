@@ -4,11 +4,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/services/biometric_service.dart';
 import '../../../../core/theme/theme_cubit.dart';
 import '../../../../core/language/language_cubit.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 import '../../../../core/routing/routes.dart' show Routes;
@@ -560,11 +562,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _launchContactUrl(BuildContext context, String urlString) async {
+    try {
+      final Uri uri = Uri.parse(urlString);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          AppSnackbar.showError(context, context.tr('launchError'));
+        }
+      }
+    } catch (_) {
+      if (context.mounted) {
+        AppSnackbar.showError(context, context.tr('launchError'));
+      }
+    }
+  }
+
   void _showLiveSupportSheet(BuildContext context) {
     final surface = AppColors.getSurface(context);
     final textPrimary = AppColors.getTextPrimary(context);
     final textSecondary = AppColors.getTextSecondary(context);
-    final isAr = context.watch<LanguageCubit>().isArabic;
+    final border = AppColors.getBorder(context);
+    final isAr = context.isArabic;
 
     showModalBottomSheet(
       context: context,
@@ -588,37 +608,115 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               SizedBox(height: 16.h),
               Text(
-                isAr ? 'الدعم الفني المباشر 💬' : 'Live Technical Support 💬',
+                context.tr('liveSupportTitle'),
                 style: TextStyle(
                   color: textPrimary,
                   fontWeight: FontWeight.bold,
                   fontSize: 16.sp,
                 ),
               ),
-              SizedBox(height: 8.h),
+              SizedBox(height: 6.h),
               Text(
-                isAr ? 'نحن هنا لمساعدتك في أي استفسار حول منصة وثيقة' : 'We are here to assist you with any questions about Watheqa',
+                context.tr('liveSupportSub'),
                 style: TextStyle(color: textSecondary, fontSize: 11.sp),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 20.h),
+
+              // 1. Direct Phone Call Option (1111)
               ListTile(
-                leading: const FaIcon(FontAwesomeIcons.envelope, color: AppColors.primary),
-                title: Text(isAr ? 'البريد الإلكتروني للدعم' : 'Support Email', style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold)),
-                subtitle: const Text('support@watheqa.eg', style: TextStyle(color: AppColors.primary)),
+                leading: Container(
+                  padding: EdgeInsets.all(8.r),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: const FaIcon(FontAwesomeIcons.phone, color: Color(0xFF10B981), size: 18),
+                ),
+                title: Text(
+                  context.tr('callSupportBtn'),
+                  style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 13.sp),
+                ),
+                subtitle: Text(
+                  context.tr('callSupportSub'),
+                  style: TextStyle(color: textSecondary, fontSize: 11.sp),
+                ),
                 onTap: () {
                   Navigator.pop(ctx);
-                  context.push(Routes.aboutUs);
+                  _launchContactUrl(context, 'tel:1111');
                 },
               ),
-              Divider(color: textSecondary.withValues(alpha: 0.2)),
+              Divider(color: border),
+
+              // 2. Email Support Option (Watheqa@support.com)
               ListTile(
-                leading: const FaIcon(FontAwesomeIcons.briefcase, color: AppColors.gold),
-                title: Text(isAr ? 'بورتفوليو مبرمج التطبيق 👨‍💻' : 'Developer Portfolio 👨‍💻', style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold)),
+                leading: Container(
+                  padding: EdgeInsets.all(8.r),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: const FaIcon(FontAwesomeIcons.envelope, color: AppColors.primary, size: 18),
+                ),
+                title: Text(
+                  context.tr('emailSupportBtn'),
+                  style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 13.sp),
+                ),
+                subtitle: Text(
+                  context.tr('emailSupportSub'),
+                  style: TextStyle(color: textSecondary, fontSize: 11.sp),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  final subject = Uri.encodeComponent(isAr ? 'طلب دعم واستفسار - منصة وثيقة' : 'Support Request - Watheqa Platform');
+                  _launchContactUrl(context, 'mailto:Watheqa@support.com?subject=$subject');
+                },
+              ),
+              Divider(color: border),
+
+              // 3. WhatsApp Fast Chat Option
+              ListTile(
+                leading: Container(
+                  padding: EdgeInsets.all(8.r),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF25D366).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: const FaIcon(FontAwesomeIcons.whatsapp, color: Color(0xFF25D366), size: 18),
+                ),
+                title: Text(
+                  context.tr('whatsappSupportBtn'),
+                  style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 13.sp),
+                ),
+                subtitle: Text(
+                  context.tr('whatsappSupportSub'),
+                  style: TextStyle(color: textSecondary, fontSize: 11.sp),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _launchContactUrl(context, 'https://wa.me/201111111111');
+                },
+              ),
+              Divider(color: border),
+
+              // 4. Developer Portfolio
+              ListTile(
+                leading: Container(
+                  padding: EdgeInsets.all(8.r),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: const FaIcon(FontAwesomeIcons.laptopCode, color: AppColors.gold, size: 18),
+                ),
+                title: Text(
+                  isAr ? 'بورتفوليو مبرمج التطبيق 👨‍💻' : 'Developer Portfolio 👨‍💻',
+                  style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 13.sp),
+                ),
                 subtitle: const Text('https://v0-youssef-farahat.vercel.app/', style: TextStyle(color: AppColors.gold)),
                 onTap: () {
                   Navigator.pop(ctx);
-                  context.push(Routes.aboutUs);
+                  _launchContactUrl(context, 'https://v0-youssef-farahat.vercel.app/');
                 },
               ),
               SizedBox(height: 10.h),
