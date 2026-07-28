@@ -90,7 +90,7 @@ function applyLanguage(lang) {
     navItems[8].querySelector('span').innerText = isEn ? 'Live System Audit Logs' : 'سجلات النظام الفورية Live Logs';
   }
 
-  // Update Section Headers (Pure English when isEn, Pure Arabic when !isEn)
+  // Update Section Headers
   const devopsTitle = document.querySelector('#tab-devops .section-title h2');
   if (devopsTitle) devopsTitle.innerHTML = isEn ? '<i class="fa-solid fa-network-wired"></i> Infrastructure Status & Server Connection' : '<i class="fa-solid fa-network-wired"></i> حالة البنية التحتية واتصال الخوادم';
 
@@ -124,6 +124,31 @@ function applyLanguage(lang) {
 
   const adminsDesc = document.querySelector('#tab-admins .section-desc');
   if (adminsDesc) adminsDesc.innerText = isEn ? 'Manage secondary assistant admin credentials to update prices and portfolios.' : 'يمكنك بفتحتك كـ Super Admin إضافة حسابات أدمن فرعية للمساعدين لتحديث أسعار الصناديق والمحفظة.';
+
+  // Update Category Filter Select Options
+  const fundCategoryFilter = document.getElementById('fundCategoryFilter');
+  if (fundCategoryFilter && fundCategoryFilter.options.length >= 6) {
+    fundCategoryFilter.options[0].text = isEn ? 'All Categories' : 'جميع الفئات';
+    fundCategoryFilter.options[1].text = isEn ? 'Equity Funds' : 'أسهم (Equity)';
+    fundCategoryFilter.options[2].text = isEn ? 'Money Market' : 'أدوات نقدية (Money Market)';
+    fundCategoryFilter.options[3].text = isEn ? 'Treasury Bills' : 'أذون وسندات خزينة (Treasury Bills)';
+    fundCategoryFilter.options[4].text = isEn ? 'Gold & Silver' : 'ذهب (Gold)';
+    fundCategoryFilter.options[5].text = isEn ? 'Islamic Funds' : 'إسلامية (Islamic)';
+  }
+
+  // Update DevOps Interval Select Options
+  const devopsPingIntervalSelect = document.getElementById('devopsPingIntervalSelect');
+  if (devopsPingIntervalSelect && devopsPingIntervalSelect.options.length >= 3) {
+    devopsPingIntervalSelect.options[0].text = isEn ? '⏱️ Ping Every 5 Mins (Recommended)' : '⏱️ قياس كل 5 دقائق (5 Mins - Recommended)';
+    devopsPingIntervalSelect.options[1].text = isEn ? '⏱️ Ping Every 1 Min' : '⏱️ قياس كل 1 دقيقة (1 Min)';
+    devopsPingIntervalSelect.options[2].text = isEn ? '⏱️ Ping Every 3 Secs (Realtime)' : '⏱️ قياس كل 3 ثواني (3 Secs)';
+  }
+
+  // Update DevOps Chart Action Buttons
+  const btnMaximizeChartModal = document.getElementById('btnMaximizeChartModal');
+  if (btnMaximizeChartModal) {
+    btnMaximizeChartModal.innerHTML = isEn ? '<i class="fa-solid fa-expand"></i> Maximize & Archive' : '<i class="fa-solid fa-expand"></i> تكبير والأرشيف';
+  }
 
   // Update Action Buttons
   const btnToggleAllSponsored = document.getElementById('btnToggleAllSponsored');
@@ -593,6 +618,8 @@ function updateMetricsAndInsights() {
 function updateDynamicCharts() {
   if (!liveFunds || liveFunds.length === 0) return;
 
+  const isEn = currentLang === 'en';
+
   // 1. Dynamic Pie Chart: Group funds by category from DB
   const categories = {};
   liveFunds.forEach(f => {
@@ -602,41 +629,50 @@ function updateDynamicCharts() {
 
   const catLabels = Object.keys(categories).map(c => {
     switch (c) {
-      case 'MoneyMarket': return 'أدوات نقدية';
-      case 'TreasuryBills': return 'أذون وسندات خزينة';
-      case 'Equity': return 'أسهم';
-      case 'Gold': return 'ذهب وفضة';
-      case 'Islamic': return 'إسلامية';
+      case 'MoneyMarket': return isEn ? 'Money Market' : 'أدوات نقدية';
+      case 'TreasuryBills': return isEn ? 'Treasury Bills' : 'أذون وسندات خزينة';
+      case 'Equity': return isEn ? 'Equity Funds' : 'أسهم (Equity)';
+      case 'Gold': return isEn ? 'Gold & Silver' : 'ذهب وفضة';
+      case 'Islamic': return isEn ? 'Islamic Funds' : 'إسلامية';
+      case 'Balanced': return isEn ? 'Balanced Funds' : 'صناديق متوازنة';
+      case 'FixedIncome': return isEn ? 'Fixed Income' : 'دخل ثابت';
       default: return c;
     }
   });
   const catCounts = Object.values(categories);
 
-  const diversePalette = [
+  // 15 Vibrant & Unique Non-repeating Palette Colors
+  const diverse15Palette = [
     '#00E676', // Bright Neon Lime Green
-    '#2563EB', // Deep Royal Blue
-    '#FFB300', // Bright Amber Yellow
-    '#9333EA', // Vivid Purple
-    '#FF1744', // Electric Hot Pink/Red
-    '#00E5FF', // Cyan / Aqua
-    '#FF9100', // Pure Bright Orange
-    '#7C4DFF', // Deep Indigo Violet
-    '#10B981', // Emerald Mint Green
+    '#3B82F6', // Vibrant Royal Blue
+    '#F59E0B', // Golden Amber
+    '#EC4899', // Bright Hot Pink
+    '#06B6D4', // Cyan Aqua
+    '#A855F7', // Vivid Purple
+    '#FF7A00', // Bright Orange
+    '#10B981', // Mint Emerald
     '#F43F5E', // Rose Coral
-    '#84CC16', // Chartreuse
-    '#38BDF8'  // Sky Blue
+    '#84CC16', // Chartreuse Lime
+    '#38BDF8', // Sky Blue
+    '#E11D48', // Bright Crimson
+    '#7C4DFF', // Indigo Violet
+    '#FFD600', // Pure Yellow
+    '#00E5FF'  // Electric Cyan
   ];
 
   if (categoryPieChartInstance) {
     categoryPieChartInstance.data.labels = catLabels;
     categoryPieChartInstance.data.datasets[0].data = catCounts;
-    categoryPieChartInstance.data.datasets[0].backgroundColor = diversePalette.slice(0, catCounts.length);
+    categoryPieChartInstance.data.datasets[0].backgroundColor = diverse15Palette.slice(0, catCounts.length);
     categoryPieChartInstance.update();
   }
 
   // 2. Dynamic Bar Chart: Top 5 performing funds automatically by YTD return
   const sortedFunds = [...liveFunds].sort((a, b) => (parseFloat(b.ytd_return) || 0) - (parseFloat(a.ytd_return) || 0)).slice(0, 5);
-  const topNames = sortedFunds.map(f => (f.name_ar || f.name).substring(0, 18) + '...');
+  const topNames = sortedFunds.map(f => {
+    const name = isEn ? (f.name_en || f.name) : (f.name_ar || f.name);
+    return name.length > 18 ? name.substring(0, 18) + '...' : name;
+  });
   const topYtds = sortedFunds.map(f => parseFloat(f.ytd_return) || 0);
 
   if (topBarChartInstance) {
@@ -1327,6 +1363,8 @@ function startDevopsPingTimer(intervalMs) {
 
     const badge = document.getElementById('liveDevopsLatencyBadge');
     if (badge) badge.innerText = `Live: ${latencyMs} ms 🟢`;
+
+    logMessage(`[DEVOPS PING 5-MIN] Health Ping: ${latencyMs} ms | Supabase DB PostgreSQL 15 Status: Active 🟢`, 'info');
 
     // Save to historical archive
     window.devopsLatencyArchive.unshift({
