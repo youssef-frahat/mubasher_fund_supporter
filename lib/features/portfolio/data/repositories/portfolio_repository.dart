@@ -8,12 +8,28 @@ import '../models/portfolio_item_model.dart';
 import '../models/portfolio_model.dart';
 
 class PortfolioRepository {
-  static const String _portfoliosKey = 'multi_portfolios_v2';
-  static const String _activeIdKey = 'active_portfolio_id_v2';
+  String _getUserPortfoliosKey() {
+    final client = SupabaseService.client;
+    final user = client?.auth.currentUser;
+    if (user != null && user.id.isNotEmpty) {
+      return 'multi_portfolios_${user.id}';
+    }
+    return 'multi_portfolios_guest_v3';
+  }
+
+  String _getUserActiveIdKey() {
+    final client = SupabaseService.client;
+    final user = client?.auth.currentUser;
+    if (user != null && user.id.isNotEmpty) {
+      return 'active_portfolio_id_${user.id}';
+    }
+    return 'active_portfolio_id_guest_v3';
+  }
 
   Future<List<PortfolioModel>> getAllPortfolios() async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString(_portfoliosKey);
+    final key = _getUserPortfoliosKey();
+    final jsonString = prefs.getString(key);
 
     List<PortfolioModel> portfolios = [];
 
@@ -25,6 +41,7 @@ class PortfolioRepository {
         portfolios = _getDefaultPortfolios();
       }
     } else {
+      // Brand new user gets a clean empty portfolio
       portfolios = _getDefaultPortfolios();
       await savePortfolios(portfolios);
     }
@@ -78,7 +95,8 @@ class PortfolioRepository {
 
   Future<String> getActivePortfolioId() async {
     final prefs = await SharedPreferences.getInstance();
-    final id = prefs.getString(_activeIdKey);
+    final activeKey = _getUserActiveIdKey();
+    final id = prefs.getString(activeKey);
     final all = await getAllPortfolios();
     if (id != null && all.any((p) => p.id == id)) {
       return id;
@@ -90,13 +108,15 @@ class PortfolioRepository {
 
   Future<void> setActivePortfolioId(String id) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_activeIdKey, id);
+    final activeKey = _getUserActiveIdKey();
+    await prefs.setString(activeKey, id);
   }
 
   Future<void> savePortfolios(List<PortfolioModel> portfolios) async {
     final prefs = await SharedPreferences.getInstance();
+    final key = _getUserPortfoliosKey();
     final jsonList = portfolios.map((e) => e.toJson()).toList();
-    await prefs.setString(_portfoliosKey, jsonEncode(jsonList));
+    await prefs.setString(key, jsonEncode(jsonList));
 
     final client = SupabaseService.client;
     final user = client?.auth.currentUser;
