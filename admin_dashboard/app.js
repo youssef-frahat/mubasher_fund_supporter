@@ -522,7 +522,7 @@ async function fetchUsers() {
   if (db) {
     try {
       const { data, error } = await db.from('profiles').select('*').order('created_at', { ascending: false });
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         fetchedProfiles = data;
       }
     } catch (err) {
@@ -530,8 +530,8 @@ async function fetchUsers() {
     }
   }
 
-  // Backup fallback for initial auth users if profiles table is syncing
   const defaultAuthFallback = [
+    { id: 'usr_ahmed_elsayed', full_name: 'أحمد السيد', phone: 'ahmedelsayed@gmail.com', is_verified: true, created_at: '2026-07-28T12:00:00Z' },
     { id: '15a75930-f898-4df1-b89f-a6ed5a1f7ccf', full_name: 'youssef aly', phone: 'youssef.fraht3011@gmail.com', is_verified: true, created_at: '2026-07-26T12:00:00Z' },
     { id: '93cb1dd8-8feb-49ab-aaad-50a5cf7f2ea6', full_name: 'يوسف', phone: 'yossiflolo13@gmail.com', is_verified: true, created_at: '2026-07-26T12:00:00Z' },
     { id: 'd87628fa-69eb-41be-82e7-4ca66fd803c9', full_name: 'Werda', phone: 'werda368@gmail.com', is_verified: true, created_at: '2026-07-26T12:00:00Z' },
@@ -541,9 +541,6 @@ async function fetchUsers() {
   defaultAuthFallback.forEach(ku => {
     if (!fetchedProfiles.some(p => p.id === ku.id)) {
       fetchedProfiles.push(ku);
-      if (db) {
-        db.from('profiles').upsert([ku]).catch(() => {});
-      }
     }
   });
 
@@ -551,7 +548,7 @@ async function fetchUsers() {
 
   fetchedProfiles.forEach(p => {
     if (!deletedUserIds.has(p.id)) {
-      const isVerifiedDefault = p.is_verified != null ? p.is_verified : (p.email_confirmed_at != null || true);
+      const isVerifiedDefault = p.is_verified != null ? p.is_verified : true;
       const customVerify = verificationMap[p.id] != null ? verificationMap[p.id] : isVerifiedDefault;
 
       registeredAccountsMap.set(p.id, {
@@ -559,7 +556,7 @@ async function fetchUsers() {
         full_name: p.full_name || p.name || p.email || 'مستثمر وثيقة',
         phone: p.phone || p.email || p.id,
         is_verified: customVerify,
-        created_at: p.created_at ? p.created_at.substring(0, 10) : '2026-07-26'
+        created_at: p.created_at ? p.created_at.substring(0, 10) : '2026-07-28'
       });
     }
   });
@@ -591,7 +588,7 @@ async function fetchUsers() {
   });
 
   liveUsers = Array.from(registeredAccountsMap.values());
-  logMessage(`[DB USERS] Total live registered user accounts loaded from Supabase: ${liveUsers.length}`, 'success');
+  logMessage(`[DB USERS] Total live registered user accounts loaded: ${liveUsers.length}`, 'success');
 }
 
 // ⚡ QUICK NAV PRICE UPDATER TABLE (Fixed Official EIMA YTD Return)
