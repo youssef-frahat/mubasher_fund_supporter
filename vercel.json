@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "name": "watheqa-admin",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/admin_dashboard/$1"
+    }
+  ]
+}
