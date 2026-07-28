@@ -15,7 +15,7 @@ class RecommendedFundsList extends StatelessWidget {
 
   const RecommendedFundsList({super.key, required this.funds});
 
-  IconData _getCategoryIcon(String category, String name) {
+  dynamic _getCategoryIcon(String category, String name) {
     final cat = category.toLowerCase();
     final n = name.toLowerCase();
 
@@ -128,7 +128,7 @@ class RecommendedFundsList extends StatelessWidget {
                               shape: BoxShape.circle,
                             ),
                             child: FaIcon(
-                              categoryIcon,
+                              categoryIcon as dynamic,
                               color: categoryColor,
                               size: 14.r,
                             ),
