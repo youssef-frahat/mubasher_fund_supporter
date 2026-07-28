@@ -22,6 +22,8 @@ class FundListTile extends StatelessWidget {
 
     if (cat.contains('gold') || cat.contains('silver') || cat.contains('metal') || n.contains('ذهب') || n.contains('فضة') || n.contains('معادن')) {
       return FontAwesomeIcons.gem;
+    } else if (cat.contains('real') || cat.contains('estate') || cat.contains('property') || n.contains('عقار') || n.contains('عقاري')) {
+      return FontAwesomeIcons.building;
     } else if (cat.contains('islamic') || cat.contains('sharia') || n.contains('إسلام') || n.contains('شريعة') || n.contains('وفاق')) {
       return FontAwesomeIcons.kaaba;
     } else if (cat.contains('money') || cat.contains('cash') || n.contains('سيولة') || n.contains('نقدي') || n.contains('يومي') || n.contains('جذور')) {
@@ -38,6 +40,8 @@ class FundListTile extends StatelessWidget {
 
     if (cat.contains('gold') || cat.contains('silver') || cat.contains('metal') || n.contains('ذهب') || n.contains('فضة') || n.contains('معادن')) {
       return const Color(0xFFF59E0B);
+    } else if (cat.contains('real') || cat.contains('estate') || cat.contains('property') || n.contains('عقار') || n.contains('عقاري')) {
+      return const Color(0xFF0284C7);
     } else if (cat.contains('islamic') || cat.contains('sharia') || n.contains('إسلام') || n.contains('شريعة') || n.contains('وفاق')) {
       return const Color(0xFF059669);
     } else if (cat.contains('money') || cat.contains('cash') || n.contains('سيولة') || n.contains('نقدي') || n.contains('يومي') || n.contains('جذور')) {

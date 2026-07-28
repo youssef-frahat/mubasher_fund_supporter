@@ -15,12 +15,14 @@ class RecommendedFundsList extends StatelessWidget {
 
   const RecommendedFundsList({super.key, required this.funds});
 
-  dynamic _getCategoryIcon(String category, String name) {
+  IconData _getCategoryIcon(String category, String name) {
     final cat = category.toLowerCase();
     final n = name.toLowerCase();
 
     if (cat.contains('gold') || cat.contains('silver') || cat.contains('metal') || n.contains('ذهب') || n.contains('فضة') || n.contains('معادن')) {
-      return FontAwesomeIcons.coins;
+      return FontAwesomeIcons.gem;
+    } else if (cat.contains('real') || cat.contains('estate') || cat.contains('property') || n.contains('عقار') || n.contains('عقاري')) {
+      return FontAwesomeIcons.building;
     } else if (cat.contains('islamic') || cat.contains('sharia') || n.contains('إسلام') || n.contains('شريعة') || n.contains('وفاق')) {
       return FontAwesomeIcons.kaaba;
     } else if (cat.contains('money') || cat.contains('cash') || n.contains('سيولة') || n.contains('نقدي') || n.contains('يومي') || n.contains('جذور')) {
@@ -37,6 +39,8 @@ class RecommendedFundsList extends StatelessWidget {
 
     if (cat.contains('gold') || cat.contains('silver') || cat.contains('metal') || n.contains('ذهب') || n.contains('فضة') || n.contains('معادن')) {
       return const Color(0xFFF59E0B);
+    } else if (cat.contains('real') || cat.contains('estate') || cat.contains('property') || n.contains('عقار') || n.contains('عقاري')) {
+      return const Color(0xFF0284C7);
     } else if (cat.contains('islamic') || cat.contains('sharia') || n.contains('إسلام') || n.contains('شريعة') || n.contains('وفاق')) {
       return const Color(0xFF059669);
     } else if (cat.contains('money') || cat.contains('cash') || n.contains('سيولة') || n.contains('نقدي') || n.contains('يومي') || n.contains('جذور')) {
@@ -123,8 +127,8 @@ class RecommendedFundsList extends StatelessWidget {
                               color: categoryColor.withValues(alpha: isDark ? 0.25 : 0.12),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
-                              categoryIcon as IconData,
+                            child: FaIcon(
+                              categoryIcon,
                               color: categoryColor,
                               size: 14.r,
                             ),
