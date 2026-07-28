@@ -123,7 +123,7 @@ class RecommendedFundsList extends StatelessWidget {
                               color: categoryColor.withValues(alpha: isDark ? 0.25 : 0.12),
                               shape: BoxShape.circle,
                             ),
-                            child: FaIcon(
+                            child: Icon(
                               categoryIcon as IconData,
                               color: categoryColor,
                               size: 14.r,
