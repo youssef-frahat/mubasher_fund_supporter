@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/language/language_cubit.dart';
 import '../../../../core/routing/routes.dart';
+import '../../../home/data/models/platform_feature.dart';
 import '../../../portfolio/data/repositories/portfolio_repository.dart';
 import '../../data/models/risk_profile_model.dart';
 
@@ -149,72 +150,101 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
           ),
           SizedBox(height: 16.h),
 
-          // List of Allocated Funds with EGP Splits
+          // List of Allocated Funds with EGP Splits (Clickable to open FundDetailsScreen)
           ...widget.riskResult.recommendedPortfolioMix.map((alloc) {
             final allocatedEgp = alloc.getAllocatedAmount(widget.totalAmount);
+            final platformFeature = PlatformFeature(
+              id: alloc.fundName.replaceAll(' ', '-').toLowerCase(),
+              title: alloc.fundName,
+              subtitle: '${alloc.getCategoryName(isAr)} • ${alloc.getBadgeLabel(isAr)}',
+              icon: Icons.account_balance,
+              accentColor: alloc.categoryColor,
+            );
+
             return Container(
               margin: EdgeInsets.only(bottom: 8.h),
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-              decoration: BoxDecoration(
-                color: AppColors.getSurface(context),
+              child: InkWell(
+                onTap: () {
+                  context.push(Routes.fundDetails, extra: platformFeature);
+                },
                 borderRadius: BorderRadius.circular(10.r),
-                border: Border.all(color: border),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 18.r,
-                    backgroundColor: alloc.categoryColor.withValues(alpha: 0.2),
-                    child: Text(
-                      '${alloc.percentage.toInt()}%',
-                      style: TextStyle(
-                        color: alloc.categoryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10.sp,
-                      ),
-                    ),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.getSurface(context),
+                    borderRadius: BorderRadius.circular(10.r),
+                    border: Border.all(color: border),
                   ),
-                  SizedBox(width: 10.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          alloc.fundName,
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18.r,
+                        backgroundColor: alloc.categoryColor.withValues(alpha: 0.2),
+                        child: Text(
+                          '${alloc.percentage.toInt()}%',
                           style: TextStyle(
-                            color: textPrimary,
-                            fontSize: 12.sp,
+                            color: alloc.categoryColor,
                             fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(height: 2.h),
-                        Text(
-                          '${alloc.getCategoryName(isAr)} • ${alloc.getBadgeLabel(isAr)}',
-                          style: TextStyle(
-                            color: textSecondary,
                             fontSize: 10.sp,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 6.w),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      '${allocatedEgp.toStringAsFixed(0)} ${isAr ? 'ج.م' : 'EGP'}',
-                      style: TextStyle(
-                        color: alloc.categoryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13.sp,
                       ),
-                    ),
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              alloc.fundName,
+                              style: TextStyle(
+                                color: textPrimary,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              '${alloc.getCategoryName(isAr)} • ${alloc.getBadgeLabel(isAr)}',
+                              style: TextStyle(
+                                color: textSecondary,
+                                fontSize: 10.sp,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 6.w),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${allocatedEgp.toStringAsFixed(0)} ${isAr ? 'ج.م' : 'EGP'}',
+                            style: TextStyle(
+                              color: alloc.categoryColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12.sp,
+                            ),
+                          ),
+                          SizedBox(height: 2.h),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                isAr ? 'التفاصيل' : 'Details',
+                                style: TextStyle(color: textSecondary, fontSize: 9.sp),
+                              ),
+                              Icon(Icons.chevron_right, size: 12.r, color: textSecondary),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             );
           }),
