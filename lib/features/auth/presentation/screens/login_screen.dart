@@ -153,8 +153,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
                               validator: (val) {
-                                if (val == null || val.trim().isEmpty) return context.tr('enterEmailErr');
-                                if (!val.contains('@') || !val.contains('.')) return context.tr('invalidEmailErr');
+                                final trimmed = val?.trim() ?? '';
+                                final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+                                if (trimmed.isEmpty) return context.tr('enterEmailErr');
+                                if (!emailRegex.hasMatch(trimmed)) return context.tr('invalidEmailErr');
                                 return null;
                               },
                             ),
@@ -181,8 +183,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
                               validator: (val) {
-                                if (val == null || val.trim().isEmpty) return context.tr('enterPassErr');
-                                if (val.length < 6) return context.tr('passMinLengthErr');
+                                final trimmed = val ?? '';
+                                if (trimmed.isEmpty) return context.tr('enterPassErr');
+                                if (trimmed.length < 8) return context.tr('passMinLengthErr');
                                 return null;
                               },
                             ),
@@ -220,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 } else {
                                   AppSnackBar.showWarning(
                                     context,
-                                    'يرجى مراجعة وتصحيح حقول البريد وكلمة المرور',
+                                    context.tr('invalidLoginFormNotice'),
                                   );
                                 }
                               },

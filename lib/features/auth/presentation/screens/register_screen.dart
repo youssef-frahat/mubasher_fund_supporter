@@ -126,8 +126,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
                               validator: (val) {
-                                if (val == null || val.trim().isEmpty) return context.tr('enterNameErr');
-                                if (val.trim().length < 3) return context.tr('nameMinLengthErr');
+                                final trimmed = val?.trim() ?? '';
+                                if (trimmed.isEmpty) return context.tr('enterNameErr');
+                                if (trimmed.length < 3) return context.tr('nameMinLengthErr');
+                                if (RegExp(r'^[0-9!@#\$%^&*()_+=\-\[\]{};:"\\|,.<>/?]+$').hasMatch(trimmed)) {
+                                  return context.tr('nameInvalidErr');
+                                }
                                 return null;
                               },
                             ),
@@ -144,8 +148,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
                               validator: (val) {
-                                if (val == null || val.trim().isEmpty) return context.tr('enterEmailErr');
-                                if (!val.contains('@') || !val.contains('.')) return context.tr('invalidEmailErr');
+                                final trimmed = val?.trim() ?? '';
+                                final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+                                if (trimmed.isEmpty) return context.tr('enterEmailErr');
+                                if (!emailRegex.hasMatch(trimmed)) return context.tr('invalidEmailErr');
                                 return null;
                               },
                             ),
@@ -171,8 +177,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                               ),
                               validator: (val) {
-                                if (val == null || val.trim().isEmpty) return context.tr('enterPassErr');
-                                if (val.length < 6) return context.tr('passMinLengthErr');
+                                final trimmed = val ?? '';
+                                if (trimmed.isEmpty) return context.tr('enterPassErr');
+                                if (trimmed.length < 8) return context.tr('passMinLengthErr');
+                                final hasLetter = RegExp(r'[a-zA-Zآ-ي]').hasMatch(trimmed);
+                                final hasDigit = RegExp(r'[0-9]').hasMatch(trimmed);
+                                if (!hasLetter || !hasDigit) return context.tr('passComplexityErr');
                                 return null;
                               },
                             ),
@@ -218,7 +228,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ? null
                             : () {
                                 if (!_acceptedTerms) {
-                                  AppSnackBar.showWarning(context, 'يرجى الموافقة على الشروط والأحكام أولاً');
+                                  AppSnackBar.showWarning(context, context.tr('agreeTermsErr'));
                                   return;
                                 }
                                 if (_formKey.currentState!.validate()) {
@@ -226,6 +236,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   final email = _emailController.text.trim();
                                   final password = _passwordController.text.trim();
                                   context.read<AuthCubit>().signUpWithEmail(email, password, name);
+                                } else {
+                                  AppSnackBar.showWarning(context, context.tr('invalidLoginFormNotice'));
                                 }
                               },
                         style: ElevatedButton.styleFrom(
