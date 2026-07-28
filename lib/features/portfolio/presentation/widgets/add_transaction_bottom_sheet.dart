@@ -330,8 +330,8 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                                   Text(
                                     _selectedFund?.name ??
                                         (widget.existingFundNames.isNotEmpty && _backendFunds.isEmpty
-                                            ? 'جميع الصناديق المتاحة مضافة للمحفظة'
-                                            : 'اختر الصندوق من القائمة...'),
+                                            ? (context.isArabic ? 'جميع الصناديق المتاحة مضافة للمحفظة' : 'All available funds are added to portfolio')
+                                            : (context.isArabic ? 'اختر الصندوق من القائمة...' : 'Select fund from list...')),
                                     style: TextStyle(
                                       color: textPrimary,
                                       fontWeight: FontWeight.bold,
@@ -343,7 +343,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                                   if (_selectedFund != null) ...[
                                     SizedBox(height: 2.h),
                                     Text(
-                                      '${_selectedFund!.managerName} | NAV الحالي: ${_selectedFund!.currentNav} ${_selectedFund!.currency}',
+                                      '${_selectedFund!.managerName} | ${context.isArabic ? 'NAV الحالي' : 'Current NAV'}: ${_selectedFund!.currentNav} ${_selectedFund!.currency}',
                                       style: TextStyle(color: textSecondary, fontSize: 10.sp),
                                     ),
                                   ],
@@ -367,7 +367,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                 style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
                 decoration: InputDecoration(
                   labelText: context.tr('units'),
-                  hintText: 'مثال: 10 أو 25.5',
+                  hintText: context.isArabic ? 'مثال: 10 أو 25.5' : 'e.g. 10 or 25.5',
                   labelStyle: TextStyle(color: textSecondary),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10.r),
@@ -401,7 +401,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'تحديد سعر وثيقة الشراء:',
+                          context.isArabic ? 'تحديد سعر وثيقة الشراء:' : 'Set Purchase Price Mode:',
                           style: TextStyle(
                             color: textPrimary,
                             fontWeight: FontWeight.bold,
@@ -441,7 +441,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                   style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
                   decoration: InputDecoration(
                     labelText: context.tr('purchasePriceLabel'),
-                    hintText: 'أدخل سعر الوثيقة وقت الشراء السابق (ج.م)',
+                    hintText: context.isArabic ? 'أدخل سعر الوثيقة وقت الشراء السابق (ج.م)' : 'Enter unit price at previous purchase (EGP)',
                     labelStyle: TextStyle(color: textSecondary),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10.r),
@@ -469,7 +469,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                 child: ElevatedButton(
                   onPressed: () {
                     if (_selectedFund == null) {
-                      AppSnackBar.showWarning(context, 'يرجى اختيار صندوق استثماري من القائمة أولاً');
+                      AppSnackBar.showWarning(context, context.isArabic ? 'يرجى اختيار صندوق استثماري من القائمة أولاً' : 'Please select a fund from the list first');
                       return;
                     }
 
@@ -498,7 +498,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                     } else {
                       AppSnackBar.showWarning(
                         context,
-                        'يرجى التأكد من استكمال كافة البيانات بصورة صحيحة',
+                        context.isArabic ? 'يرجى التأكد من استكمال كافة البيانات بصورة صحيحة' : 'Please make sure all fields are correctly filled',
                       );
                     }
                   },

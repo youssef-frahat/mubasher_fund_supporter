@@ -600,7 +600,7 @@ class _PortfolioContentView extends StatelessWidget {
                       ),
                       SizedBox(width: 10.w),
                       Text(
-                        'إضافة محفظة محاكاة جديدة',
+                        context.isArabic ? 'إضافة محفظة محاكاة جديدة' : 'Add New Simulated Portfolio',
                         style: TextStyle(
                           color: textPrimary,
                           fontSize: 16.sp,
@@ -617,7 +617,9 @@ class _PortfolioContentView extends StatelessWidget {
               ),
               SizedBox(height: 4.h),
               Text(
-                'يمكنك تخصيص اسم للمحفظة وإضافة وثائق مستقلة بها (مثل: محفظة الذهب، محفظة التقاعد...)',
+                context.isArabic
+                    ? 'يمكنك تخصيص اسم للمحفظة وإضافة وثائق مستقلة بها (مثل: محفظة الذهب، محفظة التقاعد...)'
+                    : 'Name your portfolio and manage independent certificates (e.g., Gold Portfolio, Retirement Portfolio...)',
                 style: TextStyle(color: textSecondary, fontSize: 11.sp),
               ),
               SizedBox(height: 16.h),
@@ -626,8 +628,8 @@ class _PortfolioContentView extends StatelessWidget {
                 controller: nameController,
                 style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 14.sp),
                 decoration: InputDecoration(
-                  labelText: 'اسم المحفظة الجديدة',
-                  hintText: 'مثال: محفظة الطوارئ والذهب 2026',
+                  labelText: context.isArabic ? 'اسم المحفظة الجديدة' : 'New Portfolio Name',
+                  hintText: context.isArabic ? 'مثال: محفظة الطوارئ والذهب 2026' : 'e.g. Emergency & Gold 2026',
                   labelStyle: TextStyle(color: textSecondary, fontSize: 12.sp),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.r),
@@ -652,7 +654,7 @@ class _PortfolioContentView extends StatelessWidget {
                   onPressed: () {
                     final name = nameController.text.trim();
                     if (name.isEmpty) {
-                      AppSnackBar.showWarning(context, 'يرجى إدخال اسم المحفظة الجديدة');
+                      AppSnackBar.showWarning(context, context.isArabic ? 'يرجى إدخال اسم المحفظة الجديدة' : 'Please enter new portfolio name');
                       return;
                     }
 
@@ -674,12 +676,14 @@ class _PortfolioContentView extends StatelessWidget {
                     Navigator.pop(ctx);
                     AppSnackBar.showSuccess(
                       context,
-                      'تم إنشاء وتفعيل محفظة "$name" بنجاح! 🚀',
+                      context.isArabic
+                          ? 'تم إنشاء وتفعيل محفظة "$name" بنجاح! 🚀'
+                          : 'Portfolio "$name" created & activated successfully! 🚀',
                     );
                   },
-                  child: const Text(
-                    'إنشاء وتفعيل المحفظة',
-                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  child: Text(
+                    context.isArabic ? 'إنشاء وتفعيل المحفظة' : 'Create & Activate Portfolio',
+                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -704,6 +708,7 @@ class _PortfolioContentView extends StatelessWidget {
     final surface = AppColors.getSurface(context);
     final textPrimary = AppColors.getTextPrimary(context);
     final textSecondary = AppColors.getTextSecondary(context);
+    final isAr = context.isArabic;
 
     showDialog(
       context: context,
@@ -732,7 +737,7 @@ class _PortfolioContentView extends StatelessWidget {
               ),
               SizedBox(height: 14.h),
               Text(
-                'تفعيل المحفظة يتطلب توثيق الحساب ⚠️',
+                isAr ? 'تفعيل المحفظة يتطلب توثيق الحساب ⚠️' : 'Account Verification Required ⚠️',
                 style: TextStyle(
                   color: textPrimary,
                   fontSize: 16.sp,
@@ -742,7 +747,9 @@ class _PortfolioContentView extends StatelessWidget {
               ),
               SizedBox(height: 8.h),
               Text(
-                'لا يمكنك تفعيل المحافظ الاستثمارية أو إضافة طلبات إلا بعد توثيق بريدك الإلكتروني ($email).\nيرجى فتح البريد والضغط على رابط التفعيل المرسل.',
+                isAr
+                    ? 'لا يمكنك تفعيل المحافظ الاستثمارية أو إضافة طلبات إلا بعد توثيق بريدك الإلكتروني ($email).\nيرجى فتح البريد والضغط على رابط التفعيل المرسل.'
+                    : 'You cannot activate portfolios or add orders until your email ($email) is verified.\nPlease check your inbox and click the verification link.',
                 style: TextStyle(
                   color: textSecondary,
                   fontSize: 12.sp,
@@ -758,7 +765,7 @@ class _PortfolioContentView extends StatelessWidget {
                     await client.auth.resend(type: OtpType.signup, email: email);
                     if (!ctx.mounted) return;
                     Navigator.pop(ctx);
-                    AppSnackBar.showSuccess(context, 'تم إعادة إرسال رابط التفعيل إلى بريدك الإلكتروني 📩');
+                    AppSnackBar.showSuccess(context, isAr ? 'تم إعادة إرسال رابط التفعيل إلى بريدك الإلكتروني 📩' : 'Verification link resent to your email 📩');
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -767,9 +774,9 @@ class _PortfolioContentView extends StatelessWidget {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
                 ),
                 icon: const Icon(Icons.mark_email_read, color: Colors.black),
-                label: const Text(
-                  'إعادة إرسال رابط التفعيل 📩',
-                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                label: Text(
+                  isAr ? 'إعادة إرسال رابط التفعيل 📩' : 'Resend Verification Link 📩',
+                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
