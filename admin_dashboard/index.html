@@ -17,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=3.1.0">
 </head>
 <body>
 
@@ -225,15 +225,15 @@
             <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
               <h3 style="margin:0; display:flex; align-items:center; gap:6px; font-size:15px;">
                 <i class="fa-solid fa-chart-area" style="color:#00E676;"></i> 
-                <span>استجابة الخوادم اللحظية (API Latency)</span>
+                <span>أداء واستجابة الخوادم (قياس تلقائي كل 5 دقائق)</span>
                 <span id="liveDevopsLatencyBadge" class="badge live" style="font-size:11px;">12 ms 🟢</span>
               </h3>
               <div style="display:flex; align-items:center; gap:6px;">
                 <!-- Interval Selector -->
                 <select id="devopsPingIntervalSelect" class="form-select" style="padding:3px 8px; font-size:11px; width:auto; height:28px;">
-                  <option value="300000" selected>⏱️ كل 5 دقائق (5 Mins)</option>
-                  <option value="60000">⏱️ كل دقيقة (1 Min)</option>
-                  <option value="3000">⚡ كل 3 ثواني (Live 3s)</option>
+                  <option value="300000" selected>⏱️ قياس كل 5 دقائق (5 Mins - Recommended)</option>
+                  <option value="600000">⏱️ قياس كل 10 دقائق (10 Mins)</option>
+                  <option value="900000">⏱️ قياس كل 15 دقيقة (15 Mins)</option>
                 </select>
 
                 <!-- Minimize Button -->
@@ -717,6 +717,6 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=3.1.0"></script>
 </body>
 </html>

@@ -1218,11 +1218,9 @@ let maxChartInstance = null;
 let devopsIntervalId = null;
 window.devopsLatencyArchive = [];
 
-function getLiveTimeString() {
-  const now = new Date();
-  return now.getHours().toString().padStart(2, '0') + ':' + 
-         now.getMinutes().toString().padStart(2, '0') + ':' + 
-         now.getSeconds().toString().padStart(2, '0');
+function getLiveTimeString(dateObj = new Date()) {
+  return dateObj.getHours().toString().padStart(2, '0') + ':' + 
+         dateObj.getMinutes().toString().padStart(2, '0');
 }
 
 function initLiveDevopsMonitoring() {
@@ -1235,9 +1233,7 @@ function initLiveDevopsMonitoring() {
   // Initialize with past 5-minute slots (5 mins = 300,000 ms)
   for (let i = 5; i >= 0; i--) {
     const past = new Date(now.getTime() - i * 300000);
-    const timeStr = past.getHours().toString().padStart(2, '0') + ':' + 
-                    past.getMinutes().toString().padStart(2, '0') + ':' + 
-                    past.getSeconds().toString().padStart(2, '0');
+    const timeStr = getLiveTimeString(past);
     const latency = Math.floor(11 + Math.random() * 7);
     initialLabels.push(timeStr);
     initialData.push(latency);
