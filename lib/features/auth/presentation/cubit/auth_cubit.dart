@@ -84,19 +84,24 @@ class AuthCubit extends Cubit<AuthState> {
       }
     } on AuthException catch (e) {
       String msg = e.message;
-      if (msg.contains('invalid') || msg.contains('validate email') || msg.contains('Unable to validate')) {
-        msg = 'يرجى استخدام بريد إلكتروني حقيقي ونشط (مثل Gmail أو Outlook أو Yahoo)';
-      } else if (msg.contains('already registered') || msg.contains('already exists')) {
-        msg = 'هذا البريد الإلكتروني مسجل بالفعل، يرجى تسجيل الدخول أو استخدام بريد آخر';
+      final msgLower = msg.toLowerCase();
+      if (msgLower.contains('already') || msgLower.contains('user_already_exists') || msgLower.contains('already registered')) {
+        msg = 'هذا البريد الإلكتروني مسجل بالفعل! يرجى الانتقال لتسجيل الدخول أو استخدام بريد آخر ⚠️';
+      } else if (msgLower.contains('invalid') || msgLower.contains('validate email') || msgLower.contains('unable to validate')) {
+        msg = 'يرجى استخدام بريد إلكتروني حقيقي ونشط (مثل Gmail أو Outlook أو Yahoo) ⚠️';
       }
       emit(AuthError(msg));
       emit(Unauthenticated());
     } catch (e) {
-      final errStr = e.toString();
-      if (errStr.contains('AuthRetryableFetchException') || errStr.contains('SocketException') || errStr.contains('Failed host lookup')) {
-        emit(AuthError('يرجى التأكد من الاتصال بالإنترنت واستخدام بريد إلكتروني رسمي حقيقي'));
+      final errStr = e.toString().toLowerCase();
+      if (errStr.contains('already') || errStr.contains('user_already_exists') || errStr.contains('already registered')) {
+        emit(AuthError('هذا البريد الإلكتروني مسجل بالفعل! يرجى الانتقال لتسجيل الدخول أو استخدام بريد آخر ⚠️'));
+      } else if (errStr.contains('invalid') || errStr.contains('validate email') || errStr.contains('unable to validate')) {
+        emit(AuthError('يرجى استخدام بريد إلكتروني حقيقي ونشط (مثل Gmail أو Outlook أو Yahoo) ⚠️'));
+      } else if (errStr.contains('authretryablefetchexception') || errStr.contains('socketexception') || errStr.contains('failed host lookup')) {
+        emit(AuthError('يرجى التأكد من الاتصال بالإنترنت واستخدام بريد إلكتروني حقيقي ⚠️'));
       } else {
-        emit(AuthError('حدث خطأ في التسجيل، يرجى إدخال بريد إلكتروني صحيح ونشط'));
+        emit(AuthError('فشل إنشاء الحساب: البريد مسجل بالفعل أو غير صالح ⚠️'));
       }
       emit(Unauthenticated());
     }
