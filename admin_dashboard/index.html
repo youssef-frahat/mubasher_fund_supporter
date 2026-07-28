@@ -17,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
-  <link rel="stylesheet" href="styles.css?v=3.3.0">
+  <link rel="stylesheet" href="styles.css?v=3.4.0">
 </head>
 <body>
 
@@ -188,7 +188,7 @@
         </div>
 
         <div class="card glass-card pipeline-card">
-          <h3><i class="fa-solid fa-diagram-project"></i> مسار التشغيل والنشر التلقائي (DevOps Pipeline)</h3>
+          <h3 id="pipelineTitle"><i class="fa-solid fa-diagram-project"></i> مسار التشغيل والنشر التلقائي</h3>
           
           <div class="pipeline-steps">
             <div class="step completed">
@@ -253,7 +253,7 @@
           </div>
 
           <div class="card glass-card terminal-card">
-            <h3><i class="fa-solid fa-terminal"></i> سجل الاتصال بـ Supabase Live Logs</h3>
+            <h3 id="terminalHeader"><i class="fa-solid fa-terminal" style="color:#00E676;"></i> سجل الاتصال بـ Supabase Live Logs</h3>
             <div class="terminal-body" id="devopsLogsBody">
               <!-- Log output -->
             </div>
@@ -546,7 +546,7 @@
   <div class="modal-overlay" id="addSponsoredModal">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>إضافة صندوق للقائمة الرعائية والموصى بها</h3>
+        <h3 id="addSponsoredModalTitle">إضافة صندوق للقائمة الرعائية والموصى بها</h3>
         <button class="close-btn" id="btnCloseSponsoredModal">&times;</button>
       </div>
       <form id="addSponsoredForm">
@@ -557,21 +557,21 @@
           </select>
         </div>
         <div class="form-group" style="margin-top:14px;">
-          <label style="font-weight:bold; margin-bottom:8px;">حدد التمييز الإداري للصندوق:</label>
+          <label id="lblSponsoredSelectTitle" style="font-weight:bold; margin-bottom:8px;">حدد التمييز الإداري للصندوق:</label>
           <div style="display:flex; flex-direction:column; gap:8px;">
             <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
               <input type="checkbox" id="chkSponsored" checked>
-              <span>تفعيل كـ <strong>صندوق رعائي / إعلاني (Sponsored ⭐)</strong></span>
+              <span id="lblChkSponsored">تفعيل كـ <strong>صندوق رعائي (Sponsored ⭐)</strong></span>
             </label>
             <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
               <input type="checkbox" id="chkRecommended" checked>
-              <span>تفعيل كـ <strong>موصى به / مخصص لك (Recommended 💡)</strong></span>
+              <span id="lblChkRecommended">تفعيل كـ <strong>موصى به لك (Recommended 💡)</strong></span>
             </label>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" id="btnCancelSponsoredModal">إلغاء</button>
-          <button type="submit" class="btn btn-primary">حفظ وإضافة للقائمة 🚀</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitSponsoredModal">حفظ وإضافة للقائمة 🚀</button>
         </div>
       </form>
     </div>
@@ -717,6 +717,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=3.3.0"></script>
+  <script src="app.js?v=3.4.0"></script>
 </body>
 </html>

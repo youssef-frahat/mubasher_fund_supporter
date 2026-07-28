@@ -212,6 +212,32 @@ function applyLanguage(lang) {
       : '<th>اسم الأدمن</th><th>اسم المستخدم</th><th>الرتبة والدور</th><th>الصلاحيات</th><th>التحكم</th>';
   }
 
+  // Update Pipeline Title & Terminal Header
+  const pipelineTitle = document.getElementById('pipelineTitle');
+  if (pipelineTitle) pipelineTitle.innerHTML = isEn ? '<i class="fa-solid fa-diagram-project"></i> Automated DevOps Deployment Pipeline' : '<i class="fa-solid fa-diagram-project"></i> مسار التشغيل والنشر التلقائي';
+
+  const terminalHeader = document.getElementById('terminalHeader');
+  if (terminalHeader) terminalHeader.innerHTML = isEn ? '<i class="fa-solid fa-terminal" style="color:#00E676;"></i> Live System & Supabase Audit Logs' : '<i class="fa-solid fa-terminal" style="color:#00E676;"></i> سجل الاتصال بـ Supabase Live Logs';
+
+  // Update Add Sponsored Modal Elements
+  const addSponsoredModalTitle = document.getElementById('addSponsoredModalTitle');
+  if (addSponsoredModalTitle) addSponsoredModalTitle.innerText = isEn ? 'Add Fund to Sponsored & Recommended List' : 'إضافة صندوق للقائمة الرعائية والموصى بها';
+
+  const lblSponsoredSelectTitle = document.getElementById('lblSponsoredSelectTitle');
+  if (lblSponsoredSelectTitle) lblSponsoredSelectTitle.innerText = isEn ? 'Select Admin Designation for Fund:' : 'حدد التمييز الإداري للصندوق:';
+
+  const lblChkSponsored = document.getElementById('lblChkSponsored');
+  if (lblChkSponsored) lblChkSponsored.innerHTML = isEn ? 'Set as <strong>Sponsored ⭐</strong>' : 'تفعيل كـ <strong>صندوق رعائي (Sponsored ⭐)</strong>';
+
+  const lblChkRecommended = document.getElementById('lblChkRecommended');
+  if (lblChkRecommended) lblChkRecommended.innerHTML = isEn ? 'Set as <strong>Recommended 💡</strong>' : 'تفعيل كـ <strong>موصى به لك (Recommended 💡)</strong>';
+
+  const btnSubmitSponsoredModal = document.getElementById('btnSubmitSponsoredModal');
+  if (btnSubmitSponsoredModal) btnSubmitSponsoredModal.innerText = isEn ? 'Save & Add to List 🚀' : 'حفظ وإضافة للقائمة 🚀';
+
+  const btnCancelSponsoredModal = document.getElementById('btnCancelSponsoredModal');
+  if (btnCancelSponsoredModal) btnCancelSponsoredModal.innerText = isEn ? 'Cancel' : 'إلغاء';
+
   // Refresh tables with updated language labels
   renderQuickPriceTable();
   renderFundsTable();
@@ -754,35 +780,44 @@ function renderSponsoredTable() {
   if (!tbody) return;
   tbody.innerHTML = '';
 
+  const isEn = currentLang === 'en';
   const activeSponsoredFunds = liveFunds.filter(f => f.is_sponsored || f.is_recommended || f._inSponsoredList);
 
   if (activeSponsoredFunds.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:#9ca3af">لا توجد صناديق مخصصة في القائمة الرعائية حالياً.<br>اضغط على زر <strong>"إضافة صندوق للقائمة"</strong> بالأعلى لاختيار صندوقك المفضل إدارياً ⭐</td></tr>';
+    tbody.innerHTML = isEn 
+      ? '<tr><td colspan="6" style="text-align:center; padding:24px; color:#9ca3af">No sponsored funds added yet.<br>Click <strong>"Add Fund to Sponsored List"</strong> above to select a fund ⭐</td></tr>'
+      : '<tr><td colspan="6" style="text-align:center; padding:24px; color:#9ca3af">لا توجد صناديق مخصصة في القائمة الرعائية حالياً.<br>اضغط على زر <strong>"إضافة صندوق للقائمة"</strong> بالأعلى لاختيار صندوقك المفضل إدارياً ⭐</td></tr>';
     return;
   }
 
   activeSponsoredFunds.forEach(fund => {
     const tr = document.createElement('tr');
     const navVal = parseFloat(fund.current_nav) || 0;
+    const name = isEn ? (fund.name_en || fund.name || fund.name_ar) : (fund.name_ar || fund.name);
+    const manager = isEn ? (fund.manager || fund.manager_name || 'Mubasher Capital') : (fund.manager_name || fund.manager || 'مباشر كابيتال');
+
+    const sponsoredText = fund.is_sponsored ? (isEn ? 'Sponsored Active ⭐' : 'مفعل رعائي ⭐') : (isEn ? 'Set Sponsored' : 'تفعيل رعائي');
+    const recommendedText = fund.is_recommended ? (isEn ? 'Recommended 💡' : 'موصى به 💡') : (isEn ? 'Set Recommended' : 'إضافة للتوصيات');
+    const removeBtnText = isEn ? 'Remove' : 'إزالة';
 
     tr.innerHTML = `
-      <td><strong>${fund.name_ar || fund.name}</strong></td>
-      <td>${fund.manager_name || fund.manager || 'مباشر كابيتال'}</td>
+      <td><strong>${name}</strong></td>
+      <td>${manager}</td>
       <td style="color:#00E676; font-weight:bold; white-space:nowrap">${navVal.toFixed(2)} EGP</td>
       <td>
         <button class="btn ${fund.is_sponsored ? 'btn-primary' : 'btn-secondary'}" onclick="toggleFundFlag('${fund.id}', 'is_sponsored', ${!fund.is_sponsored})">
-          ${fund.is_sponsored ? 'مفعل رعائي ⭐' : 'تفعيل رعائي'}
+          ${sponsoredText}
         </button>
       </td>
       <td>
         <button class="btn ${fund.is_recommended ? 'btn-primary' : 'btn-secondary'}" onclick="toggleFundFlag('${fund.id}', 'is_recommended', ${!fund.is_recommended})">
-          ${fund.is_recommended ? 'موصى به 💡' : 'إضافة للتوصيات'}
+          ${recommendedText}
         </button>
       </td>
       <td class="actions-cell">
         <div class="btn-action-group">
-          <button class="btn btn-danger" onclick="removeFundFromSponsored('${fund.id}')" title="إزالة من القائمة الرعائية">
-            <i class="fa-solid fa-trash"></i> إزالة
+          <button class="btn btn-danger" onclick="removeFundFromSponsored('${fund.id}')" title="${isEn ? 'Remove from sponsored list' : 'إزالة من القائمة الرعائية'}">
+            <i class="fa-solid fa-trash"></i> ${removeBtnText}
           </button>
         </div>
       </td>
@@ -961,20 +996,27 @@ function renderPortfoliosTable() {
   if (!tbody) return;
   tbody.innerHTML = '';
 
+  const isEn = currentLang === 'en';
+
   if (livePortfolios.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af">لا توجد محافظ مسجلة بعد في الباك إند (0)</td></tr>';
+    tbody.innerHTML = isEn
+      ? '<tr><td colspan="5" style="text-align:center; color:#9ca3af">No registered portfolios in backend yet (0)</td></tr>'
+      : '<tr><td colspan="5" style="text-align:center; color:#9ca3af">لا توجد محافظ مسجلة بعد في الباك إند (0)</td></tr>';
     return;
   }
 
   livePortfolios.forEach(p => {
     const tr = document.createElement('tr');
+    const portName = p.name || (isEn ? 'Main Portfolio' : 'المحفظة الرئيسية');
+    const deleteText = isEn ? 'Delete' : 'مسح';
+
     tr.innerHTML = `
-      <td><strong>${p.name || 'المحفظة الرئيسية'}</strong></td>
+      <td><strong>${portName}</strong></td>
       <td><code>${p.user_id || 'Anon User'}</code></td>
       <td>${p.created_at ? p.created_at.split('T')[0] : '2026-07-26'}</td>
       <td>${p.updated_at ? p.updated_at.split('T')[0] : '2026-07-26'}</td>
       <td>
-        <button class="btn btn-danger" onclick="deletePortfolio('${p.id}')"><i class="fa-solid fa-trash"></i> مسح</button>
+        <button class="btn btn-danger" onclick="deletePortfolio('${p.id}')"><i class="fa-solid fa-trash"></i> ${deleteText}</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -987,30 +1029,40 @@ function renderUsersTable() {
   if (!tbody) return;
   tbody.innerHTML = '';
 
+  const isEn = currentLang === 'en';
+
   if (liveUsers.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af">لا يوجد مستخدمون مسجلون في قاعدة البيانات بعد (0)</td></tr>';
+    tbody.innerHTML = isEn
+      ? '<tr><td colspan="5" style="text-align:center; color:#9ca3af">No registered user accounts in database (0)</td></tr>'
+      : '<tr><td colspan="5" style="text-align:center; color:#9ca3af">لا يوجد مستخدمون مسجلون في قاعدة البيانات بعد (0)</td></tr>';
     return;
   }
 
   liveUsers.forEach(u => {
     const tr = document.createElement('tr');
+    const userName = u.full_name || u.name || u.email || (isEn ? 'Watheqa Investor' : 'مستثمر وثيقة');
+    const verifiedBadge = (u.is_verified || u.email_confirmed_at)
+      ? (isEn ? '<span class="badge badge-sponsored"><i class="fa-solid fa-circle-check"></i> Verified 🟢</span>' : '<span class="badge badge-sponsored"><i class="fa-solid fa-circle-check"></i> موثّق 🟢</span>')
+      : (isEn ? '<span class="badge badge-recommended"><i class="fa-solid fa-triangle-exclamation"></i> Unverified ⚠️</span>' : '<span class="badge badge-recommended"><i class="fa-solid fa-triangle-exclamation"></i> غير موثّق ⚠️</span>');
+
+    const toggleText = u.is_verified 
+      ? (isEn ? 'Revoke Verification' : 'إلغاء التوثيق')
+      : (isEn ? 'Grant Verified Badge 🟢' : 'منح شارة موثق 🟢');
+
+    const deleteText = isEn ? 'Delete Account 🗑️' : 'مسح الحساب 🗑️';
+
     tr.innerHTML = `
-      <td><strong>${u.full_name || u.name || u.email || 'مستثمر وثيقة'}</strong></td>
+      <td><strong>${userName}</strong></td>
       <td>${u.phone || u.id}</td>
-      <td>
-        ${(u.is_verified || u.email_confirmed_at)
-          ? '<span class="badge badge-sponsored"><i class="fa-solid fa-circle-check"></i> موثّق 🟢</span>'
-          : '<span class="badge badge-recommended"><i class="fa-solid fa-triangle-exclamation"></i> غير موثّق ⚠️</span>'
-        }
-      </td>
+      <td>${verifiedBadge}</td>
       <td>${u.created_at ? u.created_at.split('T')[0] : '2026-07-26'}</td>
       <td class="actions-cell">
         <div class="btn-action-group">
           <button class="btn ${u.is_verified ? 'btn-secondary' : 'btn-primary'}" onclick="toggleUserVerification('${u.id}', ${!u.is_verified})">
-            ${u.is_verified ? 'إلغاء التوثيق' : 'منح شارة موثق 🟢'}
+            ${toggleText}
           </button>
-          <button class="btn btn-danger" onclick="deleteUserAccount('${u.id}')" title="مسح الحساب نهائياً">
-            <i class="fa-solid fa-trash"></i> مسح الحساب 🗑️
+          <button class="btn btn-danger" onclick="deleteUserAccount('${u.id}')" title="${isEn ? 'Delete account permanently' : 'مسح الحساب نهائياً'}">
+            <i class="fa-solid fa-trash"></i> ${deleteText}
           </button>
         </div>
       </td>
