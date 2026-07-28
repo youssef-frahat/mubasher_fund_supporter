@@ -535,6 +535,19 @@ async function fetchUsers() {
     }
   });
 
+  liveTransactions.forEach(t => {
+    if (t.user_id && !deletedUserIds.has(t.user_id) && !registeredAccountsMap.has(t.user_id)) {
+      const customVerify = verificationMap[t.user_id] != null ? verificationMap[t.user_id] : true;
+      registeredAccountsMap.set(t.user_id, {
+        id: t.user_id,
+        full_name: 'مستثمر طلبات (' + t.user_id.substring(0, 8) + ')',
+        phone: t.user_id,
+        is_verified: customVerify,
+        created_at: t.created_at ? t.created_at.substring(0, 10) : '2026-07-26'
+      });
+    }
+  });
+
   liveUsers = Array.from(registeredAccountsMap.values());
   logMessage(`[DB USERS] Total live registered user accounts loaded from Supabase: ${liveUsers.length}`, 'success');
 }

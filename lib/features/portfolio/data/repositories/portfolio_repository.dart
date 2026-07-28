@@ -29,7 +29,51 @@ class PortfolioRepository {
       await savePortfolios(portfolios);
     }
 
+    final client = SupabaseService.client;
+    final user = client?.auth.currentUser;
+    if (client != null && user != null && portfolios.isNotEmpty) {
+      _syncUserAndPortfoliosToSupabase(user, portfolios);
+    }
+
     return portfolios;
+  }
+
+  Future<void> _syncUserAndPortfoliosToSupabase(dynamic user, List<PortfolioModel> portfolios) async {
+    final client = SupabaseService.client;
+    if (client == null || user == null) return;
+
+    try {
+      final name = user.userMetadata?['full_name'] ??
+          user.userMetadata?['name'] ??
+          user.email?.split('@').first ??
+          'مستثمر وثيقة';
+      final phone = user.userMetadata?['phone'] ?? user.phone ?? user.email;
+      final avatarUrl = user.userMetadata?['avatar_url'];
+      final isVerified = user.emailConfirmedAt != null || user.appMetadata['provider'] == 'google';
+
+      // 1. Sync User Profile to Supabase DB
+      await client.from('profiles').upsert({
+        'id': user.id,
+        'full_name': name,
+        'phone': phone,
+        'avatar_url': avatarUrl,
+        'is_verified': isVerified,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+
+      // 2. Sync User Portfolios to Supabase DB
+      for (var p in portfolios) {
+        await client.from('portfolios').upsert({
+          'user_id': user.id,
+          'name': p.name,
+          'created_at': p.createdAt.toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+      debugPrint('✅ Portfolios & Profile synced to Supabase for user ${user.id}');
+    } catch (e) {
+      debugPrint('⚠️ Supabase user/portfolio sync notice: $e');
+    }
   }
 
   Future<String> getActivePortfolioId() async {
@@ -54,23 +98,10 @@ class PortfolioRepository {
     final jsonList = portfolios.map((e) => e.toJson()).toList();
     await prefs.setString(_portfoliosKey, jsonEncode(jsonList));
 
-    // Supabase sync for logged in user
     final client = SupabaseService.client;
-    final userId = client?.auth.currentUser?.id;
-    if (client != null && userId != null) {
-      try {
-        for (var p in portfolios) {
-          final isUuid = p.id.length == 36 && p.id.contains('-');
-          await client.from('portfolios').upsert({
-            if (isUuid) 'id': p.id,
-            'user_id': userId,
-            'name': p.name,
-            'updated_at': DateTime.now().toIso8601String(),
-          });
-        }
-      } catch (e) {
-        debugPrint('Supabase portfolio sync notice: $e');
-      }
+    final user = client?.auth.currentUser;
+    if (client != null && user != null) {
+      await _syncUserAndPortfoliosToSupabase(user, portfolios);
     }
   }
 

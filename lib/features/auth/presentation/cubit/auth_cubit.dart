@@ -19,18 +19,46 @@ class AuthCubit extends Cubit<AuthState> {
     
     final session = client.auth.currentSession;
     if (session?.user != null) {
-      emit(Authenticated(session!.user));
+      _syncUserProfileToSupabase(session!.user);
+      emit(Authenticated(session.user));
     } else {
       emit(Unauthenticated());
     }
 
     client.auth.onAuthStateChange.listen((data) {
       if (data.session != null) {
+        _syncUserProfileToSupabase(data.session!.user);
         emit(Authenticated(data.session!.user));
       } else {
         emit(Unauthenticated());
       }
     });
+  }
+
+  Future<void> _syncUserProfileToSupabase(User user) async {
+    final client = SupabaseService.client;
+    if (client == null) return;
+    try {
+      final name = user.userMetadata?['full_name'] ??
+          user.userMetadata?['name'] ??
+          user.email?.split('@').first ??
+          'مستثمر وثيقة';
+      final phone = user.userMetadata?['phone'] ?? user.phone ?? user.email;
+      final avatarUrl = user.userMetadata?['avatar_url'];
+      final isVerified = user.emailConfirmedAt != null || user.appMetadata['provider'] == 'google';
+
+      await client.from('profiles').upsert({
+        'id': user.id,
+        'full_name': name,
+        'phone': phone,
+        'avatar_url': avatarUrl,
+        'is_verified': isVerified,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      debugPrint('✅ User profile auto-synced to Supabase: ${user.id} ($name)');
+    } catch (e) {
+      debugPrint('⚠️ User profile auto-sync notice: $e');
+    }
   }
 
   // --- Email Registration ---

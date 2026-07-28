@@ -206,7 +206,9 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 18.sp,
-                                                            prefixIcon: Icon(Icons.edit_note, color: AppColors.primary, size: 20.r),
+                                ),
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(Icons.edit_note, color: AppColors.primary, size: 20.r),
                                   suffixText: isAr ? 'ج.م' : 'EGP',
                                   suffixStyle: TextStyle(
                                     color: textSecondary,

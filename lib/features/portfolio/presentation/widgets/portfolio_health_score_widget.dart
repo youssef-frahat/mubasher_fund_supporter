@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/app_config/app_colors.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../../data/models/portfolio_item_model.dart';
 import '../screens/portfolio_breakdown_screen.dart';
 

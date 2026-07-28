@@ -28,10 +28,6 @@ class CalculatorRepository {
     required InvestmentGoal goal,
     required InvestmentDuration duration,
   }) {
-  RiskAssessmentResult calculateRiskProfile({
-    required InvestmentGoal goal,
-    required InvestmentDuration duration,
-  }) {
     if (goal == InvestmentGoal.islamicSharia) {
       return RiskAssessmentResult(
         riskCategoryAr: 'استثمار متوافق مع الشريعة الإسلامية',
