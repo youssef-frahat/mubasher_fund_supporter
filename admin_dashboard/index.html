@@ -17,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
-  <link rel="stylesheet" href="styles.css?v=3.5.0">
+  <link rel="stylesheet" href="styles.css?v=3.6.0">
 </head>
 <body>
 
@@ -106,7 +106,7 @@
       <div class="system-status-card">
         <div class="status-indicator online"></div>
         <div class="status-info">
-          <h4>مربوط بـ Supabase DB 🟢</h4>
+          <h4 id="sidebarStatusHeader">مربوط بـ Supabase DB 🟢</h4>
           <p id="supabaseConnectionText">maorabzkqtqmlrakqlya</p>
         </div>
       </div>
@@ -152,38 +152,38 @@
         <div class="metrics-grid">
           <div class="metric-card green">
             <div class="metric-header">
-              <span>حالة اتصال Supabase DB</span>
+              <span id="lblDbStatusHeader">حالة اتصال Supabase DB</span>
               <i class="fa-solid fa-database"></i>
             </div>
             <div class="metric-value text-success" id="dbStatusVal">Connected 🟢</div>
-            <div class="metric-sub text-success">استجابة 14ms (PostgreSQL 15)</div>
+            <div class="metric-sub text-success" id="lblDbStatusSub">استجابة 14ms (PostgreSQL 15)</div>
           </div>
 
           <div class="metric-card blue">
             <div class="metric-header">
-              <span>إجمالي الصناديق في الداتا بيز</span>
+              <span id="lblDbFundsHeader">إجمالي الصناديق في الداتا بيز</span>
               <i class="fa-solid fa-vault"></i>
             </div>
             <div class="metric-value" id="dbFundsCount">197 صندوق</div>
-            <div class="metric-sub text-info">تقرير EIMA الرسمي</div>
+            <div class="metric-sub text-info" id="lblDbFundsSub">تقرير EIMA الرسمي</div>
           </div>
 
           <div class="metric-card gold">
             <div class="metric-header">
-              <span>إجمالي المحافظ المسجلة</span>
+              <span id="lblDbPortfoliosHeader">إجمالي المحافظ المسجلة</span>
               <i class="fa-solid fa-wallet"></i>
             </div>
             <div class="metric-value" id="dbPortfoliosCount">0 محفظة</div>
-            <div class="metric-sub text-gold">محافظ العملاء الفعلية</div>
+            <div class="metric-sub text-gold" id="lblDbPortfoliosSub">محافظ العملاء الفعلية</div>
           </div>
 
           <div class="metric-card purple">
             <div class="metric-header">
-              <span>معدل الأمان والـ Uptime</span>
+              <span id="lblSecurityHeader">معدل الأمان والـ Uptime</span>
               <i class="fa-solid fa-shield-halved"></i>
             </div>
             <div class="metric-value">99.98%</div>
-            <div class="metric-sub text-purple">Super Admin Authenticated</div>
+            <div class="metric-sub text-purple" id="lblSecuritySub">Super Admin Authenticated</div>
           </div>
         </div>
 
@@ -335,49 +335,49 @@
         <div class="metrics-grid">
           <div class="metric-card green">
             <div class="metric-header">
-              <span>إجمالي المستخدمين المسجلين</span>
+              <span id="lblInsightTotalUsersHeader">إجمالي المستخدمين المسجلين</span>
               <i class="fa-solid fa-users"></i>
             </div>
             <div class="metric-value" id="insightTotalUsers">0</div>
-            <div class="metric-sub text-success">جدول المستخدمين الموثقين</div>
+            <div class="metric-sub text-success" id="lblInsightTotalUsersSub">جدول المستخدمين الموثقين</div>
           </div>
 
           <div class="metric-card blue">
             <div class="metric-header">
-              <span>المستخدمين الموثقين (Verified)</span>
+              <span id="lblInsightVerifiedUsersHeader">المستخدمين الموثقين</span>
               <i class="fa-solid fa-circle-check"></i>
             </div>
             <div class="metric-value" id="insightVerifiedUsers">0</div>
-            <div class="metric-sub text-info">تأكيد البريد الإلكتروني</div>
+            <div class="metric-sub text-info" id="lblInsightVerifiedUsersSub">تأكيد البريد الإلكتروني</div>
           </div>
 
           <div class="metric-card gold">
             <div class="metric-header">
-              <span>قيمة المحافظ بالجنيه المصري</span>
+              <span id="lblInsightValuationHeader">قيمة المحافظ بالجنيه المصري</span>
               <i class="fa-solid fa-sack-dollar"></i>
             </div>
             <div class="metric-value" id="insightTotalValuation">0 EGP</div>
-            <div class="metric-sub text-gold">محاكاة استثمارية فعلية</div>
+            <div class="metric-sub text-gold" id="lblInsightValuationSub">محاكاة استثمارية فعلية</div>
           </div>
 
           <div class="metric-card purple">
             <div class="metric-header">
-              <span>إجمالي طلبات التداول المسجلة</span>
+              <span id="lblInsightTransactionsHeader">إجمالي طلبات التداول المسجلة</span>
               <i class="fa-solid fa-right-left"></i>
             </div>
             <div class="metric-value" id="insightTotalTransactions">0 طلب</div>
-            <div class="metric-sub text-purple">شراء وبيع وثائق</div>
+            <div class="metric-sub text-purple" id="lblInsightTransactionsSub">شراء وبيع وثائق</div>
           </div>
         </div>
 
         <div class="grid-2col">
           <div class="card glass-card">
-            <h3>توزيع الصناديق الاستثمارية حسب الفئات 🥧</h3>
+            <h3 id="categoryPieTitle">توزيع الصناديق الاستثمارية حسب الفئات 🥧</h3>
             <canvas id="categoryPieChart" height="200"></canvas>
           </div>
 
           <div class="card glass-card">
-            <h3>الصناديق الأعلى عائداً سنويًا (YTD Return) 📈</h3>
+            <h3 id="topBarTitle">الصناديق الأعلى عائداً سنويًا (YTD Return) 📈</h3>
             <canvas id="topFundsBarChart" height="200"></canvas>
           </div>
         </div>
@@ -581,32 +581,32 @@
   <div class="modal-overlay" id="addAdminModal">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>إضافة أدمن مساعد جديد</h3>
+        <h3 id="addAdminModalTitle">إضافة أدمن مساعد جديد</h3>
         <button class="close-btn" id="btnCloseAdminModal">&times;</button>
       </div>
       <form id="addAdminForm">
         <div class="form-group">
-          <label>اسم الأدمن الكامل</label>
+          <label id="lblNewAdminName">اسم الأدمن الكامل</label>
           <input type="text" id="newAdminName" required class="form-input" placeholder="مثال: مصطفى محمود">
         </div>
         <div class="form-group">
-          <label>اسم المستخدم (Username)</label>
+          <label id="lblNewAdminUsername">اسم المستخدم (Username)</label>
           <input type="text" id="newAdminUsername" required class="form-input" placeholder="e.g. Mostafa_Admin">
         </div>
         <div class="form-group">
-          <label>كلمة المرور (Password)</label>
+          <label id="lblNewAdminPassword">كلمة المرور (Password)</label>
           <input type="password" id="newAdminPassword" required class="form-input" placeholder="••••••••">
         </div>
         <div class="form-group">
-          <label>الصلاحية والرتبة</label>
+          <label id="lblNewAdminRole">الصلاحية والرتبة</label>
           <select id="newAdminRole" class="form-select">
-            <option value="Fund Manager Admin">أدمن أسعار وصناديق (Fund & Price Manager)</option>
-            <option value="Customer Support Admin">أدمن توثيق ودعم عملاء (Support Admin)</option>
+            <option value="Fund & Price Manager">أدمن أسعار وصناديق</option>
+            <option value="Support Admin">أدمن توثيق ودعم عملاء</option>
           </select>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" id="btnCancelAdminModal">إلغاء</button>
-          <button type="submit" class="btn btn-primary">إضافة الأدمن فوراً</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitAdminModal">إضافة الأدمن فوراً</button>
         </div>
       </form>
     </div>
@@ -717,6 +717,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=3.5.0"></script>
+  <script src="app.js?v=3.6.0"></script>
 </body>
 </html>

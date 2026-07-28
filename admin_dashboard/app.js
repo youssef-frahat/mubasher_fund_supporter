@@ -212,6 +212,86 @@ function applyLanguage(lang) {
       : '<th>اسم الأدمن</th><th>اسم المستخدم</th><th>الرتبة والدور</th><th>الصلاحيات</th><th>التحكم</th>';
   }
 
+  // Update Sidebar Status
+  const sidebarStatusHeader = document.getElementById('sidebarStatusHeader');
+  if (sidebarStatusHeader) sidebarStatusHeader.innerText = isEn ? 'Connected to Supabase DB 🟢' : 'مربوط بـ Supabase DB 🟢';
+
+  // Update DevOps Metric Cards
+  const lblDbStatusHeader = document.getElementById('lblDbStatusHeader');
+  if (lblDbStatusHeader) lblDbStatusHeader.innerText = isEn ? 'Supabase DB Status' : 'حالة اتصال Supabase DB';
+
+  const lblDbStatusSub = document.getElementById('lblDbStatusSub');
+  if (lblDbStatusSub) lblDbStatusSub.innerText = isEn ? 'Response 14ms (PostgreSQL 15)' : 'استجابة 14ms (PostgreSQL 15)';
+
+  const lblDbFundsHeader = document.getElementById('lblDbFundsHeader');
+  if (lblDbFundsHeader) lblDbFundsHeader.innerText = isEn ? 'Total Funds in Database' : 'إجمالي الصناديق في الداتا بيز';
+
+  const lblDbFundsSub = document.getElementById('lblDbFundsSub');
+  if (lblDbFundsSub) lblDbFundsSub.innerText = isEn ? 'Official EIMA Report' : 'تقرير EIMA الرسمي';
+
+  const lblDbPortfoliosHeader = document.getElementById('lblDbPortfoliosHeader');
+  if (lblDbPortfoliosHeader) lblDbPortfoliosHeader.innerText = isEn ? 'Total Registered Portfolios' : 'إجمالي المحافظ المسجلة';
+
+  const lblDbPortfoliosSub = document.getElementById('lblDbPortfoliosSub');
+  if (lblDbPortfoliosSub) lblDbPortfoliosSub.innerText = isEn ? 'Active Client Portfolios' : 'محافظ العملاء الفعلية';
+
+  const lblSecurityHeader = document.getElementById('lblSecurityHeader');
+  if (lblSecurityHeader) lblSecurityHeader.innerText = isEn ? 'Security & Uptime Rate' : 'معدل الأمان والـ Uptime';
+
+  // Update Insights Metric Cards
+  const lblInsightTotalUsersHeader = document.getElementById('lblInsightTotalUsersHeader');
+  if (lblInsightTotalUsersHeader) lblInsightTotalUsersHeader.innerText = isEn ? 'Total Registered Investors' : 'إجمالي المستخدمين المسجلين';
+
+  const lblInsightTotalUsersSub = document.getElementById('lblInsightTotalUsersSub');
+  if (lblInsightTotalUsersSub) lblInsightTotalUsersSub.innerText = isEn ? 'Verified Users Database' : 'جدول المستخدمين الموثقين';
+
+  const lblInsightVerifiedUsersHeader = document.getElementById('lblInsightVerifiedUsersHeader');
+  if (lblInsightVerifiedUsersHeader) lblInsightVerifiedUsersHeader.innerText = isEn ? 'Verified Users (Verified)' : 'المستخدمين الموثقين';
+
+  const lblInsightVerifiedUsersSub = document.getElementById('lblInsightVerifiedUsersSub');
+  if (lblInsightVerifiedUsersSub) lblInsightVerifiedUsersSub.innerText = isEn ? 'Email Confirmed' : 'تأكيد البريد الإلكتروني';
+
+  const lblInsightValuationHeader = document.getElementById('lblInsightValuationHeader');
+  if (lblInsightValuationHeader) lblInsightValuationHeader.innerText = isEn ? 'Portfolios Valuation (EGP)' : 'قيمة المحافظ بالجنيه المصري';
+
+  const lblInsightValuationSub = document.getElementById('lblInsightValuationSub');
+  if (lblInsightValuationSub) lblInsightValuationSub.innerText = isEn ? 'Actual Investment Valuation' : 'محاكاة استثمارية فعلية';
+
+  const lblInsightTransactionsHeader = document.getElementById('lblInsightTransactionsHeader');
+  if (lblInsightTransactionsHeader) lblInsightTransactionsHeader.innerText = isEn ? 'Total Registered Trading Orders' : 'إجمالي طلبات التداول المسجلة';
+
+  const lblInsightTransactionsSub = document.getElementById('lblInsightTransactionsSub');
+  if (lblInsightTransactionsSub) lblInsightTransactionsSub.innerText = isEn ? 'Buy & Sell Certificates' : 'شراء وبيع وثائق';
+
+  // Update Chart Titles
+  const categoryPieTitle = document.getElementById('categoryPieTitle');
+  if (categoryPieTitle) categoryPieTitle.innerText = isEn ? 'Mutual Funds Breakdown by Category 🥧' : 'توزيع الصناديق الاستثمارية حسب الفئات 🥧';
+
+  const topBarTitle = document.getElementById('topBarTitle');
+  if (topBarTitle) topBarTitle.innerText = isEn ? 'Top Performing Funds (YTD Return) 📈' : 'الصناديق الأعلى عائداً سنويًا (YTD Return) 📈';
+
+  // Update Add Admin Modal Elements
+  const addAdminModalTitle = document.getElementById('addAdminModalTitle');
+  if (addAdminModalTitle) addAdminModalTitle.innerText = isEn ? 'Add New Assistant Admin' : 'إضافة أدمن مساعد جديد';
+
+  const lblNewAdminName = document.getElementById('lblNewAdminName');
+  if (lblNewAdminName) lblNewAdminName.innerText = isEn ? 'Admin Full Name' : 'اسم الأدمن الكامل';
+
+  const lblNewAdminUsername = document.getElementById('lblNewAdminUsername');
+  if (lblNewAdminUsername) lblNewAdminUsername.innerText = isEn ? 'Username' : 'اسم المستخدم (Username)';
+
+  const lblNewAdminPassword = document.getElementById('lblNewAdminPassword');
+  if (lblNewAdminPassword) lblNewAdminPassword.innerText = isEn ? 'Password' : 'كلمة المرور (Password)';
+
+  const lblNewAdminRole = document.getElementById('lblNewAdminRole');
+  if (lblNewAdminRole) lblNewAdminRole.innerText = isEn ? 'Role & Permissions' : 'الصلاحية والرتبة';
+
+  const btnSubmitAdminModal = document.getElementById('btnSubmitAdminModal');
+  if (btnSubmitAdminModal) btnSubmitAdminModal.innerText = isEn ? 'Add Admin Instantly 🚀' : 'إضافة الأدمن فوراً 🚀';
+
+  const btnCancelAdminModal = document.getElementById('btnCancelAdminModal');
+  if (btnCancelAdminModal) btnCancelAdminModal.innerText = isEn ? 'Cancel' : 'إلغاء';
+
   // Update Pipeline Title & Terminal Header
   const pipelineTitle = document.getElementById('pipelineTitle');
   if (pipelineTitle) pipelineTitle.innerHTML = isEn ? '<i class="fa-solid fa-diagram-project"></i> Automated DevOps Deployment Pipeline' : '<i class="fa-solid fa-diagram-project"></i> مسار التشغيل والنشر التلقائي';
@@ -562,26 +642,36 @@ function renderAdminsTable() {
   const tbody = document.getElementById('adminsTableBody');
   if (!tbody) return;
   tbody.innerHTML = '';
+  const isEn = currentLang === 'en';
+
+  const superName = isEn ? 'Youssef Frahat (Super Admin)' : 'يوسف فرحات (Super Admin)';
+  const superRole = isEn ? 'System Owner & Super Admin 🔑' : 'مالك النظام وسوبر أدمن 🔑';
+  const superPerms = isEn ? 'Full Unrestricted Access 100%' : 'صلاحية مطلقة 100%';
+  const superTag = isEn ? 'Main Account' : 'الحساب الرئيسي';
 
   const superTr = document.createElement('tr');
   superTr.innerHTML = `
-    <td><strong>يوسف فرحات (Super Admin)</strong></td>
+    <td><strong>${superName}</strong></td>
     <td><code>Youssef_Frahat</code></td>
-    <td><span class="badge" style="background:rgba(0,230,118,0.15); color:#00E676">مالك النظام وسوبر أدمن 🔑</span></td>
-    <td>صلاحية مطلقة 100%</td>
-    <td><span class="badge live">الحساب الرئيسي</span></td>
+    <td><span class="badge" style="background:rgba(0,230,118,0.15); color:#00E676">${superRole}</span></td>
+    <td>${superPerms}</td>
+    <td><span class="badge live">${superTag}</span></td>
   `;
   tbody.appendChild(superTr);
 
   secondaryAdmins.forEach(admin => {
     const tr = document.createElement('tr');
+    const roleText = admin.role || (isEn ? 'Fund & Price Manager' : 'أدمن أسعار وصناديق');
+    const permsText = isEn ? 'Prices & Funds Management' : 'تعديل الأسعار وإدارة الصناديق';
+    const removeText = isEn ? 'Remove Admin' : 'إزالة الأدمن';
+
     tr.innerHTML = `
       <td><strong>${admin.name}</strong></td>
       <td><code>${admin.username}</code></td>
-      <td><span class="badge" style="background:rgba(59,130,246,0.15); color:#3B82F6">${admin.role}</span></td>
-      <td>تعديل الأسعار وإدارة الصناديق</td>
+      <td><span class="badge" style="background:rgba(59,130,246,0.15); color:#3B82F6">${roleText}</span></td>
+      <td>${permsText}</td>
       <td>
-        <button class="btn btn-danger" onclick="deleteAdmin('${admin.id}')"><i class="fa-solid fa-trash"></i> إزالة الأدمن</button>
+        <button class="btn btn-danger" onclick="deleteAdmin('${admin.id}')"><i class="fa-solid fa-trash"></i> ${removeText}</button>
       </td>
     `;
     tbody.appendChild(tr);

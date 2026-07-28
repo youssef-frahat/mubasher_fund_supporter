@@ -756,12 +756,14 @@ body {
 .modal-overlay {
   position: fixed;
   top: 0; right: 0; bottom: 0; left: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 9999;
+  padding: 24px;
+  overflow-y: auto;
 }
 
 .modal-overlay.active {
@@ -772,8 +774,16 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  width: 500px;
+  width: 520px;
+  max-width: 95vw;
+  max-height: 88vh;
   padding: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.85);
+  margin: auto;
+  position: relative;
 }
 
 .modal-header {
@@ -781,14 +791,34 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 18px;
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+  z-index: 10;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .close-btn {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 22px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: var(--danger);
+  font-size: 18px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.close-btn:hover {
+  background: var(--danger);
+  color: #fff;
+  transform: scale(1.1);
 }
 
 .form-group {
@@ -808,4 +838,10 @@ body {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 20px;
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-card);
+  z-index: 10;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
 }
