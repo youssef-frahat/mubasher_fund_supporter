@@ -119,24 +119,6 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
             fontWeight: FontWeight.bold,
             fontSize: 16.sp,
           ),
-        ),
-        actions: [
-          TextButton.icon(
-            onPressed: () {
-              setState(() {
-                _searchController.clear();
-                _searchQuery = '';
-                _selectedCategoryKey = 'catAll';
-              });
-            },
-            icon: const Icon(Icons.cleaning_services_outlined, size: 16, color: AppColors.primary),
-            label: Text(
-              'تفريغ للصفحة',
-              style: TextStyle(color: AppColors.primary, fontSize: 12.sp, fontWeight: FontWeight.bold),
-            ),
-          ),
-          SizedBox(width: 8.w),
-        ],
       ),
       body: Column(
         children: [
