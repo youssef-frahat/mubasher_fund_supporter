@@ -721,6 +721,22 @@ function updateDynamicCharts() {
   }
 }
 
+function formatCategoryName(cat, isEn) {
+  switch (cat) {
+    case 'MoneyMarket': return isEn ? 'Money Market' : 'أدوات نقدية';
+    case 'TreasuryBills': return isEn ? 'Treasury Bills' : 'أذون وسندات خزينة';
+    case 'Equity': return isEn ? 'Equity Funds' : 'أسهم (Equity)';
+    case 'Gold': return isEn ? 'Gold & Silver' : 'ذهب وفضة';
+    case 'Islamic': return isEn ? 'Islamic Funds' : 'إسلامية';
+    case 'Balanced': return isEn ? 'Balanced Funds' : 'صناديق متوازنة';
+    case 'ForeignCurrency': return isEn ? 'Foreign Currency' : 'عملات أجنبية';
+    case 'FixedIncome': return isEn ? 'Fixed Income' : 'دخل ثابت';
+    case 'Sectorial': return isEn ? 'Sectorial' : 'قطاعية';
+    case 'Charity': return isEn ? 'Charitable' : 'خيرية';
+    default: return cat || (isEn ? 'General' : 'عام');
+  }
+}
+
 // Render All Funds Table directly from DB
 function renderFundsTable() {
   const tbody = document.getElementById('fundsTableBody');
@@ -728,9 +744,12 @@ function renderFundsTable() {
   const search = document.getElementById('fundSearchInput').value.toLowerCase();
 
   tbody.innerHTML = '';
+  const isEn = currentLang === 'en';
 
   if (liveFunds.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#9ca3af">جاري التحميل من Supabase...</td></tr>';
+    tbody.innerHTML = isEn
+      ? '<tr><td colspan="7" style="text-align:center; color:#9ca3af">Loading funds from database...</td></tr>'
+      : '<tr><td colspan="7" style="text-align:center; color:#9ca3af">جاري التحميل من Supabase...</td></tr>';
     return;
   }
 
@@ -750,23 +769,35 @@ function renderFundsTable() {
     const navVal = parseFloat(fund.current_nav) || 0;
     const ytdVal = getOfficialFundYtd(fund);
 
+    const displayName = isEn ? (fund.name_en || fund.name || fund.name_ar) : (fund.name_ar || fund.name);
+    const subName = isEn ? (fund.name_ar || '') : (fund.name_en || '');
+    const displayManager = isEn ? (fund.manager || fund.manager_name || 'Mubasher Capital') : (fund.manager_name || fund.manager || 'مباشر كابيتال');
+    const catLabel = formatCategoryName(fund.category, isEn);
+
+    const sponsoredBadgeText = isEn ? 'Sponsored ⭐' : 'رعائي ⭐';
+    const recommendedBadgeText = isEn ? 'Recommended 💡' : 'موصى به 💡';
+    const topBadgeText = isEn ? 'Top Performing 🏆' : 'الأعلى أداءً 🏆';
+
+    const editTitle = isEn ? 'Edit' : 'تعديل';
+    const deleteTitle = isEn ? 'Delete' : 'مسح';
+
     tr.innerHTML = `
-      <td><strong>${fund.name_ar || fund.name}</strong><br><small style="color:#9ca3af">${fund.name_en || ''}</small></td>
-      <td>${fund.manager_name || fund.manager || 'مباشر كابيتال'}</td>
+      <td><strong>${displayName}</strong><br><small style="color:#9ca3af">${subName}</small></td>
+      <td>${displayManager}</td>
       <td style="color:#00E676; font-weight:bold; white-space:nowrap">${navVal.toFixed(4)} EGP</td>
       <td style="color:#3B82F6; font-weight:bold; white-space:nowrap">${ytdVal >= 0 ? '+' : ''}${ytdVal.toFixed(2)}%</td>
-      <td><span class="badge" style="background:rgba(59,130,246,0.15); color:#3B82F6">${fund.category || 'Equity'}</span></td>
+      <td><span class="badge" style="background:rgba(59,130,246,0.15); color:#3B82F6">${catLabel}</span></td>
       <td>
         <div class="badge-group">
-          ${fund.is_sponsored ? '<span class="badge badge-sponsored">رعائي ⭐</span>' : ''}
-          ${fund.is_recommended ? '<span class="badge badge-recommended">موصى به 💡</span>' : ''}
-          ${fund.is_top_performing ? '<span class="badge badge-top">الأعلى أداءً 🏆</span>' : ''}
+          ${fund.is_sponsored ? `<span class="badge badge-sponsored">${sponsoredBadgeText}</span>` : ''}
+          ${fund.is_recommended ? `<span class="badge badge-recommended">${recommendedBadgeText}</span>` : ''}
+          ${fund.is_top_performing ? `<span class="badge badge-top">${topBadgeText}</span>` : ''}
         </div>
       </td>
       <td class="actions-cell">
         <div class="btn-action-group">
-          <button class="btn btn-secondary btn-icon" onclick="editFund('${fund.id}')" title="تعديل"><i class="fa-solid fa-pen"></i></button>
-          <button class="btn btn-danger btn-icon" onclick="deleteFund('${fund.id}')" title="مسح"><i class="fa-solid fa-trash"></i></button>
+          <button class="btn btn-secondary btn-icon" onclick="editFund('${fund.id}')" title="${editTitle}"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn btn-danger btn-icon" onclick="deleteFund('${fund.id}')" title="${deleteTitle}"><i class="fa-solid fa-trash"></i></button>
         </div>
       </td>
     `;
