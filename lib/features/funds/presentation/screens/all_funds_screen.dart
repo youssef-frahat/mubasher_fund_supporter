@@ -112,7 +112,6 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
     final textPrimary = AppColors.getTextPrimary(context);
     final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
-    final isAr = context.isArabic;
 
     final hasActiveQuery = _searchQuery.trim().isNotEmpty;
     final hasCategoryFilter = _selectedCategoryKey != 'catAll';
