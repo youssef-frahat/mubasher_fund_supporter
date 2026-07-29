@@ -182,8 +182,8 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                         ? Center(
                             child: Text(
                               widget.existingFundNames.isNotEmpty && _backendFunds.isEmpty
-                                  ? 'جميع الصناديق المتاحة مضافة بالفعل للمحفظة ⚠️'
-                                  : 'لا توجد صناديق مطابقة للبحث',
+                                  ? context.tr('allFundsAddedError')
+                                  : context.tr('noMatchingFundsFound'),
                               style: TextStyle(color: textSecondary, fontSize: 12.sp, fontWeight: FontWeight.bold),
                               textAlign: TextAlign.center,
                             ),
@@ -333,8 +333,8 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                                   Text(
                                     _selectedFund?.name ??
                                         (widget.existingFundNames.isNotEmpty && _backendFunds.isEmpty
-                                            ? (context.isArabic ? 'جميع الصناديق المتاحة مضافة للمحفظة' : 'All available funds are added to portfolio')
-                                            : (context.isArabic ? 'اختر الصندوق من القائمة...' : 'Select fund from list...')),
+                                            ? context.tr('allFundsAddedShort')
+                                            : context.tr('selectFundFromListHint')),
                                     style: TextStyle(
                                       color: textPrimary,
                                       fontWeight: FontWeight.bold,
@@ -346,7 +346,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                                   if (_selectedFund != null) ...[
                                     SizedBox(height: 2.h),
                                     Text(
-                                      '${_selectedFund!.managerName} | ${context.isArabic ? 'NAV الحالي' : 'Current NAV'}: ${_selectedFund!.currentNav} ${_selectedFund!.currency}',
+                                      '${_selectedFund!.managerName} | ${context.tr('currentNavLabel')}: ${_selectedFund!.currentNav} ${_selectedFund!.currency}',
                                       style: TextStyle(color: textSecondary, fontSize: 10.sp),
                                     ),
                                   ],
@@ -370,7 +370,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                 style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
                 decoration: InputDecoration(
                   labelText: context.tr('units'),
-                  hintText: context.isArabic ? 'مثال: 10 أو 25.5' : 'e.g. 10 or 25.5',
+                  hintText: context.tr('unitsHint'),
                   labelStyle: TextStyle(color: textSecondary),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10.r),
@@ -404,7 +404,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          context.isArabic ? 'تحديد سعر وثيقة الشراء:' : 'Set Purchase Price Mode:',
+                          context.tr('setPurchasePriceMode'),
                           style: TextStyle(
                             color: textPrimary,
                             fontWeight: FontWeight.bold,
@@ -444,7 +444,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                   style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
                   decoration: InputDecoration(
                     labelText: context.tr('purchasePriceLabel'),
-                    hintText: context.isArabic ? 'أدخل سعر الوثيقة وقت الشراء السابق (ج.م)' : 'Enter unit price at previous purchase (EGP)',
+                    hintText: context.tr('purchasePriceHint'),
                     labelStyle: TextStyle(color: textSecondary),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10.r),
@@ -472,7 +472,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                 child: ElevatedButton(
                   onPressed: () {
                     if (_selectedFund == null) {
-                      AppSnackBar.showWarning(context, context.isArabic ? 'يرجى اختيار صندوق استثماري من القائمة أولاً' : 'Please select a fund from the list first');
+                      AppSnackBar.showWarning(context, context.tr('selectFundFirstWarning'));
                       return;
                     }
 
@@ -501,7 +501,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                     } else {
                       AppSnackBar.showWarning(
                         context,
-                        context.isArabic ? 'يرجى التأكد من استكمال كافة البيانات بصورة صحيحة' : 'Please make sure all fields are correctly filled',
+                        context.tr('fillFormCorrectlyWarning'),
                       );
                     }
                   },

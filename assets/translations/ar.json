@@ -18,5 +18,22 @@
   "seeAll": "عرض الكل ➔",
   "securityEncryption": "تشفير بنكي آمن 256-bit",
   "privacyPolicy": "الشروط والأحكام وسياسة الخصوصية",
-  "faq": "الأسئلة الشائعة"
+  "faq": "الأسئلة الشائعة",
+  "selectFundFromList": "اختر الصندوق الاستثماري من القائمة 🔍",
+  "useCurrentNavDefault": "استخدام سعر اليوم الحالي تلقائياً",
+  "enterCustomPurchasePrice": "إدخال سعر شراء مختلف/سابق يدوياً",
+  "purchasePriceLabel": "سعر الشراء للوثيقة (ج.م)",
+  "invalidUnitsError": "يرجى إدخال عدد وثائق صحيح أكبر من صفر",
+  "invalidPriceError": "يرجى إدخال سعر شراء صحيح",
+  "searchBackendFunds": "بحث في 200+ صندوق استثماري مصري...",
+  "allFundsAddedError": "جميع الصناديق المتاحة مضافة بالفعل للمحفظة ⚠️",
+  "noMatchingFundsFound": "لا توجد صناديق مطابقة للبحث 🔍",
+  "allFundsAddedShort": "جميع الصناديق المتاحة مضافة للمحفظة",
+  "selectFundFromListHint": "اختر الصندوق من القائمة...",
+  "currentNavLabel": "NAV الحالي",
+  "unitsHint": "مثال: 10 أو 25.5",
+  "setPurchasePriceMode": "تحديد سعر وثيقة الشراء:",
+  "purchasePriceHint": "أدخل سعر الوثيقة وقت الشراء السابق (ج.م)",
+  "selectFundFirstWarning": "يرجى اختيار صندوق استثماري من القائمة أولاً ⚠️",
+  "fillFormCorrectlyWarning": "يرجى التأكد من استكمال كافة البيانات بصورة صحيحة ⚠️"
 }

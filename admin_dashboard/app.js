@@ -488,11 +488,12 @@ async function fetchPortfolios() {
   if (!db) return;
   const deletedPortIds = new Set(JSON.parse(localStorage.getItem('watheqa_deleted_portfolio_ids') || '[]'));
   try {
-    const { data, error } = await db.from('portfolios').select('*').order('created_at', { ascending: false });
+    const { data, error } = await db.from('portfolios').select('*, portfolio_items(*)').order('created_at', { ascending: false });
     if (error) throw error;
     if (data) {
       livePortfolios = data.filter(p => !deletedPortIds.has(p.id.toString()));
       document.getElementById('dbPortfoliosCount').innerText = `${livePortfolios.length} محفظة`;
+      logMessage(`[DB] Loaded ${livePortfolios.length} portfolios with live items from 'portfolios' table.`, 'success');
     }
   } catch (err) {
     logMessage(`[DB NOTICE] Fetch portfolios notice: ${err.message}`, 'info');
@@ -1269,12 +1270,22 @@ function renderPortfoliosTable() {
     const tr = document.createElement('tr');
     const portName = p.name || (isEn ? 'Main Portfolio' : 'المحفظة الرئيسية');
     const deleteText = isEn ? 'Delete' : 'مسح';
+    const itemsList = p.portfolio_items || [];
+    const itemsCount = itemsList.length;
+    let totalVal = 0;
+    itemsList.forEach(i => {
+      totalVal += (parseFloat(i.units) || 0) * (parseFloat(i.current_nav) || 0);
+    });
+
+    const userDisplay = p.user_id ? p.user_id.substring(0, 16) + '...' : 'Anon User';
+    const assetsLabel = isEn ? `${itemsCount} Assets` : `${itemsCount} أصول/وثائق`;
 
     tr.innerHTML = `
       <td><strong>${portName}</strong></td>
-      <td><code>${p.user_id || 'Anon User'}</code></td>
+      <td><code>${userDisplay}</code></td>
+      <td><span class="badge" style="background:rgba(16,185,129,0.15); color:#10B981">${assetsLabel}</span></td>
+      <td style="color:#00E676; font-weight:bold; white-space:nowrap">${totalVal.toFixed(2)} EGP</td>
       <td>${p.created_at ? p.created_at.split('T')[0] : '2026-07-26'}</td>
-      <td>${p.updated_at ? p.updated_at.split('T')[0] : '2026-07-26'}</td>
       <td>
         <button class="btn btn-danger" onclick="deletePortfolio('${p.id}')"><i class="fa-solid fa-trash"></i> ${deleteText}</button>
       </td>

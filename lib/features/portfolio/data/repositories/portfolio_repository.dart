@@ -26,71 +26,95 @@ class PortfolioRepository {
     return 'active_portfolio_id_guest_v3';
   }
 
+  /// Get all portfolios for the user.
+  /// Uses Supabase DB as the primary source of truth for logged-in users,
+  /// with local SharedPreferences fallback for offline or guest mode.
   Future<List<PortfolioModel>> getAllPortfolios() async {
+    final client = SupabaseService.client;
+    final user = client?.auth.currentUser;
+
+    if (client != null && user != null && user.id.isNotEmpty) {
+      try {
+        // Fetch portfolios with joined portfolio_items directly from Supabase DB
+        final response = await client
+            .from('portfolios')
+            .select('*, portfolio_items(*)')
+            .eq('user_id', user.id)
+            .order('created_at', ascending: false)
+            .timeout(const Duration(seconds: 5));
+
+        if (response is List && response.isNotEmpty) {
+          final List<PortfolioModel> dbPortfolios = response
+              .map((e) => PortfolioModel.fromJson(Map<String, dynamic>.from(e as Map)))
+              .toList();
+
+            // Cache to local SharedPreferences
+            await _savePortfoliosToLocal(dbPortfolios);
+            return dbPortfolios;
+          } else {
+            // First time user in Supabase DB: Create default portfolio in DB
+            final defaultPortfolio = await _createDefaultPortfolioInSupabase(user.id);
+            if (defaultPortfolio != null) {
+              final list = [defaultPortfolio];
+              await _savePortfoliosToLocal(list);
+              return list;
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Supabase fetch portfolios notice (falling back to local): $e');
+      }
+    }
+
+    // Guest or Offline Fallback
+    return _getLocalPortfolios();
+  }
+
+  Future<PortfolioModel?> _createDefaultPortfolioInSupabase(String userId) async {
+    final client = SupabaseService.client;
+    if (client == null) return null;
+
+    try {
+      final newPortfolio = PortfolioModel(
+        id: 'portfolio-${DateTime.now().millisecondsSinceEpoch}',
+        name: 'المحفظة الرئيسية',
+        items: [],
+        createdAt: DateTime.now(),
+      );
+
+      await client.from('portfolios').insert(newPortfolio.toSupabaseJson(userId));
+      debugPrint('✅ Default portfolio created in Supabase for user $userId');
+      return newPortfolio;
+    } catch (e) {
+      debugPrint('⚠️ Failed to create default portfolio in Supabase: $e');
+      return null;
+    }
+  }
+
+  Future<List<PortfolioModel>> _getLocalPortfolios() async {
     final prefs = await SharedPreferences.getInstance();
     final key = _getUserPortfoliosKey();
     final jsonString = prefs.getString(key);
 
-    List<PortfolioModel> portfolios = [];
-
     if (jsonString != null && jsonString.isNotEmpty) {
       try {
         final List<dynamic> decoded = jsonDecode(jsonString);
-        portfolios = decoded.map((e) => PortfolioModel.fromJson(e)).toList();
+        return decoded.map((e) => PortfolioModel.fromJson(e)).toList();
       } catch (_) {
-        portfolios = _getDefaultPortfolios();
+        return _getDefaultPortfolios();
       }
-    } else {
-      // Brand new user gets a clean empty portfolio
-      portfolios = _getDefaultPortfolios();
-      await savePortfolios(portfolios);
     }
 
-    final client = SupabaseService.client;
-    final user = client?.auth.currentUser;
-    if (client != null && user != null && portfolios.isNotEmpty) {
-      _syncUserAndPortfoliosToSupabase(user, portfolios);
-    }
-
-    return portfolios;
+    final defaultList = _getDefaultPortfolios();
+    await _savePortfoliosToLocal(defaultList);
+    return defaultList;
   }
 
-  Future<void> _syncUserAndPortfoliosToSupabase(dynamic user, List<PortfolioModel> portfolios) async {
-    final client = SupabaseService.client;
-    if (client == null || user == null) return;
-
-    try {
-      final name = user.userMetadata?['full_name'] ??
-          user.userMetadata?['name'] ??
-          user.email?.split('@').first ??
-          'مستثمر وثيقة';
-      final phone = user.userMetadata?['phone'] ?? user.phone ?? user.email;
-      final avatarUrl = user.userMetadata?['avatar_url'];
-      final isVerified = user.emailConfirmedAt != null || user.appMetadata['provider'] == 'google';
-
-      // 1. Sync User Profile to Supabase DB
-      await client.from('profiles').upsert({
-        'id': user.id,
-        'full_name': name,
-        'phone': phone,
-        'avatar_url': avatarUrl,
-        'is_verified': isVerified,
-        'updated_at': DateTime.now().toIso8601String(),
-      });
-
-      // 2. Sync User Portfolios to Supabase DB
-      for (var p in portfolios) {
-        await client.from('portfolios').upsert({
-          'user_id': user.id,
-          'name': p.name,
-          'created_at': p.createdAt.toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-        });
-      }
-      debugPrint('✅ Portfolios & Profile synced to Supabase for user ${user.id}');
-    } catch (e) {
-      debugPrint('⚠️ Supabase user/portfolio sync notice: $e');
-    }
+  Future<void> _savePortfoliosToLocal(List<PortfolioModel> portfolios) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _getUserPortfoliosKey();
+    final jsonList = portfolios.map((e) => e.toJson()).toList();
+    await prefs.setString(key, jsonEncode(jsonList));
   }
 
   Future<String> getActivePortfolioId() async {
@@ -98,6 +122,7 @@ class PortfolioRepository {
     final activeKey = _getUserActiveIdKey();
     final id = prefs.getString(activeKey);
     final all = await getAllPortfolios();
+
     if (id != null && all.any((p) => p.id == id)) {
       return id;
     }
@@ -112,42 +137,47 @@ class PortfolioRepository {
     await prefs.setString(activeKey, id);
   }
 
-  Future<void> savePortfolios(List<PortfolioModel> portfolios) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = _getUserPortfoliosKey();
-    final jsonList = portfolios.map((e) => e.toJson()).toList();
-    await prefs.setString(key, jsonEncode(jsonList));
-
+  /// Create a new portfolio in Supabase DB and local storage
+  Future<PortfolioModel> createPortfolio(String name) async {
     final client = SupabaseService.client;
     final user = client?.auth.currentUser;
-    if (client != null && user != null) {
-      await _syncUserAndPortfoliosToSupabase(user, portfolios);
-    }
-  }
 
-  Future<PortfolioModel> createPortfolio(String name) async {
-    final portfolios = await getAllPortfolios();
     final newPortfolio = PortfolioModel(
       id: 'portfolio-${DateTime.now().millisecondsSinceEpoch}',
       name: name,
       items: [],
       createdAt: DateTime.now(),
     );
+
+    if (client != null && user != null) {
+      try {
+        await client.from('portfolios').insert(newPortfolio.toSupabaseJson(user.id));
+        debugPrint('✅ Created portfolio "${name}" in Supabase DB');
+      } catch (e) {
+        debugPrint('⚠️ Supabase createPortfolio notice: $e');
+      }
+    }
+
+    final portfolios = await getAllPortfolios();
     portfolios.add(newPortfolio);
-    await savePortfolios(portfolios);
+    await _savePortfoliosToLocal(portfolios);
     await setActivePortfolioId(newPortfolio.id);
+
     return newPortfolio;
   }
 
-  /// Create a simulated portfolio directly from Robo-Advisor recommendations
+  /// Create a simulated portfolio directly from Robo-Advisor recommendations in Supabase DB
   Future<PortfolioModel> createPortfolioFromRecommendedMix({
     required String name,
     required RiskAssessmentResult riskResult,
     required double totalAmount,
   }) async {
-    final portfolios = await getAllPortfolios();
+    final client = SupabaseService.client;
+    final user = client?.auth.currentUser;
 
+    final newPortfolioId = 'portfolio-${DateTime.now().millisecondsSinceEpoch}';
     final List<PortfolioItem> items = [];
+
     for (var alloc in riskResult.recommendedPortfolioMix) {
       final allocatedEgp = alloc.getAllocatedAmount(totalAmount);
       double mockNav = 100.0;
@@ -178,46 +208,56 @@ class PortfolioRepository {
     }
 
     final newPortfolio = PortfolioModel(
-      id: 'portfolio-${DateTime.now().millisecondsSinceEpoch}',
+      id: newPortfolioId,
       name: name,
       items: items,
       createdAt: DateTime.now(),
     );
 
-    portfolios.add(newPortfolio);
-    await savePortfolios(portfolios);
-    await setActivePortfolioId(newPortfolio.id);
-
-    // Save transactions to Supabase DB if user is logged in
-    final client = SupabaseService.client;
-    final userId = client?.auth.currentUser?.id;
-    if (client != null && userId != null) {
+    if (client != null && user != null) {
       try {
-        for (var item in items) {
-          await client.from('transactions').insert({
-            'user_id': userId,
-            'fund_name': item.fundName,
-            'category': item.category.name,
-            'units': item.units,
-            'purchase_price': item.purchasePrice,
-            'current_nav': item.currentNav,
-            'created_at': DateTime.now().toIso8601String(),
-          });
+        // 1. Insert Portfolio into Supabase DB
+        await client.from('portfolios').insert(newPortfolio.toSupabaseJson(user.id));
+
+        // 2. Batch insert Portfolio Items into Supabase DB
+        if (items.isNotEmpty) {
+          final itemsJson = items.map((i) => i.toSupabaseJson(newPortfolioId)).toList();
+          await client.from('portfolio_items').insert(itemsJson);
         }
+
+        debugPrint('✅ Created Robo-Advisor portfolio & items in Supabase DB');
       } catch (e) {
-        debugPrint('Supabase recommended mix transactions insert notice: $e');
+        debugPrint('⚠️ Supabase createPortfolioFromRecommendedMix notice: $e');
       }
     }
+
+    final portfolios = await getAllPortfolios();
+    portfolios.add(newPortfolio);
+    await _savePortfoliosToLocal(portfolios);
+    await setActivePortfolioId(newPortfolio.id);
 
     return newPortfolio;
   }
 
+  /// Delete a portfolio from Supabase DB and local storage
   Future<void> deletePortfolio(String portfolioId) async {
+    final client = SupabaseService.client;
+    final user = client?.auth.currentUser;
+
+    if (client != null && user != null) {
+      try {
+        await client.from('portfolios').delete().eq('id', portfolioId).eq('user_id', user.id);
+        debugPrint('✅ Deleted portfolio $portfolioId from Supabase DB');
+      } catch (e) {
+        debugPrint('⚠️ Supabase deletePortfolio notice: $e');
+      }
+    }
+
     final portfolios = await getAllPortfolios();
     if (portfolios.length <= 1) return;
 
     portfolios.removeWhere((p) => p.id == portfolioId);
-    await savePortfolios(portfolios);
+    await _savePortfoliosToLocal(portfolios);
 
     final activeId = await getActivePortfolioId();
     if (activeId == portfolioId) {
@@ -225,11 +265,23 @@ class PortfolioRepository {
     }
   }
 
+  /// Add a transaction/item to active portfolio in Supabase DB and local storage
   Future<void> addTransactionToActive(PortfolioItem newItem) async {
-    final portfolios = await getAllPortfolios();
     final activeId = await getActivePortfolioId();
+    final client = SupabaseService.client;
 
+    if (client != null) {
+      try {
+        await client.from('portfolio_items').insert(newItem.toSupabaseJson(activeId));
+        debugPrint('✅ Added portfolio item ${newItem.fundName} to Supabase DB');
+      } catch (e) {
+        debugPrint('⚠️ Supabase addTransactionToActive notice: $e');
+      }
+    }
+
+    final portfolios = await getAllPortfolios();
     final index = portfolios.indexWhere((p) => p.id == activeId);
+
     if (index != -1) {
       final current = portfolios[index];
       final updatedItems = List<PortfolioItem>.from(current.items)..add(newItem);
@@ -239,34 +291,31 @@ class PortfolioRepository {
         items: updatedItems,
         createdAt: current.createdAt,
       );
-      await savePortfolios(portfolios);
-    }
-
-    // Sync transaction insertion to Supabase DB
-    final client = SupabaseService.client;
-    final userId = client?.auth.currentUser?.id;
-    if (client != null && userId != null) {
-      try {
-        await client.from('transactions').insert({
-          'user_id': userId,
-          'fund_name': newItem.fundName,
-          'category': newItem.category.name,
-          'units': newItem.units,
-          'purchase_price': newItem.purchasePrice,
-          'current_nav': newItem.currentNav,
-          'created_at': newItem.purchaseDate.toIso8601String(),
-        });
-      } catch (e) {
-        debugPrint('Supabase transaction insert notice: $e');
-      }
+      await _savePortfoliosToLocal(portfolios);
     }
   }
 
+  /// Update units of an item in active portfolio in Supabase DB and local storage
   Future<void> updateTransactionUnitsInActive(String itemId, double newUnits) async {
-    final portfolios = await getAllPortfolios();
     final activeId = await getActivePortfolioId();
+    final client = SupabaseService.client;
 
+    if (client != null) {
+      try {
+        if (newUnits <= 0) {
+          await client.from('portfolio_items').delete().eq('id', itemId);
+        } else {
+          await client.from('portfolio_items').update({'units': newUnits}).eq('id', itemId);
+        }
+        debugPrint('✅ Updated item $itemId units in Supabase DB');
+      } catch (e) {
+        debugPrint('⚠️ Supabase updateTransactionUnitsInActive notice: $e');
+      }
+    }
+
+    final portfolios = await getAllPortfolios();
     final index = portfolios.indexWhere((p) => p.id == activeId);
+
     if (index != -1) {
       final current = portfolios[index];
       final updatedItems = List<PortfolioItem>.from(current.items);
@@ -295,16 +344,28 @@ class PortfolioRepository {
           items: updatedItems,
           createdAt: current.createdAt,
         );
-        await savePortfolios(portfolios);
+        await _savePortfoliosToLocal(portfolios);
       }
     }
   }
 
+  /// Remove an item from active portfolio in Supabase DB and local storage
   Future<void> removeTransactionFromActive(String itemId) async {
+    final client = SupabaseService.client;
+
+    if (client != null) {
+      try {
+        await client.from('portfolio_items').delete().eq('id', itemId);
+        debugPrint('✅ Removed portfolio item $itemId from Supabase DB');
+      } catch (e) {
+        debugPrint('⚠️ Supabase removeTransactionFromActive notice: $e');
+      }
+    }
+
     final portfolios = await getAllPortfolios();
     final activeId = await getActivePortfolioId();
-
     final index = portfolios.indexWhere((p) => p.id == activeId);
+
     if (index != -1) {
       final current = portfolios[index];
       final updatedItems = List<PortfolioItem>.from(current.items)
@@ -316,7 +377,7 @@ class PortfolioRepository {
         items: updatedItems,
         createdAt: current.createdAt,
       );
-      await savePortfolios(portfolios);
+      await _savePortfoliosToLocal(portfolios);
     }
   }
 
@@ -398,14 +459,11 @@ class PortfolioRepository {
   }
 
   /// Refresh the currentNav of every portfolio item from live Supabase data.
-  /// Called automatically on each portfolio load so P&L always reflects
-  /// the latest NAV the admin has set.
   Future<void> refreshPortfolioNavs() async {
     try {
       final liveFunds = await SupabaseFundsRepository().getFunds().timeout(const Duration(seconds: 4));
       if (liveFunds.isEmpty) return;
 
-      // Build a lookup map: fund name (lower-case trimmed) → currentNav
       final navMap = <String, double>{};
       for (final f in liveFunds) {
         navMap[f.name.trim().toLowerCase()] = f.currentNav;
@@ -449,11 +507,11 @@ class PortfolioRepository {
       }).toList();
 
       if (anyUpdated) {
-        await savePortfolios(updatedPortfolios);
+        await _savePortfoliosToLocal(updatedPortfolios);
         debugPrint('✅ Portfolio NAVs refreshed from Supabase');
       }
     } catch (e) {
-      debugPrint('⚠️ refreshPortfolioNavs error (non-critical): $e');
+      debugPrint('⚠️ refreshPortfolioNavs error: $e');
     }
   }
 

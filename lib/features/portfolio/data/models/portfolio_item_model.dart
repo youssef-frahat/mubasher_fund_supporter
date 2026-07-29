@@ -138,19 +138,41 @@ class PortfolioItem {
     };
   }
 
+  Map<String, dynamic> toSupabaseJson(String portfolioId) {
+    return {
+      'id': id,
+      'portfolio_id': portfolioId,
+      'fund_name': fundName,
+      'category': category.name,
+      'units': units,
+      'purchase_price': purchasePrice,
+      'current_nav': currentNav,
+      'purchase_date': purchaseDate.toIso8601String(),
+      'created_at': DateTime.now().toIso8601String(),
+    };
+  }
+
   factory PortfolioItem.fromJson(Map<String, dynamic> json) {
     return PortfolioItem(
-      id: json['id'],
-      fundId: json['fundId'],
-      fundName: json['fundName'],
+      id: json['id']?.toString() ?? '',
+      fundId: json['fund_id']?.toString() ?? json['fundId']?.toString() ?? '',
+      fundName: json['fund_name'] ?? json['fundName'] ?? '',
       category: FundCategory.values.firstWhere(
-        (e) => e.name == json['category'],
+        (e) => e.name == (json['category'] ?? ''),
         orElse: () => FundCategory.moneyMarket,
       ),
-      units: (json['units'] as num).toDouble(),
-      purchasePrice: (json['purchasePrice'] as num).toDouble(),
-      currentNav: (json['currentNav'] as num).toDouble(),
-      purchaseDate: DateTime.parse(json['purchaseDate']),
+      units: (json['units'] as num?)?.toDouble() ?? 0.0,
+      purchasePrice: (json['purchase_price'] as num?)?.toDouble() ??
+          (json['purchasePrice'] as num?)?.toDouble() ??
+          0.0,
+      currentNav: (json['current_nav'] as num?)?.toDouble() ??
+          (json['currentNav'] as num?)?.toDouble() ??
+          0.0,
+      purchaseDate: json['purchase_date'] != null
+          ? DateTime.parse(json['purchase_date'])
+          : json['purchaseDate'] != null
+              ? DateTime.parse(json['purchaseDate'])
+              : DateTime.now(),
     );
   }
 }

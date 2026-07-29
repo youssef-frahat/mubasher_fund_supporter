@@ -107,7 +107,8 @@ CREATE TABLE public.portfolios (
 
 -- RLS Policies for Portfolios
 ALTER TABLE public.portfolios ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow users access to their own portfolios" ON public.portfolios FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Allow public read access to portfolios for admin" ON public.portfolios FOR SELECT USING (true);
+CREATE POLICY "Allow users all access to their own portfolios" ON public.portfolios FOR ALL USING (auth.uid() = user_id);
 
 -- =====================================================================
 -- 4. PORTFOLIO ITEMS TABLE (Assets inside Portfolio)
@@ -127,6 +128,7 @@ CREATE TABLE public.portfolio_items (
 
 -- RLS Policies for Portfolio Items
 ALTER TABLE public.portfolio_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access to portfolio items for admin" ON public.portfolio_items FOR SELECT USING (true);
 CREATE POLICY "Allow users to manage portfolio items" ON public.portfolio_items FOR ALL USING (
     EXISTS (
         SELECT 1 FROM public.portfolios
@@ -168,13 +170,28 @@ ALTER TABLE public.wishlist ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow users to manage wishlist" ON public.wishlist FOR ALL USING (auth.uid() = user_id);
 
 -- =====================================================================
--- 7. AUTOMATIC PROFILE CREATION TRIGGER ON SIGN UP
+-- 7. AUTOMATIC PROFILE AND DEFAULT PORTFOLIO CREATION TRIGGER ON SIGN UP
 -- =====================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
+  -- 1. Create Profile
   INSERT INTO public.profiles (id, full_name, avatar_url)
-  VALUES (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url');
+  VALUES (
+    new.id,
+    COALESCE(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
+    new.raw_user_meta_data->>'avatar_url'
+  )
+  ON CONFLICT (id) DO NOTHING;
+
+  -- 2. Automatically Create Default Portfolio for New User
+  INSERT INTO public.portfolios (id, user_id, name)
+  VALUES (
+    uuid_generate_v4(),
+    new.id,
+    'المحفظة الرئيسية'
+  );
+
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -183,3 +200,4 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+

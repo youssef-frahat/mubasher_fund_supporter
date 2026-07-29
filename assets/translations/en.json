@@ -18,5 +18,22 @@
   "seeAll": "See All ➔",
   "securityEncryption": "256-bit Bank Grade Security",
   "privacyPolicy": "Terms & Privacy Policy",
-  "faq": "FAQ"
+  "faq": "FAQ",
+  "selectFundFromList": "Select Investment Fund from List 🔍",
+  "useCurrentNavDefault": "Use today current NAV automatically",
+  "enterCustomPurchasePrice": "Enter custom/previous purchase price manually",
+  "purchasePriceLabel": "Purchase Price per Unit (EGP)",
+  "invalidUnitsError": "Please enter a valid units count greater than zero",
+  "invalidPriceError": "Please enter a valid purchase price",
+  "searchBackendFunds": "Search in 200+ Egyptian investment funds...",
+  "allFundsAddedError": "All available funds are already added to portfolio ⚠️",
+  "noMatchingFundsFound": "No funds matching your search 🔍",
+  "allFundsAddedShort": "All available funds are added to portfolio",
+  "selectFundFromListHint": "Select fund from list...",
+  "currentNavLabel": "Current NAV",
+  "unitsHint": "e.g. 10 or 25.5",
+  "setPurchasePriceMode": "Set Purchase Price Mode:",
+  "purchasePriceHint": "Enter unit price at previous purchase (EGP)",
+  "selectFundFirstWarning": "Please select an investment fund from the list first ⚠️",
+  "fillFormCorrectlyWarning": "Please make sure all fields are correctly filled ⚠️"
 }
