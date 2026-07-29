@@ -61,6 +61,59 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  String _sanitizeAuthError(dynamic error) {
+    final errStr = error.toString().toLowerCase();
+
+    // 1. User Already Exists
+    if (errStr.contains('already') ||
+        errStr.contains('user_already_exists') ||
+        errStr.contains('already registered') ||
+        errStr.contains('already exists')) {
+      return 'هذا البريد الإلكتروني مسجل بالفعل! يرجى الانتقال لتسجيل الدخول ⚠️';
+    }
+
+    // 2. Invalid Email Format / Fake Domain
+    if (errStr.contains('invalid email') ||
+        errStr.contains('validate email') ||
+        errStr.contains('unable to validate') ||
+        errStr.contains('invalid_email') ||
+        errStr.contains('format is invalid')) {
+      return 'يرجى كتابة بريد إلكتروني حقيقي ونشط (مثل gmail.com أو outlook.com) ⚠️';
+    }
+
+    // 3. Database / Supabase Trigger Error
+    if (errStr.contains('database error') ||
+        errStr.contains('unexpected_failure') ||
+        errStr.contains('saving new user') ||
+        errStr.contains('postgrestexception')) {
+      return 'هذا الحساب أو البريد مسجل بالفعل أو يتعذر حفظه مجدداً، يرجى تسجيل الدخول ⚠️';
+    }
+
+    // 4. Invalid Credentials (Login)
+    if (errStr.contains('invalid login credentials') ||
+        errStr.contains('invalid_credentials') ||
+        errStr.contains('wrong password') ||
+        errStr.contains('user not found')) {
+      return 'البريد الإلكتروني أو كلمة المرور غير صحيحة ⚠️';
+    }
+
+    // 5. Network / Socket Exception
+    if (errStr.contains('socketexception') ||
+        errStr.contains('failed host lookup') ||
+        errStr.contains('authretryablefetchexception') ||
+        errStr.contains('connection refused') ||
+        errStr.contains('network_error')) {
+      return 'تعذر الاتصال بالسيرفر، يرجى التأكد من الاتصال بالإنترنت والمحاولة مجدداً ⚠️';
+    }
+
+    // 6. Password Complexity / Weak Password
+    if (errStr.contains('weak_password') || errStr.contains('password should be')) {
+      return 'كلمة المرور ضعيفة، يجب أن تحتوي على 8 أحرف وأرقام على الأقل ⚠️';
+    }
+
+    return 'حدث خطأ أثناء العملية، يرجى التأكد من البيانات والمحاولة مجدداً ⚠️';
+  }
+
   // --- Email Registration ---
   Future<void> signUpWithEmail(String email, String password, String fullName) async {
     emit(AuthLoading());
@@ -69,9 +122,9 @@ class AuthCubit extends Cubit<AuthState> {
       if (client == null) throw Exception('Supabase not initialized');
 
       final response = await client.auth.signUp(
-        email: email,
+        email: email.trim(),
         password: password,
-        data: {'full_name': fullName},
+        data: {'full_name': fullName.trim()},
       );
 
       if (response.user != null) {
@@ -79,32 +132,15 @@ class AuthCubit extends Cubit<AuthState> {
         if (response.session != null) {
           emit(Authenticated(response.user!));
         } else {
-          emit(OtpSent(email));
+          emit(OtpSent(email.trim()));
         }
-      }
-    } on AuthException catch (e) {
-      String msg = e.message;
-      final msgLower = msg.toLowerCase();
-      if (msgLower.contains('already') || msgLower.contains('user_already_exists') || msgLower.contains('already registered')) {
-        msg = 'هذا البريد الإلكتروني مسجل بالفعل! يرجى الانتقال لتسجيل الدخول أو استخدام بريد آخر ⚠️';
-      } else if (msgLower.contains('invalid') || msgLower.contains('validate email') || msgLower.contains('unable to validate')) {
-        msg = 'يرجى استخدام بريد إلكتروني حقيقي ونشط (مثل Gmail أو Outlook أو Yahoo) ⚠️';
-      }
-      emit(AuthError(msg));
-      emit(Unauthenticated());
-    } catch (e) {
-      final errStr = e.toString().toLowerCase();
-      if (errStr.contains('already') || errStr.contains('user_already_exists') || errStr.contains('already registered')) {
-        emit(AuthError('هذا البريد الإلكتروني مسجل بالفعل! يرجى الانتقال لتسجيل الدخول أو استخدام بريد آخر ⚠️'));
-      } else if (errStr.contains('invalid') || errStr.contains('validate email') || errStr.contains('unable to validate')) {
-        emit(AuthError('يرجى استخدام بريد إلكتروني حقيقي ونشط (مثل Gmail أو Outlook أو Yahoo) ⚠️'));
-      } else if (errStr.contains('database error') || errStr.contains('unexpected_failure')) {
-        emit(AuthError('حدث تضارب في سيرفر سوبابيز عند حفظ المستخدم، يرجى المحاولة مجدداً ⚠️'));
-      } else if (errStr.contains('authretryablefetchexception') || errStr.contains('socketexception') || errStr.contains('failed host lookup')) {
-        emit(AuthError('يرجى التأكد من الاتصال بالإنترنت واستخدام بريد إلكتروني حقيقي ⚠️'));
       } else {
-        emit(AuthError('فشل إنشاء الحساب: البريد مسجل بالفعل أو غير صالح ⚠️'));
+        emit(AuthError('لم يكتمل التفاعل مع السيرفر، يرجى إعادة المحاولة ⚠️'));
+        emit(Unauthenticated());
       }
+    } catch (e) {
+      final cleanMsg = _sanitizeAuthError(e);
+      emit(AuthError(cleanMsg));
       emit(Unauthenticated());
     }
   }
@@ -117,18 +153,20 @@ class AuthCubit extends Cubit<AuthState> {
       if (client == null) throw Exception('Supabase not initialized');
 
       final response = await client.auth.signInWithPassword(
-        email: email,
+        email: email.trim(),
         password: password,
       );
 
       if (response.user != null) {
+        await _syncUserProfileToSupabase(response.user!);
         emit(Authenticated(response.user!));
       } else {
-        emit(AuthError('يرجى التحقق من البريد الإلكتروني وكلمة المرور'));
+        emit(AuthError('يرجى التحقق من البريد الإلكتروني وكلمة المرور ⚠️'));
         emit(Unauthenticated());
       }
     } catch (e) {
-      emit(AuthError('خطأ في تسجيل الدخول: بيانات الدخول غير صحيحة أو الحساب غير مفعل بعد'));
+      final cleanMsg = _sanitizeAuthError(e);
+      emit(AuthError(cleanMsg));
       emit(Unauthenticated());
     }
   }
@@ -147,7 +185,7 @@ class AuthCubit extends Cubit<AuthState> {
       final idToken = googleAuth?.idToken;
 
       if (accessToken == null || idToken == null) {
-        throw Exception('Google Auth Failed: Tokens are null.');
+        throw Exception('Google Auth Cancelled or Failed.');
       }
 
       final client = SupabaseService.client;
@@ -157,7 +195,8 @@ class AuthCubit extends Cubit<AuthState> {
         accessToken: accessToken,
       );
     } catch (e) {
-      emit(AuthError('Google Sign-In failed: $e'));
+      final cleanMsg = _sanitizeAuthError(e);
+      emit(AuthError('تسجيل الدخول عبر جوجل: $cleanMsg'));
       emit(Unauthenticated());
     }
   }
@@ -169,10 +208,11 @@ class AuthCubit extends Cubit<AuthState> {
       final client = SupabaseService.client;
       if (client == null) throw Exception('Supabase not initialized');
       
-      await client.auth.resetPasswordForEmail(email);
+      await client.auth.resetPasswordForEmail(email.trim());
       emit(Unauthenticated());
     } catch (e) {
-      emit(AuthError('Failed to send reset email: $e'));
+      final cleanMsg = _sanitizeAuthError(e);
+      emit(AuthError('استعادة كلمة المرور: $cleanMsg'));
       emit(Unauthenticated());
     }
   }

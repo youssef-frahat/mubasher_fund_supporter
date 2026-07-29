@@ -59,7 +59,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
             padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
             child: BlocConsumer<AuthCubit, AuthState>(
               listener: (context, state) {
-                if (state is OtpSent) {
+                if (state is Authenticated) {
+                  AppSnackBar.showSuccess(context, 'أهلاً بك! تم إنشاء الحساب وتأمين دخولك بنجاح 🚀');
+                  context.go(Routes.home);
+                } else if (state is OtpSent) {
                   _showEmailConfirmationDialog(context, state.email);
                 } else if (state is AuthError) {
                   AppSnackBar.showError(context, state.message);
