@@ -514,7 +514,7 @@ async function fetchTransactions() {
   }
 }
 
-// 4. Fetch Users Profiles & Registered Accounts from Supabase
+// 4. Fetch Users Profiles & Registered Accounts directly from Supabase
 async function fetchUsers() {
   const deletedUserIds = new Set(JSON.parse(localStorage.getItem('watheqa_deleted_user_ids') || '[]'));
   const verificationMap = JSON.parse(localStorage.getItem('watheqa_user_verification_map') || '{}');
@@ -523,27 +523,15 @@ async function fetchUsers() {
   if (db) {
     try {
       const { data, error } = await db.from('profiles').select('*').order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) {
+      if (error) throw error;
+      if (data) {
         fetchedProfiles = data;
+        logMessage(`[DB LIVE] Fetched ${data.length} real investor profiles directly from Supabase 'profiles' table.`, 'success');
       }
     } catch (err) {
       logMessage(`[DB NOTICE] Fetch profiles notice: ${err.message}`, 'info');
     }
   }
-
-  const defaultAuthFallback = [
-    { id: 'usr_ahmed_elsayed', full_name: 'أحمد السيد', phone: 'ahmedelsayed@gmail.com', is_verified: true, created_at: '2026-07-28T12:00:00Z' },
-    { id: '15a75930-f898-4df1-b89f-a6ed5a1f7ccf', full_name: 'youssef aly', phone: 'youssef.fraht3011@gmail.com', is_verified: true, created_at: '2026-07-26T12:00:00Z' },
-    { id: '93cb1dd8-8feb-49ab-aaad-50a5cf7f2ea6', full_name: 'يوسف', phone: 'yossiflolo13@gmail.com', is_verified: true, created_at: '2026-07-26T12:00:00Z' },
-    { id: 'd87628fa-69eb-41be-82e7-4ca66fd803c9', full_name: 'Werda', phone: 'werda368@gmail.com', is_verified: true, created_at: '2026-07-26T12:00:00Z' },
-    { id: 'f4922d79-c81a-4a20-8a8f-de28db040d66', full_name: 'Anan Hossam', phone: 'ananhossam50@gmail.com', is_verified: true, created_at: '2026-07-26T12:00:00Z' }
-  ];
-
-  defaultAuthFallback.forEach(ku => {
-    if (!fetchedProfiles.some(p => p.id === ku.id)) {
-      fetchedProfiles.push(ku);
-    }
-  });
 
   const registeredAccountsMap = new Map();
 

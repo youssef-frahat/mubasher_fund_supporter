@@ -90,6 +90,8 @@ CREATE TABLE public.profiles (
 
 -- RLS Policies for Profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access to profiles for admin" ON public.profiles FOR SELECT USING (true);
+CREATE POLICY "Allow public all access to profiles for admin" ON public.profiles FOR ALL USING (true);
 CREATE POLICY "Allow users to view their own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Allow users to update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "Allow users to insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
