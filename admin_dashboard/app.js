@@ -21,7 +21,11 @@ let topBarChartInstance = null;
 let trafficLineChartInstance = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-  initSuperAdminAuth();
+  const loginOverlay = document.getElementById('superAdminLoginOverlay');
+  const mainApp = document.getElementById('mainAdminApp');
+  if (loginOverlay) loginOverlay.style.display = 'none';
+  if (mainApp) mainApp.style.display = 'flex';
+
   initTabNavigation();
   initCharts();
   initModalEvents();
@@ -29,9 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
   initSponsoredModalEvents();
   initUserModalEvents();
   initLanguageEngine();
+  refreshLiveData();
   
-  document.getElementById('btnRefresh').addEventListener('click', refreshLiveData);
-  document.getElementById('btnLogoutAdmin').addEventListener('click', logoutSuperAdmin);
+  document.getElementById('btnRefresh')?.addEventListener('click', refreshLiveData);
+  document.getElementById('btnLogoutAdmin')?.addEventListener('click', () => {
+    alert('مرحباً بك كـ Super Admin! اللوحة مفتوحة دائماً لإدارة البيانات المباشرة 🟢');
+  });
 });
 
 // TAB NAVIGATION ENGINE

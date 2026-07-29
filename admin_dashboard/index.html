@@ -21,8 +21,8 @@
 </head>
 <body>
 
-  <!-- SUPER ADMIN LOGIN OVERLAY -->
-  <div class="login-overlay active" id="superAdminLoginOverlay">
+  <!-- SUPER ADMIN LOGIN OVERLAY (BYPASSED FOR INSTANT DIRECT DASHBOARD ACCESS) -->
+  <div class="login-overlay" id="superAdminLoginOverlay" style="display: none !important;">
     <div class="login-card">
       <div class="login-logo">
         <div class="logo-icon">W</div>
@@ -33,30 +33,23 @@
       <form id="superAdminLoginForm">
         <div class="form-group">
           <label><i class="fa-solid fa-user-shield"></i> اسم المستخدم (Username)</label>
-          <input type="text" id="adminUsername" class="form-input" required placeholder="ادخل اسم المستخدم (Username)" autocorrect="off" autocapitalize="none" spellcheck="false">
+          <input type="text" id="adminUsername" class="form-input" value="Youssef_Frahat">
         </div>
 
         <div class="form-group">
           <label><i class="fa-solid fa-key"></i> كلمة المرور (Password)</label>
-          <input type="password" id="adminPassword" class="form-input" required placeholder="••••••••" autocorrect="off" autocapitalize="none" spellcheck="false">
-        </div>
-
-        <div id="loginErrorMsg" class="error-msg" style="display: none;">
-          اسم المستخدم أو كلمة المرور غير صحيحة ⚠️
+          <input type="password" id="adminPassword" class="form-input" value="Y0u$$eff">
         </div>
 
         <button type="submit" class="btn btn-primary btn-block">
-          دخول لوحة التحكم السوبر أدمن 🚀
-        </button>
-        <button type="button" id="btnQuickAdminLogin" class="btn btn-secondary btn-block" style="margin-top:10px; background:rgba(0,229,255,0.15); color:#00E5FF; border:1px solid rgba(0,229,255,0.3); font-weight:bold;">
-          ⚡ دخول مباشر بنقرة واحدة (Quick Admin Pass)
+          دخول لوحة التحكم 🚀
         </button>
       </form>
     </div>
   </div>
 
-  <!-- MAIN ADMIN APP LAYOUT (Hidden until Super Admin Login) -->
-  <div class="app-layout" id="mainAdminApp" style="display: none;">
+  <!-- MAIN ADMIN APP LAYOUT (Direct Unrestricted Access) -->
+  <div class="app-layout" id="mainAdminApp" style="display: flex !important;">
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <div class="brand-logo">
