@@ -1027,6 +1027,7 @@ function renderSponsoredTable() {
         <option value="islamicSharia" ${goalKey === 'islamicSharia' ? 'selected' : ''}>🌙 استثمار إسلامي</option>
         <option value="capitalPreservation" ${goalKey === 'capitalPreservation' ? 'selected' : ''}>🛡️ حفظ رأس المال</option>
         <option value="balancedGrowth" ${goalKey === 'balancedGrowth' ? 'selected' : ''}>⚖️ نمو متوازن</option>
+        <option value="highYield" ${goalKey === 'highYield' ? 'selected' : ''}>🚀 أقصى نمو وأرباح (أسهم)</option>
       </select>
     `;
 
@@ -1137,6 +1138,12 @@ function initSponsoredModalEvents() {
         const cat = (f.category || '').toLowerCase();
         const name = (f.name_ar || f.name || '').toLowerCase();
         return cat.includes('islamic') || cat.includes('إسلام') || cat.includes('شريعة') || name.includes('إسلامي') || f.is_sharia;
+      });
+    } else if (selectedGoal === 'highYield') {
+      filtered = availableFunds.filter(f => {
+        const cat = (f.category || '').toLowerCase();
+        const name = (f.name_ar || f.name || '').toLowerCase();
+        return cat.includes('equity') || cat.includes('أسهم') || cat.includes('نمو') || cat.includes('أرباح') || name.includes('أسهم');
       });
     }
 

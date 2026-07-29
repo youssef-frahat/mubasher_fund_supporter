@@ -155,8 +155,9 @@ class CalculatorRepository {
         return 'islamicSharia';
       case InvestmentGoal.capitalPreservation:
         return 'capitalPreservation';
-      case InvestmentGoal.balancedGrowth:
       case InvestmentGoal.highYield:
+        return 'highYield';
+      case InvestmentGoal.balancedGrowth:
         return 'balancedGrowth';
     }
   }
@@ -165,7 +166,35 @@ class CalculatorRepository {
     required InvestmentGoal goal,
     required InvestmentDuration duration,
   }) {
-    if (goal == InvestmentGoal.islamicSharia) {
+    if (goal == InvestmentGoal.highYield) {
+      return RiskAssessmentResult(
+        riskCategoryAr: 'أقصى نمو وأرباح (أسهم)',
+        riskCategoryEn: 'Maximum Growth & Equities',
+        expectedRoiPercentage: 34.5,
+        descriptionAr: 'محفظة عارية المخاطر تستهدف تحقيق أعلى معدلات نمو وأرباح رأسمالية من صناديق الأسهم.',
+        descriptionEn: 'High growth portfolio targeting maximum capital gains from stock & equity funds.',
+        recommendedPortfolioMix: [
+          PortfolioFundAllocation(
+            fundName: 'صندوق مباشر للأسهم المصرية',
+            categoryNameAr: 'صناديق الأسهم',
+            categoryNameEn: 'Equity Funds',
+            percentage: 60.0,
+            badgeLabelAr: 'نمو صاروخي 🚀',
+            badgeLabelEn: 'High Growth',
+            categoryColor: const Color(0xFF10B981),
+          ),
+          PortfolioFundAllocation(
+            fundName: 'صندوق سي أي كابيتال للنمو',
+            categoryNameAr: 'أسهم واعدة',
+            categoryNameEn: 'Growth Stocks',
+            percentage: 40.0,
+            badgeLabelAr: 'أرباح رأسمالية 📈',
+            badgeLabelEn: 'Capital Gains',
+            categoryColor: const Color(0xFF3B82F6),
+          ),
+        ],
+      );
+    } else if (goal == InvestmentGoal.islamicSharia) {
       return RiskAssessmentResult(
         riskCategoryAr: 'استثمار متوافق مع الشريعة الإسلامية',
         riskCategoryEn: 'Sharia Compliant Investment',
