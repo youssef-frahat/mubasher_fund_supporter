@@ -89,10 +89,7 @@
           <i class="fa-solid fa-users-gear"></i>
           <span>المستخدمين وتفعيل التوثيق</span>
         </button>
-        <button class="nav-item" data-tab="robo-config">
-          <i class="fa-solid fa-robot"></i>
-          <span>توصيات المستشار الذكي 🤖</span>
-        </button>
+
         <button class="nav-item" data-tab="admins">
           <i class="fa-solid fa-user-plus"></i>
           <span>إدارة فريق الأدمن والمساعدين 🔑</span>
@@ -532,120 +529,7 @@
             </table>
           </div>
         </div>
-      <!-- TAB: ROBO-ADVISOR CONFIGURATOR -->
-      <section id="tab-robo-config" class="tab-content">
-        <div class="section-title">
-          <h2><i class="fa-solid fa-robot"></i> إعدادات وتخصيص توصيات المستشار الذكي (Robo-Advisor Case Configurator)</h2>
-          <span class="badge live">Supabase DB Sync 🟢</span>
-        </div>
 
-        <div class="alert alert-info glass-card" style="margin-bottom:20px; padding:16px; border-right:4px solid #00E5FF;">
-          <h4 style="margin:0 0 8px 0; color:#00E5FF;"><i class="fa-solid fa-lightbulb"></i> دليل توجيه اختيار الصناديق حسب درجة المخاطرة والهدف (Admin Guidance Hint):</h4>
-          <ul style="margin:0; padding-right:20px; color:#cbd5e1; font-size:13px; line-height:1.8;">
-            <li>🛡️ <strong>حفظ رأس المال (Low Risk):</strong> اختر صناديق السيولة النقدية اليومية وأذون الخزانة مع نسبة بسيطة من الذهب.</li>
-            <li>⚖️ <strong>النمو المتوازن (Balanced Risk):</strong> اختر مزيج متوازن بين صناديق السيولة اليومية، الذهب، وصناديق الأسهم القيادية.</li>
-            <li>🚀 <strong>التحوط بالذهب والفضة (Gold & Metals):</strong> اختر صناديق الذهب والمعادن ومسبوكات الذهب لحماية الأموال من التضخم.</li>
-            <li>🌙 <strong>الشريعة الإسلامية (Islamic Sharia):</strong> اختر حصرياً الصناديق المتوافقة مع الشريعة المرخصة (أسهم إسلامية، مرابحة، ذهب إسلامي).</li>
-          </ul>
-        </div>
-
-        <div class="card glass-card" style="padding:20px; margin-bottom:20px;">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:12px;">
-            <h3 style="color:#00E5FF; margin:0;"><i class="fa-solid fa-sliders"></i> اختر حالة الاستثمار / درجة المخاطرة لتعديل صناديقها:</h3>
-            <select id="roboGoalSelector" class="form-control" style="max-width:340px; font-weight:bold; color:#00E5FF; background:rgba(15,23,42,0.9);">
-              <option value="goldHedging">🪙 التحوط وحماية رأس المال (الذهب والفضة)</option>
-              <option value="islamicSharia">🌙 استثمار متوافق مع الشريعة الإسلامية</option>
-              <option value="capitalPreservation">🛡️ أمان مرتفع وحفظ رأس المال</option>
-              <option value="balancedGrowth">⚖️ نمو متوازن (المحفظة الذكية النموذجية)</option>
-            </select>
-          </div>
-
-          <form id="formRoboConfig">
-            <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
-              <div class="form-group">
-                <label>العنوان العربي للحالة:</label>
-                <input type="text" id="roboGoalTitleAr" class="form-control" placeholder="عنوان الحالة باللغة العربية">
-              </div>
-              <div class="form-group">
-                <label>متوسط العائد السنوي المتوقع (%):</label>
-                <input type="number" step="0.1" id="roboExpectedRoi" class="form-control" placeholder="مثال: 27.5">
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom:20px;">
-              <label>وصف التوصية والمحفظة للمستثمر:</label>
-              <textarea id="roboDescriptionAr" class="form-control" rows="2" placeholder="وصف مخصص يظهر للمستثمر في الموبايل..."></textarea>
-            </div>
-
-            <h4 style="color:#10B981; border-bottom:1px solid rgba(16,185,129,0.3); padding-bottom:8px; margin-top:20px;">
-              📦 تحديد الصناديق الـ 3 الموصى بها في هذه المحفظة:
-            </h4>
-
-            <!-- Fund #1 -->
-            <div style="background:rgba(255,255,255,0.03); padding:14px; border-radius:12px; margin-bottom:14px; border:1px solid rgba(255,255,255,0.08);">
-              <h5 style="color:#F59E0B; margin:0 0 10px 0;">الصندوق الأول (الوزن الأعلى - Fund #1):</h5>
-              <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:12px;">
-                <div class="form-group">
-                  <label>اختر الصندوق من الداتا بيز (197 صندوق):</label>
-                  <select id="roboFund1Select" class="form-control robo-fund-dropdown"></select>
-                </div>
-                <div class="form-group">
-                  <label>النسبة المئوية (%):</label>
-                  <input type="number" id="roboFund1Pct" class="form-control" value="50">
-                </div>
-                <div class="form-group">
-                  <label>الشارة / التسمية:</label>
-                  <input type="text" id="roboFund1Badge" class="form-control" value="الملاذ الآمن الأول">
-                </div>
-              </div>
-            </div>
-
-            <!-- Fund #2 -->
-            <div style="background:rgba(255,255,255,0.03); padding:14px; border-radius:12px; margin-bottom:14px; border:1px solid rgba(255,255,255,0.08);">
-              <h5 style="color:#3B82F6; margin:0 0 10px 0;">الصندوق الثاني (Fund #2):</h5>
-              <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:12px;">
-                <div class="form-group">
-                  <label>اختر الصندوق من الداتا بيز (197 صندوق):</label>
-                  <select id="roboFund2Select" class="form-control robo-fund-dropdown"></select>
-                </div>
-                <div class="form-group">
-                  <label>النسبة المئوية (%):</label>
-                  <input type="number" id="roboFund2Pct" class="form-control" value="30">
-                </div>
-                <div class="form-group">
-                  <label>الشارة / التسمية:</label>
-                  <input type="text" id="roboFund2Badge" class="form-control" value="نمو مرتفع">
-                </div>
-              </div>
-            </div>
-
-            <!-- Fund #3 -->
-            <div style="background:rgba(255,255,255,0.03); padding:14px; border-radius:12px; margin-bottom:14px; border:1px solid rgba(255,255,255,0.08);">
-              <h5 style="color:#8B5CF6; margin:0 0 10px 0;">الصندوق الثالث (Fund #3):</h5>
-              <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:12px;">
-                <div class="form-group">
-                  <label>اختر الصندوق من الداتا بيز (197 صندوق):</label>
-                  <select id="roboFund3Select" class="form-control robo-fund-dropdown"></select>
-                </div>
-                <div class="form-group">
-                  <label>النسبة المئوية (%):</label>
-                  <input type="number" id="roboFund3Pct" class="form-control" value="20">
-                </div>
-                <div class="form-group">
-                  <label>الشارة / التسمية:</label>
-                  <input type="text" id="roboFund3Badge" class="form-control" value="فرص مضاعفة">
-                </div>
-              </div>
-            </div>
-
-            <div style="margin-top:20px; text-align:right;">
-              <button type="button" id="btnSaveRoboConfig" class="btn btn-success" style="padding:12px 24px; font-weight:bold; font-size:15px;">
-                <i class="fa-solid fa-floppy-disk"></i> حفظ وتحديث توصيات المستشار الذكي في سوبابيز 💾
-              </button>
-            </div>
-          </form>
-        </div>
-      </section>
 
       <!-- TAB: LOGS -->
       <section id="tab-logs" class="tab-content">
@@ -678,7 +562,7 @@
           </select>
         </div>
         <div class="form-group" style="margin-top:14px;">
-          <label id="lblSponsoredSelectTitle" style="font-weight:bold; margin-bottom:8px;">حدد التمييز الإداري للصندوق:</label>
+          <label id="lblSponsoredSelectTitle" style="font-weight:bold; margin-bottom:8px;">حدد التمييز الإداري وتسكين المستشار الذكي للصندوق:</label>
           <div style="display:flex; flex-direction:column; gap:8px;">
             <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
               <input type="checkbox" id="chkSponsored" checked>
@@ -686,9 +570,18 @@
             </label>
             <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
               <input type="checkbox" id="chkRecommended" checked>
-              <span id="lblChkRecommended">تفعيل كـ <strong>موصى به لك (Recommended 💡)</strong></span>
+              <span id="lblChkRecommended">تفعيل كـ <strong>موصى به لك بالموبايل (Recommended 💡)</strong></span>
             </label>
           </div>
+        </div>
+        <div class="form-group" style="margin-top:14px;">
+          <label style="font-weight:bold; margin-bottom:6px; color:#00E5FF;">تسكين في هدف المستشار الذكي بالموبايل (Robo Target Risk Case):</label>
+          <select id="sponsoredTargetGoalSelect" class="form-select" style="width:100%; font-weight:bold; color:#00E5FF; background:rgba(15,23,42,0.9);">
+            <option value="goldHedging">🪙 التحوط وحماية رأس المال (الذهب والفضة)</option>
+            <option value="islamicSharia">🌙 استثمار متوافق مع الشريعة الإسلامية</option>
+            <option value="capitalPreservation">🛡️ أمان مرتفع وحفظ رأس المال</option>
+            <option value="balancedGrowth">⚖️ نمو متوازن (المحفظة الذكية النموذجية)</option>
+          </select>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" id="btnCancelSponsoredModal">إلغاء</button>

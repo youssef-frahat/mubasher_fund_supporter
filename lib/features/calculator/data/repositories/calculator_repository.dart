@@ -18,7 +18,7 @@ class CalculatorRepository {
     return filtered.isNotEmpty ? filtered : list;
   }
 
-  /// Get Risk Assessment Profile directly from Supabase DB `robo_advisor_configs` table if configured by Admin
+  /// Get Risk Assessment Profile directly from Supabase DB `funds` & `robo_advisor_configs` tables configured by Admin
   Future<RiskAssessmentResult> getDynamicRiskProfile({
     required InvestmentGoal goal,
     required InvestmentDuration duration,
@@ -29,6 +29,52 @@ class CalculatorRepository {
 
     final goalKey = _getGoalKey(goal);
     try {
+      // 1. First check if Admin has designated specific funds for this goalKey in funds table
+      final recFunds = await client
+          .from('funds')
+          .select('*')
+          .eq('is_recommended', true)
+          .eq('recommended_goal_key', goalKey)
+          .limit(3);
+
+      if ((recFunds as List).isNotEmpty) {
+        final List<PortfolioFundAllocation> mix = [];
+        final double perFundPct = (100.0 / recFunds.length).roundToDouble();
+
+        for (int i = 0; i < recFunds.length; i++) {
+          final f = recFunds[i] as Map;
+          final fundName = (f['name_ar'] ?? f['name'] ?? '').toString();
+          final category = (f['category'] ?? 'عام').toString();
+
+          Color color = const Color(0xFF10B981);
+          if (i == 0) color = const Color(0xFFF59E0B);
+          if (i == 1) color = const Color(0xFF3B82F6);
+          if (i == 2) color = const Color(0xFF8B5CF6);
+
+          mix.add(PortfolioFundAllocation(
+            fundName: fundName,
+            categoryNameAr: category,
+            categoryNameEn: category,
+            percentage: i == 0 ? (100.0 - (perFundPct * (recFunds.length - 1))) : perFundPct,
+            badgeLabelAr: i == 0 ? 'موصى به إدارياً ⭐' : 'توصية المستشار 💡',
+            badgeLabelEn: 'Admin Recommended',
+            categoryColor: color,
+          ));
+        }
+
+        if (mix.isNotEmpty) {
+          return RiskAssessmentResult(
+            riskCategoryAr: defaultResult.riskCategoryAr,
+            riskCategoryEn: defaultResult.riskCategoryEn,
+            expectedRoiPercentage: defaultResult.expectedRoiPercentage,
+            descriptionAr: defaultResult.descriptionAr,
+            descriptionEn: defaultResult.descriptionEn,
+            recommendedPortfolioMix: mix,
+          );
+        }
+      }
+
+      // 2. Fallback to robo_advisor_configs table if no direct funds assigned
       final response = await client
           .from('robo_advisor_configs')
           .select('*')
