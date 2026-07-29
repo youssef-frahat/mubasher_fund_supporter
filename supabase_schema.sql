@@ -175,24 +175,33 @@ CREATE POLICY "Allow users to manage wishlist" ON public.wishlist FOR ALL USING 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  -- 1. Create Profile
+  -- 1. Create or Update Profile
   INSERT INTO public.profiles (id, full_name, avatar_url)
   VALUES (
     new.id,
     COALESCE(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
     new.raw_user_meta_data->>'avatar_url'
   )
-  ON CONFLICT (id) DO NOTHING;
+  ON CONFLICT (id) DO UPDATE SET
+    full_name = EXCLUDED.full_name,
+    avatar_url = EXCLUDED.avatar_url,
+    updated_at = timezone('utc'::text, now());
 
-  -- 2. Automatically Create Default Portfolio for New User
-  INSERT INTO public.portfolios (id, user_id, name)
-  VALUES (
-    uuid_generate_v4(),
-    new.id,
-    'المحفظة الرئيسية'
-  );
+  -- 2. Automatically Create Default Portfolio for New User (if none exists)
+  IF NOT EXISTS (SELECT 1 FROM public.portfolios WHERE user_id = new.id) THEN
+    INSERT INTO public.portfolios (id, user_id, name)
+    VALUES (
+      uuid_generate_v4(),
+      new.id,
+      'المحفظة الرئيسية'
+    );
+  END IF;
 
   RETURN new;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Fallback: Ensure auth.users signup never fails due to trigger notice
+    RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart' as google_auth;
@@ -6,8 +7,16 @@ import '../../../../core/supabase/supabase_service.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
+  StreamSubscription? _authSubscription;
+
   AuthCubit() : super(AuthInitial()) {
     _checkAuthStatus();
+  }
+
+  @override
+  Future<void> close() {
+    _authSubscription?.cancel();
+    return super.close();
   }
 
   void _checkAuthStatus() {
@@ -25,10 +34,12 @@ class AuthCubit extends Cubit<AuthState> {
       emit(Unauthenticated());
     }
 
-    client.auth.onAuthStateChange.listen((data) {
-      if (data.session != null) {
-        _syncUserProfileToSupabase(data.session!.user);
-        emit(Authenticated(data.session!.user));
+    _authSubscription?.cancel();
+    _authSubscription = client.auth.onAuthStateChange.listen((data) {
+      final user = data.session?.user;
+      if (user != null) {
+        _syncUserProfileToSupabase(user);
+        emit(Authenticated(user));
       } else {
         emit(Unauthenticated());
       }
@@ -136,12 +147,10 @@ class AuthCubit extends Cubit<AuthState> {
         }
       } else {
         emit(AuthError('لم يكتمل التفاعل مع السيرفر، يرجى إعادة المحاولة ⚠️'));
-        emit(Unauthenticated());
       }
     } catch (e) {
       final cleanMsg = _sanitizeAuthError(e);
       emit(AuthError(cleanMsg));
-      emit(Unauthenticated());
     }
   }
 
@@ -162,12 +171,10 @@ class AuthCubit extends Cubit<AuthState> {
         emit(Authenticated(response.user!));
       } else {
         emit(AuthError('يرجى التحقق من البريد الإلكتروني وكلمة المرور ⚠️'));
-        emit(Unauthenticated());
       }
     } catch (e) {
       final cleanMsg = _sanitizeAuthError(e);
       emit(AuthError(cleanMsg));
-      emit(Unauthenticated());
     }
   }
 
@@ -180,24 +187,36 @@ class AuthCubit extends Cubit<AuthState> {
         serverClientId: webClientId,
       );
       final googleUser = await googleSignIn.signIn();
-      final googleAuth = await googleUser?.authentication;
-      final accessToken = googleAuth?.accessToken;
-      final idToken = googleAuth?.idToken;
+      if (googleUser == null) {
+        // User cancelled google sign in dialog
+        emit(Unauthenticated());
+        return;
+      }
 
-      if (accessToken == null || idToken == null) {
-        throw Exception('Google Auth Cancelled or Failed.');
+      final googleAuth = await googleUser.authentication;
+      final accessToken = googleAuth.accessToken;
+      final idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        throw Exception('Google Auth Token Null.');
       }
 
       final client = SupabaseService.client;
-      await client!.auth.signInWithIdToken(
+      if (client == null) throw Exception('Supabase client null');
+
+      final authResponse = await client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
         accessToken: accessToken,
       );
+
+      if (authResponse.user != null) {
+        await _syncUserProfileToSupabase(authResponse.user!);
+        emit(Authenticated(authResponse.user!));
+      }
     } catch (e) {
       final cleanMsg = _sanitizeAuthError(e);
       emit(AuthError('تسجيل الدخول عبر جوجل: $cleanMsg'));
-      emit(Unauthenticated());
     }
   }
 
@@ -213,15 +232,49 @@ class AuthCubit extends Cubit<AuthState> {
     } catch (e) {
       final cleanMsg = _sanitizeAuthError(e);
       emit(AuthError('استعادة كلمة المرور: $cleanMsg'));
+    }
+  }
+
+  // --- Sign Out ---
+  Future<void> signOut() async {
+    emit(AuthLoading());
+    try {
+      final client = SupabaseService.client;
+      if (client != null) {
+        await client.auth.signOut();
+      }
+      try {
+        const webClientId = '839907844431-hm1sj5q6sep7vi6bhii0v006d4rr2ci2.apps.googleusercontent.com';
+        final googleSignIn = google_auth.GoogleSignIn(serverClientId: webClientId);
+        await googleSignIn.signOut();
+        await googleSignIn.disconnect();
+      } catch (_) {}
+    } catch (e) {
+      debugPrint('⚠️ SignOut notice: $e');
+    } finally {
       emit(Unauthenticated());
     }
   }
 
-  Future<void> signOut() async {
+  /// Force clear local auth session cache & disconnect Google Account
+  Future<void> forceClearAuthCache() async {
     emit(AuthLoading());
-    final client = SupabaseService.client;
-    if (client != null) {
-      await client.auth.signOut();
+    try {
+      final client = SupabaseService.client;
+      if (client != null) {
+        await client.auth.signOut(scope: SignOutScope.global);
+      }
+      try {
+        const webClientId = '839907844431-hm1sj5q6sep7vi6bhii0v006d4rr2ci2.apps.googleusercontent.com';
+        final googleSignIn = google_auth.GoogleSignIn(serverClientId: webClientId);
+        await googleSignIn.signOut();
+        await googleSignIn.disconnect();
+      } catch (_) {}
+      debugPrint('✅ Auth cache forcefully cleared!');
+    } catch (e) {
+      debugPrint('⚠️ Clear auth cache notice: $e');
+    } finally {
+      emit(Unauthenticated());
     }
   }
 

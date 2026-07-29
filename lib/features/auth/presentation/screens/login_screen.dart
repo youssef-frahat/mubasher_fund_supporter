@@ -317,6 +317,31 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
+                      SizedBox(height: 12.h),
+
+                      // Reset Cache Option for deleted accounts
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: () async {
+                            await context.read<AuthCubit>().forceClearAuthCache();
+                            if (context.mounted) {
+                              AppSnackBar.showSuccess(
+                                context,
+                                'تم مسح كاش الحسابات والجلسات القديمة بنجاح! يمكنك التجربة الآن 🚀',
+                              );
+                            }
+                          },
+                          icon: Icon(Icons.cleaning_services_outlined, color: textSecondary, size: 14.r),
+                          label: Text(
+                            'مسح كاش الجلسات والحسابات القديمة 🔄',
+                            style: TextStyle(
+                              color: textSecondary,
+                              fontSize: 11.sp,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 );
