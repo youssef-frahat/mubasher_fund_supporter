@@ -21,8 +21,8 @@
 </head>
 <body>
 
-  <!-- SUPER ADMIN LOGIN OVERLAY (BYPASSED FOR INSTANT DIRECT DASHBOARD ACCESS) -->
-  <div class="login-overlay" id="superAdminLoginOverlay" style="display: none !important;">
+  <!-- SUPER ADMIN LOGIN OVERLAY -->
+  <div class="login-overlay" id="superAdminLoginOverlay" style="display: flex;">
     <div class="login-card">
       <div class="login-logo">
         <div class="logo-icon">W</div>
@@ -33,23 +33,27 @@
       <form id="superAdminLoginForm">
         <div class="form-group">
           <label><i class="fa-solid fa-user-shield"></i> اسم المستخدم (Username)</label>
-          <input type="text" id="adminUsername" class="form-input" value="Youssef_Frahat">
+          <input type="text" id="adminUsername" class="form-input" required placeholder="ادخل اسم المستخدم (Username)" autocorrect="off" autocapitalize="none" spellcheck="false">
         </div>
 
         <div class="form-group">
           <label><i class="fa-solid fa-key"></i> كلمة المرور (Password)</label>
-          <input type="password" id="adminPassword" class="form-input" value="Y0u$$eff">
+          <input type="password" id="adminPassword" class="form-input" required placeholder="••••••••" autocorrect="off" autocapitalize="none" spellcheck="false">
+        </div>
+
+        <div id="loginErrorMsg" class="error-msg" style="display: none;">
+          اسم المستخدم أو كلمة المرور غير صحيحة ⚠️
         </div>
 
         <button type="submit" class="btn btn-primary btn-block">
-          دخول لوحة التحكم 🚀
+          دخول لوحة التحكم السوبر أدمن 🚀
         </button>
       </form>
     </div>
   </div>
 
-  <!-- MAIN ADMIN APP LAYOUT (Direct Unrestricted Access) -->
-  <div class="app-layout" id="mainAdminApp" style="display: flex !important;">
+  <!-- MAIN ADMIN APP LAYOUT (Protected by Auth) -->
+  <div class="app-layout" id="mainAdminApp" style="display: none;">
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <div class="brand-logo">

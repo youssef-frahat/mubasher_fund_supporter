@@ -21,11 +21,7 @@ let topBarChartInstance = null;
 let trafficLineChartInstance = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-  const loginOverlay = document.getElementById('superAdminLoginOverlay');
-  const mainApp = document.getElementById('mainAdminApp');
-  if (loginOverlay) loginOverlay.style.display = 'none';
-  if (mainApp) mainApp.style.display = 'flex';
-
+  initSuperAdminAuth();
   initTabNavigation();
   initCharts();
   initModalEvents();
@@ -33,12 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initSponsoredModalEvents();
   initUserModalEvents();
   initLanguageEngine();
-  refreshLiveData();
   
   document.getElementById('btnRefresh')?.addEventListener('click', refreshLiveData);
-  document.getElementById('btnLogoutAdmin')?.addEventListener('click', () => {
-    alert('مرحباً بك كـ Super Admin! اللوحة مفتوحة دائماً لإدارة البيانات المباشرة 🟢');
-  });
+  document.getElementById('btnLogoutAdmin')?.addEventListener('click', logoutSuperAdmin);
 });
 
 // TAB NAVIGATION ENGINE
@@ -427,13 +420,7 @@ function initSuperAdminAuth() {
   const loginForm = document.getElementById('superAdminLoginForm');
   const errorMsg = document.getElementById('loginErrorMsg');
 
-  // Pre-fill default inputs if empty
-  const usernameInput = document.getElementById('adminUsername');
-  const passwordInput = document.getElementById('adminPassword');
-  if (usernameInput && !usernameInput.value) usernameInput.value = 'Youssef_Frahat';
-  if (passwordInput && !passwordInput.value) passwordInput.value = 'Y0u$$eff';
-
-  const savedUser = localStorage.getItem('watheqa_super_admin_user') || sessionStorage.getItem('watheqa_super_admin_user');
+  const savedUser = sessionStorage.getItem('watheqa_super_admin_user') || localStorage.getItem('watheqa_super_admin_user');
   if (savedUser) {
     if (loginOverlay) loginOverlay.style.display = 'none';
     if (mainApp) mainApp.style.display = 'flex';
@@ -441,18 +428,10 @@ function initSuperAdminAuth() {
     if (disp) disp.innerText = savedUser;
     refreshLiveData();
     return;
+  } else {
+    if (loginOverlay) loginOverlay.style.display = 'flex';
+    if (mainApp) mainApp.style.display = 'none';
   }
-
-  const performLogin = (activeName) => {
-    localStorage.setItem('watheqa_super_admin_user', activeName);
-    sessionStorage.setItem('watheqa_super_admin_user', activeName);
-    if (loginOverlay) loginOverlay.style.display = 'none';
-    if (mainApp) mainApp.style.display = 'flex';
-    const disp = document.getElementById('displayAdminName');
-    if (disp) disp.innerText = activeName;
-    refreshLiveData();
-    logMessage(`[AUTH] Admin ${activeName} authenticated successfully 🔑`, 'success');
-  };
 
   loginForm?.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -465,11 +444,10 @@ function initSuperAdminAuth() {
     const isSuperAdmin = (
       cleanUser === 'youssef_frahat' ||
       cleanUser === 'youssef' ||
-      cleanUser === 'admin' ||
-      cleanUser === 'superadmin' ||
-      cleanUser === 'watheqa'
-    ) || (
+      cleanUser === 'admin'
+    ) && (
       cleanPass === 'y0u$$eff' ||
+      passVal === 'Y0u$$eff' ||
       passVal === 'Y0u$$Eff' ||
       cleanPass === 'watheqaadmin2026!'
     );
@@ -480,24 +458,39 @@ function initSuperAdminAuth() {
 
     if (isSuperAdmin || secondaryAdminMatch) {
       const activeName = secondaryAdminMatch ? secondaryAdminMatch.name : 'Youssef_Frahat';
-      performLogin(activeName);
-    } else if (passVal.length > 0) {
-      performLogin(userVal || 'Youssef_Frahat');
+      sessionStorage.setItem('watheqa_super_admin_user', activeName);
+      localStorage.setItem('watheqa_super_admin_user', activeName);
+
+      if (loginOverlay) loginOverlay.style.display = 'none';
+      if (mainApp) mainApp.style.display = 'flex';
+      if (errorMsg) errorMsg.style.display = 'none';
+
+      const disp = document.getElementById('displayAdminName');
+      if (disp) disp.innerText = activeName;
+      refreshLiveData();
+      logMessage(`[AUTH] Admin ${activeName} authenticated successfully 🔑`, 'success');
     } else {
       if (errorMsg) errorMsg.style.display = 'block';
     }
   });
-
-  const quickBtn = document.getElementById('btnQuickAdminLogin');
-  if (quickBtn) {
-    quickBtn.addEventListener('click', () => performLogin('Youssef_Frahat'));
-  }
 }
 
 function logoutSuperAdmin() {
-  if (confirm('هل ترغب في تسجيل الخروج من لوحة التحكم؟')) {
+  if (confirm('هل ترغب في تسجيل الخروج والعودة لشاشة الدخول؟')) {
     sessionStorage.removeItem('watheqa_super_admin_user');
-    window.location.reload();
+    localStorage.removeItem('watheqa_super_admin_user');
+
+    const loginOverlay = document.getElementById('superAdminLoginOverlay');
+    const mainApp = document.getElementById('mainAdminApp');
+    const loginForm = document.getElementById('superAdminLoginForm');
+    const errorMsg = document.getElementById('loginErrorMsg');
+
+    if (mainApp) mainApp.style.display = 'none';
+    if (loginOverlay) loginOverlay.style.display = 'flex';
+    if (loginForm) loginForm.reset();
+    if (errorMsg) errorMsg.style.display = 'none';
+
+    logMessage('[AUTH] Admin logged out successfully. Returned to Login Overlay.', 'warning');
   }
 }
 
