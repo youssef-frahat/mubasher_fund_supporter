@@ -266,8 +266,8 @@ class _SponsoredRecommendationCardState extends State<SponsoredRecommendationCar
                       try {
                         final repo = PortfolioRepository();
                         final portfolioName = isArabic
-                            ? 'محفظة المستشار (${widget.riskResult.riskCategory})'
-                            : 'Advisor Portfolio (${widget.riskResult.riskCategory})';
+                            ? 'محفظة المستشار (${widget.riskResult.getRiskCategory(true)})'
+                            : 'Advisor Portfolio (${widget.riskResult.getRiskCategory(false)})';
                         final createdPortfolio = await repo.createPortfolioFromRecommendedMix(
                           name: portfolioName,
                           riskResult: widget.riskResult,

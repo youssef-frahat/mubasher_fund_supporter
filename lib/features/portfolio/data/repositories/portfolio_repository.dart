@@ -246,7 +246,17 @@ class PortfolioRepository {
     required double totalAmount,
   }) async {
     final client = SupabaseService.client;
-    final user = client?.auth.currentUser;
+    var user = client?.auth.currentUser;
+
+    // If user is guest, attempt anonymous sign in so portfolio is persisted in Supabase DB for Dashboard visibility
+    if (client != null && user == null) {
+      try {
+        final anonRes = await client.auth.signInAnonymously();
+        user = anonRes.user ?? client.auth.currentUser;
+      } catch (e) {
+        debugPrint('⚠️ Anonymous sign-in notice: $e');
+      }
+    }
 
     if (client != null && user != null) {
       try {
@@ -298,6 +308,14 @@ class PortfolioRepository {
 
         final createdPortfolio = PortfolioModel.fromJson(Map<String, dynamic>.from(fullRes as Map));
         await setActivePortfolioId(createdPortfolio.id);
+
+        // Keep local cache in sync so Flutter local state matches DB instantly
+        final localList = await _getLocalPortfoliosWithoutFallback();
+        if (!localList.any((p) => p.id == createdPortfolio.id)) {
+          localList.add(createdPortfolio);
+          await _savePortfoliosToLocal(localList);
+        }
+
         debugPrint('✅ Created Robo-Advisor portfolio & items in Supabase DB (${createdPortfolio.id})');
         return createdPortfolio;
       } catch (e) {
@@ -344,7 +362,7 @@ class PortfolioRepository {
       createdAt: DateTime.now(),
     );
 
-    final portfolios = await getAllPortfolios();
+    final portfolios = await _getLocalPortfoliosWithoutFallback();
     portfolios.add(newPortfolio);
     await _savePortfoliosToLocal(portfolios);
     await setActivePortfolioId(newPortfolio.id);
