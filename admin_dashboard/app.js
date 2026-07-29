@@ -926,8 +926,11 @@ function formatCategoryName(cat, isEn) {
 // Render All Funds Table directly from DB
 function renderFundsTable() {
   const tbody = document.getElementById('fundsTableBody');
-  const filterCat = document.getElementById('fundCategoryFilter').value;
-  const search = document.getElementById('fundSearchInput').value.toLowerCase();
+  if (!tbody) return;
+  const filterCatElement = document.getElementById('fundCategoryFilter');
+  const searchElement = document.getElementById('fundSearchInput');
+  const filterCat = filterCatElement ? filterCatElement.value : 'ALL';
+  const search = searchElement ? searchElement.value.toLowerCase() : '';
 
   tbody.innerHTML = '';
   const isEn = currentLang === 'en';
@@ -935,7 +938,63 @@ function renderFundsTable() {
   if (liveFunds.length === 0) {
     tbody.innerHTML = isEn
       ? '<tr><td colspan="7" style="text-align:center; color:#9ca3af">Loading funds from database...</td></tr>'
-      : '<tr><td colspan="7" style="text-align:center; color:#9ca// ⭐ CLEAN SPONSORED & RECOMMENDED FUNDS CRUD TABLE (Admin Controlled Only)
+      : '<tr><td colspan="7" style="text-align:center; color:#9ca3af">جاري التحميل من Supabase...</td></tr>';
+    return;
+  }
+
+  const filtered = liveFunds.filter(f => {
+    const nameAr = f.name_ar || f.name || '';
+    const nameEn = f.name_en || f.name || '';
+    const manager = f.manager_name || f.manager || '';
+    const category = f.category || '';
+
+    const matchCat = filterCat === 'ALL' || category === filterCat;
+    const matchSearch = nameAr.toLowerCase().includes(search) || nameEn.toLowerCase().includes(search) || manager.toLowerCase().includes(search);
+    return matchCat && matchSearch;
+  });
+
+  filtered.forEach(fund => {
+    const tr = document.createElement('tr');
+    const navVal = parseFloat(fund.current_nav) || 0;
+    const ytdVal = getOfficialFundYtd(fund);
+
+    const displayName = isEn ? (fund.name_en || fund.name || fund.name_ar) : (fund.name_ar || fund.name);
+    const subName = isEn ? (fund.name_ar || '') : (fund.name_en || '');
+    const displayManager = isEn ? (fund.manager || fund.manager_name || 'Mubasher Capital') : (fund.manager_name || fund.manager || 'مباشر كابيتال');
+    const catLabel = formatCategoryName(fund.category, isEn);
+
+    const sponsoredBadgeText = isEn ? 'Sponsored ⭐' : 'رعائي ⭐';
+    const recommendedBadgeText = isEn ? 'Recommended 💡' : 'موصى به 💡';
+    const topBadgeText = isEn ? 'Top Performing 🏆' : 'الأعلى أداءً 🏆';
+
+    const editTitle = isEn ? 'Edit' : 'تعديل';
+    const deleteTitle = isEn ? 'Delete' : 'مسح';
+
+    tr.innerHTML = `
+      <td><strong>${displayName}</strong><br><small style="color:#9ca3af">${subName}</small></td>
+      <td>${displayManager}</td>
+      <td style="color:#00E676; font-weight:bold; white-space:nowrap">${navVal.toFixed(4)} EGP</td>
+      <td style="color:#3B82F6; font-weight:bold; white-space:nowrap">${ytdVal >= 0 ? '+' : ''}${ytdVal.toFixed(2)}%</td>
+      <td><span class="badge" style="background:rgba(59,130,246,0.15); color:#3B82F6">${catLabel}</span></td>
+      <td>
+        <div class="badge-group">
+          ${fund.is_sponsored ? `<span class="badge badge-sponsored">${sponsoredBadgeText}</span>` : ''}
+          ${fund.is_recommended ? `<span class="badge badge-recommended">${recommendedBadgeText}</span>` : ''}
+          ${fund.is_top_performing ? `<span class="badge badge-top">${topBadgeText}</span>` : ''}
+        </div>
+      </td>
+      <td class="actions-cell">
+        <div class="btn-action-group">
+          <button class="btn btn-secondary btn-icon" onclick="editFund('${fund.id}')" title="${editTitle}"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn btn-danger btn-icon" onclick="deleteFund('${fund.id}')" title="${deleteTitle}"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ⭐ CLEAN SPONSORED & RECOMMENDED FUNDS CRUD TABLE (Admin Controlled Only)
 function renderSponsoredTable() {
   const tbody = document.getElementById('sponsoredTableBody');
   if (!tbody) return;
@@ -1144,83 +1203,6 @@ function initSponsoredModalEvents() {
             recommended_goal_key: goalKey
           }).eq('id', fundId);
           logMessage(`[SUPABASE SPONSORED ADD] Fund '${fund.name_ar || fund.name}' added to sponsored list under goal '${goalKey}' 🚀`, 'success');
-        } catch (err) {
-          logMessage(`[SUPABASE ERROR] Add sponsored failed: ${err.message}`, 'danger');
-        }
-      }
-    }
-
-    closeModal();
-  });
-}OVE] Fund '${fund.name_ar || fund.name}' removed from sponsored list.`, 'warning');
-      } catch (err) {
-        logMessage(`[SUPABASE ERROR] Remove sponsored failed: ${err.message}`, 'danger');
-      }
-    }
-  }
-}
-
-// Modal for adding any of the 197 EIMA funds to the active Sponsored list
-function initSponsoredModalEvents() {
-  const modal = document.getElementById('addSponsoredModal');
-  const btnOpen = document.getElementById('btnOpenAddSponsoredModal');
-  const btnClose = document.getElementById('btnCloseSponsoredModal');
-  const btnCancel = document.getElementById('btnCancelSponsoredModal');
-  const form = document.getElementById('addSponsoredForm');
-  const selectFund = document.getElementById('selectFundForSponsored');
-
-  if (!btnOpen) return;
-
-  btnOpen.addEventListener('click', () => {
-    selectFund.innerHTML = '';
-    const availableFunds = liveFunds.filter(f => !f.is_sponsored && !f.is_recommended && !f._inSponsoredList);
-    if (availableFunds.length === 0) {
-      selectFund.innerHTML = '<option value="" disabled selected>جميع الصناديق مضافة بالفعل للقائمة</option>';
-    } else {
-      availableFunds.forEach(f => {
-        const opt = document.createElement('option');
-        opt.value = f.id;
-        opt.innerText = `${f.name_ar || f.name} (${f.manager_name || f.manager || 'مباشر'}) - NAV: ${f.current_nav} EGP`;
-        selectFund.appendChild(opt);
-      });
-    }
-    const countLabel = document.getElementById('sponsoredModalFundCountLabel');
-    if (countLabel) {
-      countLabel.innerText = currentLang === 'en'
-        ? `Select Fund from Database (${availableFunds.length} available out of ${liveFunds.length} total)`
-        : `اختر الصندوق من قاعدة البيانات (متاح ${availableFunds.length} من إجمالي ${liveFunds.length} صندوق)`;
-    }
-    modal.classList.add('active');
-  });
-
-  const closeModal = () => modal.classList.remove('active');
-  btnClose.addEventListener('click', closeModal);
-  btnCancel.addEventListener('click', closeModal);
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const fundId = selectFund.value;
-    if (!fundId) return;
-    const isSponsored = document.getElementById('chkSponsored').checked;
-    const isRecommended = document.getElementById('chkRecommended').checked;
-
-    const fund = liveFunds.find(f => f.id.toString() === fundId.toString());
-    if (fund) {
-      fund.is_sponsored = isSponsored;
-      fund.is_recommended = isRecommended;
-      fund._inSponsoredList = true;
-
-      renderSponsoredTable();
-      renderFundsTable();
-      updateDynamicCharts();
-
-      if (db) {
-        try {
-          await db.from('funds').update({
-            is_sponsored: isSponsored,
-            is_recommended: isRecommended
-          }).eq('id', fundId);
-          logMessage(`[SUPABASE SPONSORED ADD] Fund '${fund.name_ar || fund.name}' added to sponsored list 🚀`, 'success');
         } catch (err) {
           logMessage(`[SUPABASE ERROR] Add sponsored failed: ${err.message}`, 'danger');
         }
