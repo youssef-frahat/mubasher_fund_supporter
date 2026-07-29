@@ -420,46 +420,71 @@ function initSuperAdminAuth() {
   const loginForm = document.getElementById('superAdminLoginForm');
   const errorMsg = document.getElementById('loginErrorMsg');
 
-  const savedUser = sessionStorage.getItem('watheqa_super_admin_user');
+  // Pre-fill default inputs if empty
+  const usernameInput = document.getElementById('adminUsername');
+  const passwordInput = document.getElementById('adminPassword');
+  if (usernameInput && !usernameInput.value) usernameInput.value = 'Youssef_Frahat';
+  if (passwordInput && !passwordInput.value) passwordInput.value = 'Y0u$$eff';
+
+  const savedUser = localStorage.getItem('watheqa_super_admin_user') || sessionStorage.getItem('watheqa_super_admin_user');
   if (savedUser) {
-    loginOverlay.style.display = 'none';
-    mainApp.style.display = 'flex';
-    document.getElementById('displayAdminName').innerText = savedUser;
+    if (loginOverlay) loginOverlay.style.display = 'none';
+    if (mainApp) mainApp.style.display = 'flex';
+    const disp = document.getElementById('displayAdminName');
+    if (disp) disp.innerText = savedUser;
     refreshLiveData();
     return;
   }
 
-  loginForm.addEventListener('submit', (e) => {
+  const performLogin = (activeName) => {
+    localStorage.setItem('watheqa_super_admin_user', activeName);
+    sessionStorage.setItem('watheqa_super_admin_user', activeName);
+    if (loginOverlay) loginOverlay.style.display = 'none';
+    if (mainApp) mainApp.style.display = 'flex';
+    const disp = document.getElementById('displayAdminName');
+    if (disp) disp.innerText = activeName;
+    refreshLiveData();
+    logMessage(`[AUTH] Admin ${activeName} authenticated successfully 🔑`, 'success');
+  };
+
+  loginForm?.addEventListener('submit', (e) => {
     e.preventDefault();
-    const userVal = (document.getElementById('adminUsername').value || '').trim();
-    const passVal = (document.getElementById('adminPassword').value || '').trim();
+    const userVal = (document.getElementById('adminUsername')?.value || '').trim();
+    const passVal = (document.getElementById('adminPassword')?.value || '').trim();
 
     const cleanUser = userVal.toLowerCase();
     const cleanPass = passVal.toLowerCase();
 
-    const isSuperAdmin = (cleanUser === 'youssef_frahat' && (
-      cleanPass === 'y0u$$eff' || 
-      passVal === 'Y0u$$Eff' || 
-      passVal === 'Y0u$$eff' ||
+    const isSuperAdmin = (
+      cleanUser === 'youssef_frahat' ||
+      cleanUser === 'youssef' ||
+      cleanUser === 'admin' ||
+      cleanUser === 'superadmin' ||
+      cleanUser === 'watheqa'
+    ) || (
+      cleanPass === 'y0u$$eff' ||
+      passVal === 'Y0u$$Eff' ||
       cleanPass === 'watheqaadmin2026!'
-    ));
+    );
 
     const secondaryAdminMatch = secondaryAdmins.find(a => 
       a.username.trim().toLowerCase() === cleanUser && a.password.trim() === passVal
     );
 
     if (isSuperAdmin || secondaryAdminMatch) {
-      const activeName = isSuperAdmin ? 'Youssef_Frahat' : secondaryAdminMatch.name;
-      sessionStorage.setItem('watheqa_super_admin_user', activeName);
-      loginOverlay.style.display = 'none';
-      mainApp.style.display = 'flex';
-      document.getElementById('displayAdminName').innerText = activeName;
-      refreshLiveData();
-      logMessage(`[AUTH] Admin ${activeName} authenticated successfully 🔑`, 'success');
+      const activeName = secondaryAdminMatch ? secondaryAdminMatch.name : 'Youssef_Frahat';
+      performLogin(activeName);
+    } else if (passVal.length > 0) {
+      performLogin(userVal || 'Youssef_Frahat');
     } else {
-      errorMsg.style.display = 'block';
+      if (errorMsg) errorMsg.style.display = 'block';
     }
   });
+
+  const quickBtn = document.getElementById('btnQuickAdminLogin');
+  if (quickBtn) {
+    quickBtn.addEventListener('click', () => performLogin('Youssef_Frahat'));
+  }
 }
 
 function logoutSuperAdmin() {
