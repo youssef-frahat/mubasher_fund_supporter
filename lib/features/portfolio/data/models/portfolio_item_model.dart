@@ -139,8 +139,7 @@ class PortfolioItem {
   }
 
   Map<String, dynamic> toSupabaseJson(String portfolioId) {
-    return {
-      'id': id,
+    final map = <String, dynamic>{
       'portfolio_id': portfolioId,
       'fund_name': fundName,
       'category': category.name,
@@ -150,6 +149,15 @@ class PortfolioItem {
       'purchase_date': purchaseDate.toIso8601String(),
       'created_at': DateTime.now().toIso8601String(),
     };
+    if (_isValidUuid(id)) {
+      map['id'] = id;
+    }
+    return map;
+  }
+
+  static bool _isValidUuid(String str) {
+    final uuidRegex = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+    return uuidRegex.hasMatch(str);
   }
 
   factory PortfolioItem.fromJson(Map<String, dynamic> json) {

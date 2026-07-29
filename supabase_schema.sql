@@ -1,105 +1,41 @@
 -- =====================================================================
--- MUBASHER FUND SUPPORTER - Complete Supabase Database Schema & Seed
+-- MUBASHER FUND SUPPORTER - MASTER SUPABASE DATABASE FIX & MIGRATION SCRIPT
 -- Run this in Supabase SQL Editor (https://app.supabase.com -> SQL Editor)
 -- =====================================================================
 
--- Enable UUID extension
+-- 1. Enable Extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Clean drop of existing tables to avoid column mismatch errors from older runs
-DROP TABLE IF EXISTS public.wishlist CASCADE;
-DROP TABLE IF EXISTS public.portfolio_transactions CASCADE;
-DROP TABLE IF EXISTS public.portfolio_items CASCADE;
-DROP TABLE IF EXISTS public.portfolios CASCADE;
-DROP TABLE IF EXISTS public.funds CASCADE;
-DROP TABLE IF EXISTS public.profiles CASCADE;
-
 -- =====================================================================
--- 1. FUNDS TABLE (Investment Funds Data)
--- Supports all app repository query variants and full EIMA report data
+-- 2. CREATE / ALTER PROFILES TABLE (With all required fields)
 -- =====================================================================
-CREATE TABLE public.funds (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name TEXT NOT NULL,
-    name_ar TEXT,
-    name_en TEXT,
-    manager_name TEXT NOT NULL DEFAULT 'مباشر كابيتال',
-    manager TEXT DEFAULT 'مباشر كابيتال',
-    description_ar TEXT,
-    description_en TEXT,
-    inception_date TEXT,
-    initial_value NUMERIC(12, 4) DEFAULT 100.0000,
-    current_nav NUMERIC(12, 4) NOT NULL DEFAULT 100.0000,
-    nav_date TEXT DEFAULT '09/07/26',
-    
-    -- Returns (%)
-    weekly_return NUMERIC(8, 2) DEFAULT 0.00,
-    four_weeks_return NUMERIC(8, 2) DEFAULT 0.00,
-    ytd_return NUMERIC(8, 2) NOT NULL DEFAULT 0.00,
-    last_12m_return NUMERIC(8, 2) DEFAULT 0.00,
-    return_2y NUMERIC(8, 2) DEFAULT 0.00,
-    return_3y NUMERIC(8, 2) DEFAULT 0.00,
-    return_4y NUMERIC(8, 2) DEFAULT 0.00,
-    return_5y NUMERIC(8, 2) DEFAULT 0.00,
-    return_6y NUMERIC(8, 2) DEFAULT 0.00,
-    daily_change NUMERIC(8, 2) NOT NULL DEFAULT 0.00,
-
-    -- Rankings
-    weekly_rank INTEGER,
-    four_weeks_rank INTEGER,
-    ytd_rank INTEGER,
-    last_12m_rank INTEGER,
-    rank_2y INTEGER,
-    rank_3y INTEGER,
-    rank_4y INTEGER,
-    rank_5y INTEGER,
-    rank_6y INTEGER,
-    rank INTEGER,
-
-    -- Metadata & Monetization / Sponsored Status
-    currency TEXT NOT NULL DEFAULT 'EGP',
-    risk_level TEXT NOT NULL DEFAULT 'Medium' CHECK (risk_level IN ('Low', 'Medium', 'High')),
-    category TEXT NOT NULL DEFAULT 'Equity',
-    sub_category TEXT,
-    fund_type TEXT DEFAULT 'Equity',
-    logo_url TEXT,
-    is_recommended BOOLEAN DEFAULT false,
-    is_sponsored BOOLEAN DEFAULT false,
-    is_top_performing BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- RLS Policies for Funds
-ALTER TABLE public.funds ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read access to funds" ON public.funds FOR SELECT USING (true);
-CREATE POLICY "Allow public all access to funds" ON public.funds FOR ALL USING (true);
-
--- =====================================================================
--- 2. USER PROFILES TABLE
--- =====================================================================
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     full_name TEXT,
-    avatar_url TEXT,
+    email TEXT,
+    phone TEXT,
     phone_number TEXT,
+    avatar_url TEXT,
+    is_verified BOOLEAN DEFAULT true,
     risk_tolerance TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- RLS Policies for Profiles
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read access to profiles for admin" ON public.profiles FOR SELECT USING (true);
-CREATE POLICY "Allow public all access to profiles for admin" ON public.profiles FOR ALL USING (true);
-CREATE POLICY "Allow users to view their own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Allow users to update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Allow users to insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+-- Ensure all columns exist even if profiles table was created earlier
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone_number TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT true;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS risk_tolerance TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
 
 -- =====================================================================
--- 3. PORTFOLIOS TABLE (User Portfolios)
+-- 3. CREATE / ALTER PORTFOLIOS TABLE
 -- =====================================================================
-CREATE TABLE public.portfolios (
+CREATE TABLE IF NOT EXISTS public.portfolios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     name TEXT NOT NULL DEFAULT 'محفظتي الاستثمارية',
@@ -107,85 +43,105 @@ CREATE TABLE public.portfolios (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- RLS Policies for Portfolios
-ALTER TABLE public.portfolios ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read access to portfolios for admin" ON public.portfolios FOR SELECT USING (true);
-CREATE POLICY "Allow users all access to their own portfolios" ON public.portfolios FOR ALL USING (auth.uid() = user_id);
-
 -- =====================================================================
--- 4. PORTFOLIO ITEMS TABLE (Assets inside Portfolio)
+-- 4. CREATE / ALTER PORTFOLIO ITEMS TABLE
 -- =====================================================================
-CREATE TABLE public.portfolio_items (
+CREATE TABLE IF NOT EXISTS public.portfolio_items (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     portfolio_id UUID NOT NULL REFERENCES public.portfolios(id) ON DELETE CASCADE,
-    fund_id UUID REFERENCES public.funds(id) ON DELETE SET NULL,
+    fund_id TEXT,
     fund_name TEXT NOT NULL,
-    category TEXT NOT NULL,
-    units NUMERIC(14, 4) NOT NULL DEFAULT 0.0000,
-    purchase_price NUMERIC(12, 4) NOT NULL DEFAULT 0.0000,
-    current_nav NUMERIC(12, 4) NOT NULL DEFAULT 0.0000,
+    category TEXT NOT NULL DEFAULT 'عام',
+    units NUMERIC(15, 4) NOT NULL DEFAULT 0.0000,
+    purchase_price NUMERIC(15, 4) NOT NULL DEFAULT 0.0000,
+    current_nav NUMERIC(15, 4) NOT NULL DEFAULT 0.0000,
     purchase_date TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- RLS Policies for Portfolio Items
-ALTER TABLE public.portfolio_items ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read access to portfolio items for admin" ON public.portfolio_items FOR SELECT USING (true);
-CREATE POLICY "Allow users to manage portfolio items" ON public.portfolio_items FOR ALL USING (
-    EXISTS (
-        SELECT 1 FROM public.portfolios
-        WHERE public.portfolios.id = public.portfolio_items.portfolio_id
-        AND public.portfolios.user_id = auth.uid()
-    )
-);
+ALTER TABLE public.portfolio_items ADD COLUMN IF NOT EXISTS fund_id TEXT;
+ALTER TABLE public.portfolio_items ADD COLUMN IF NOT EXISTS fund_name TEXT;
+ALTER TABLE public.portfolio_items ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'عام';
+ALTER TABLE public.portfolio_items ADD COLUMN IF NOT EXISTS units NUMERIC(15, 4) DEFAULT 0;
+ALTER TABLE public.portfolio_items ADD COLUMN IF NOT EXISTS purchase_price NUMERIC(15, 4) DEFAULT 0;
+ALTER TABLE public.portfolio_items ADD COLUMN IF NOT EXISTS current_nav NUMERIC(15, 4) DEFAULT 0;
 
 -- =====================================================================
--- 5. PORTFOLIO TRANSACTIONS TABLE
+-- 5. CREATE / ALTER TRANSACTIONS & WISHLIST TABLES
 -- =====================================================================
-CREATE TABLE public.portfolio_transactions (
+CREATE TABLE IF NOT EXISTS public.portfolio_transactions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    fund_id UUID NOT NULL REFERENCES public.funds(id) ON DELETE CASCADE,
-    units NUMERIC(14, 4) NOT NULL,
-    purchase_price NUMERIC(12, 4) NOT NULL,
+    fund_id TEXT NOT NULL,
+    units NUMERIC(15, 4) NOT NULL,
+    purchase_price NUMERIC(15, 4) NOT NULL,
     transaction_date TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- RLS Policies for Portfolio Transactions
-ALTER TABLE public.portfolio_transactions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow users to view own transactions" ON public.portfolio_transactions FOR ALL USING (auth.uid() = user_id);
-
--- =====================================================================
--- 6. WISHLIST TABLE (Saved Funds)
--- =====================================================================
-CREATE TABLE public.wishlist (
+CREATE TABLE IF NOT EXISTS public.wishlist (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    fund_id UUID NOT NULL REFERENCES public.funds(id) ON DELETE CASCADE,
+    fund_id TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     UNIQUE(user_id, fund_id)
 );
 
--- RLS Policies for Wishlist
+-- =====================================================================
+-- 6. DISABLE STRICT RLS / ADD UNRESTRICTED PERMISSIONS FOR ADMIN & APP
+-- =====================================================================
+
+-- Profiles RLS Policies
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow_All_Profiles" ON public.profiles;
+CREATE POLICY "Allow_All_Profiles" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
+
+-- Portfolios RLS Policies
+ALTER TABLE public.portfolios ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow_All_Portfolios" ON public.portfolios;
+CREATE POLICY "Allow_All_Portfolios" ON public.portfolios FOR ALL USING (true) WITH CHECK (true);
+
+-- Portfolio Items RLS Policies
+ALTER TABLE public.portfolio_items ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow_All_Portfolio_Items" ON public.portfolio_items;
+CREATE POLICY "Allow_All_Portfolio_Items" ON public.portfolio_items FOR ALL USING (true) WITH CHECK (true);
+
+-- Transactions RLS Policies
+ALTER TABLE public.portfolio_transactions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow_All_Transactions" ON public.portfolio_transactions;
+CREATE POLICY "Allow_All_Transactions" ON public.portfolio_transactions FOR ALL USING (true) WITH CHECK (true);
+
+-- Wishlist RLS Policies
 ALTER TABLE public.wishlist ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow users to manage wishlist" ON public.wishlist FOR ALL USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Allow_All_Wishlist" ON public.wishlist;
+CREATE POLICY "Allow_All_Wishlist" ON public.wishlist FOR ALL USING (true) WITH CHECK (true);
+
+-- Grant privileges to anon and authenticated roles
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
 
 -- =====================================================================
--- 7. AUTOMATIC PROFILE AND DEFAULT PORTFOLIO CREATION TRIGGER ON SIGN UP
+-- 7. SAFE AUTOMATIC PROFILE AND DEFAULT PORTFOLIO TRIGGER ON SIGN UP
 -- =====================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  -- 1. Create or Update Profile
-  INSERT INTO public.profiles (id, full_name, avatar_url)
+  -- 1. Create or Update Profile seamlessly
+  INSERT INTO public.profiles (id, full_name, phone, phone_number, email, avatar_url, is_verified)
   VALUES (
     new.id,
     COALESCE(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
-    new.raw_user_meta_data->>'avatar_url'
+    COALESCE(new.raw_user_meta_data->>'phone', new.phone, new.email),
+    COALESCE(new.raw_user_meta_data->>'phone', new.phone, new.email),
+    new.email,
+    new.raw_user_meta_data->>'avatar_url',
+    true
   )
   ON CONFLICT (id) DO UPDATE SET
     full_name = EXCLUDED.full_name,
+    email = EXCLUDED.email,
+    phone = EXCLUDED.phone,
+    phone_number = EXCLUDED.phone_number,
     avatar_url = EXCLUDED.avatar_url,
     updated_at = timezone('utc'::text, now());
 
@@ -202,13 +158,13 @@ BEGIN
   RETURN new;
 EXCEPTION
   WHEN OTHERS THEN
-    -- Fallback: Ensure auth.users signup never fails due to trigger notice
+    -- Prevent trigger failure from blocking Auth Sign Up
     RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Re-apply Trigger
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
-

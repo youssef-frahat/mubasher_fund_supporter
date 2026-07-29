@@ -20,13 +20,23 @@ class PortfolioModel {
         'createdAt': createdAt.toIso8601String(),
       };
 
-  Map<String, dynamic> toSupabaseJson(String userId) => {
-        'id': id,
-        'user_id': userId,
-        'name': name,
-        'created_at': createdAt.toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      };
+  Map<String, dynamic> toSupabaseJson(String userId) {
+    final map = <String, dynamic>{
+      'user_id': userId,
+      'name': name,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+    if (_isValidUuid(id)) {
+      map['id'] = id;
+    }
+    return map;
+  }
+
+  static bool _isValidUuid(String str) {
+    final uuidRegex = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+    return uuidRegex.hasMatch(str);
+  }
 
   factory PortfolioModel.fromJson(Map<String, dynamic> json) {
     final rawItems = json['portfolio_items'] ?? json['items'];
