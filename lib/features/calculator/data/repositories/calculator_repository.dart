@@ -13,15 +13,13 @@ class CalculatorRepository {
   Future<List<FundModel>> getSponsoredBackendFunds({
     List<String> excludedFundNames = const [],
   }) async {
-    final sponsored = await SupabaseFundsRepository().getRecommendedFunds();
-    final list = sponsored.isNotEmpty
-        ? sponsored
-        : (await SupabaseFundsRepository().getFunds()).take(6).toList();
+    final list = await SupabaseFundsRepository().getFunds();
 
     if (excludedFundNames.isEmpty) return list;
 
     final lowerExcluded = excludedFundNames.map((e) => e.trim().toLowerCase()).toSet();
-    return list.where((f) => !lowerExcluded.contains(f.name.trim().toLowerCase())).toList();
+    final filtered = list.where((f) => !lowerExcluded.contains(f.name.trim().toLowerCase())).toList();
+    return filtered.isNotEmpty ? filtered : list;
   }
 
   RiskAssessmentResult calculateRiskProfile({

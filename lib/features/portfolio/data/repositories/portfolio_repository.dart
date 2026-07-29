@@ -402,7 +402,7 @@ class PortfolioRepository {
   /// the latest NAV the admin has set.
   Future<void> refreshPortfolioNavs() async {
     try {
-      final liveFunds = await SupabaseFundsRepository().getFunds();
+      final liveFunds = await SupabaseFundsRepository().getFunds().timeout(const Duration(seconds: 4));
       if (liveFunds.isEmpty) return;
 
       // Build a lookup map: fund name (lower-case trimmed) → currentNav

@@ -165,9 +165,12 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                       setStateModal(() {
                         _filteredFunds = _backendFunds.where((f) {
                           final nameMatch = f.name.toLowerCase().contains(q);
+                          final nameArMatch = (f.nameAr ?? '').toLowerCase().contains(q);
+                          final nameEnMatch = (f.nameEn ?? '').toLowerCase().contains(q);
                           final managerMatch = f.managerName.toLowerCase().contains(q);
                           final catMatch = f.category.toLowerCase().contains(q);
-                          return nameMatch || managerMatch || catMatch;
+                          final abbrMatch = (f.abbreviation ?? '').toLowerCase().contains(q);
+                          return nameMatch || nameArMatch || nameEnMatch || managerMatch || catMatch || abbrMatch;
                         }).toList();
                       });
                     },

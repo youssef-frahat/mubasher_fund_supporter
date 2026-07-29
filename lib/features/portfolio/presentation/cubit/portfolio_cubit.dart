@@ -11,8 +11,10 @@ class PortfolioCubit extends Cubit<PortfolioState> {
   Future<void> loadPortfolio() async {
     emit(PortfolioLoading());
     try {
-      // Refresh NAVs from Supabase before loading so P&L is always live
-      await repository.refreshPortfolioNavs();
+      // Safely try to refresh NAVs from Supabase with non-blocking error handling
+      try {
+        await repository.refreshPortfolioNavs().timeout(const Duration(seconds: 4));
+      } catch (_) {}
 
       final portfolios = await repository.getAllPortfolios();
       final activeId = await repository.getActivePortfolioId();
