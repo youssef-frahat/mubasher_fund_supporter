@@ -34,6 +34,28 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnLogoutAdmin').addEventListener('click', logoutSuperAdmin);
 });
 
+// TAB NAVIGATION ENGINE
+function initTabNavigation() {
+  const navItems = document.querySelectorAll('.sidebar .nav-item');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const tabId = item.getAttribute('data-tab');
+      if (!tabId) return;
+
+      navItems.forEach(n => n.classList.remove('active'));
+      tabContents.forEach(tc => tc.classList.remove('active'));
+
+      item.classList.add('active');
+      const targetTab = document.getElementById(`tab-${tabId}`);
+      if (targetTab) {
+        targetTab.classList.add('active');
+      }
+    });
+  });
+}
+
 // Internationalization (i18n) Engine
 let currentLang = localStorage.getItem('watheqa_admin_lang') || 'ar';
 
@@ -77,19 +99,26 @@ function applyLanguage(lang) {
     quickPriceSearch.placeholder = isEn ? 'Fast search by fund name...' : 'بحث سريع باسم الصندوق...';
   }
 
-  // Update sidebar menu items
+  // Update sidebar menu items dynamically by data-tab
   const navItems = document.querySelectorAll('.nav-menu .nav-item');
-  if (navItems.length >= 9) {
-    navItems[0].querySelector('span').innerText = isEn ? 'DevOps System & Status' : 'منظومة DevOps والحالة';
-    navItems[1].querySelector('span').innerText = isEn ? 'Quick NAV Price Updater ⚡' : 'تعديل الأسعار السريع ⚡';
-    navItems[2].querySelector('span').innerText = isEn ? 'All Mutual Funds (CRUD)' : 'إدارة كافة الصناديق الاستثمارية';
-    navItems[3].querySelector('span').innerText = isEn ? 'Sponsored & Recommended' : 'الصناديق الرعائية والموصى بها';
-    navItems[4].querySelector('span').innerText = isEn ? 'Portfolios & Trading Orders' : 'محافظ العملاء وطلبات التداول';
-    navItems[5].querySelector('span').innerText = isEn ? 'Users & Verification' : 'المستخدمين وتفعيل التوثيق';
-    navItems[6].querySelector('span').innerText = isEn ? 'Admin Team Management 🔑' : 'إدارة فريق الأدمن والمساعدين 🔑';
-    navItems[7].querySelector('span').innerText = isEn ? 'Analytics & Usage Insights' : 'تحليلات الاستخدام والربط';
-    navItems[8].querySelector('span').innerText = isEn ? 'Live System Audit Logs' : 'سجلات النظام الفورية Live Logs';
-  }
+  navItems.forEach(item => {
+    const tabId = item.getAttribute('data-tab');
+    const span = item.querySelector('span');
+    if (!span || !tabId) return;
+
+    switch (tabId) {
+      case 'devops': span.innerText = isEn ? 'DevOps System & Status' : 'منظومة DevOps والحالة'; break;
+      case 'quick-price': span.innerText = isEn ? 'Quick NAV Price Updater ⚡' : 'تعديل الأسعار السريع ⚡'; break;
+      case 'funds': span.innerText = isEn ? 'All Mutual Funds (CRUD)' : 'إدارة كافة الصناديق (CRUD)'; break;
+      case 'sponsored': span.innerText = isEn ? 'Sponsored & Recommended' : 'الصناديق الرعائية والموصى بها'; break;
+      case 'portfolios': span.innerText = isEn ? 'Portfolios & Trading Orders' : 'محافظ العملاء وطلبات التداول'; break;
+      case 'users': span.innerText = isEn ? 'Users & Verification' : 'المستخدمين وتفعيل التوثيق'; break;
+      case 'robo-config': span.innerText = isEn ? 'Robo-Advisor Recommendations 🤖' : 'توصيات المستشار الذكي 🤖'; break;
+      case 'admins': span.innerText = isEn ? 'Admin Team Management 🔑' : 'إدارة فريق الأدمن والمساعدين 🔑'; break;
+      case 'insights': span.innerText = isEn ? 'Analytics & Usage Insights' : 'تحليلات الاستخدام والربط'; break;
+      case 'logs': span.innerText = isEn ? 'Live System Audit Logs' : 'سجلات النظام Live Logs'; break;
+    }
+  });
 
   // Update Section Headers
   const devopsTitle = document.querySelector('#tab-devops .section-title h2');
