@@ -30,7 +30,7 @@ class CalculatorCubit extends Cubit<CalculatorState> {
   Future<void> calculate() async {
     emit(CalculatorCalculating());
 
-    final riskResult = repository.calculateRiskProfile(
+    final riskResult = await repository.getDynamicRiskProfile(
       goal: selectedGoal,
       duration: selectedDuration,
     );

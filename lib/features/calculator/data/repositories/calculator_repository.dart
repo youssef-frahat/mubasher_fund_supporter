@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/supabase/supabase_service.dart';
 import '../models/risk_profile_model.dart';
 import '../../../home/data/models/fund_model.dart';
 import '../../../home/data/repositories/funds_repository.dart';
 
 class CalculatorRepository {
-  // ignore: unused_field
-  final SupabaseClient? _supabaseClient;
-
-  CalculatorRepository({this._supabaseClient});
 
   Future<List<FundModel>> getSponsoredBackendFunds({
     List<String> excludedFundNames = const [],
@@ -20,6 +16,103 @@ class CalculatorRepository {
     final lowerExcluded = excludedFundNames.map((e) => e.trim().toLowerCase()).toSet();
     final filtered = list.where((f) => !lowerExcluded.contains(f.name.trim().toLowerCase())).toList();
     return filtered.isNotEmpty ? filtered : list;
+  }
+
+  /// Get Risk Assessment Profile directly from Supabase DB `robo_advisor_configs` table if configured by Admin
+  Future<RiskAssessmentResult> getDynamicRiskProfile({
+    required InvestmentGoal goal,
+    required InvestmentDuration duration,
+  }) async {
+    final defaultResult = calculateRiskProfile(goal: goal, duration: duration);
+    final client = SupabaseService.client;
+    if (client == null) return defaultResult;
+
+    final goalKey = _getGoalKey(goal);
+    try {
+      final response = await client
+          .from('robo_advisor_configs')
+          .select('*')
+          .eq('goal_key', goalKey)
+          .maybeSingle();
+
+      if (response != null) {
+        final Map<String, dynamic> data = response;
+        final String titleAr = data['goal_title_ar'] ?? defaultResult.riskCategoryAr;
+        final double roi = (data['expected_roi'] as num?)?.toDouble() ?? defaultResult.expectedRoiPercentage;
+        final String descAr = data['description_ar'] ?? defaultResult.descriptionAr;
+
+        final fund1Name = data['fund1_name']?.toString() ?? '';
+        final fund2Name = data['fund2_name']?.toString() ?? '';
+        final fund3Name = data['fund3_name']?.toString() ?? '';
+
+        final List<PortfolioFundAllocation> mix = [];
+
+        if (fund1Name.isNotEmpty) {
+          mix.add(PortfolioFundAllocation(
+            fundName: fund1Name,
+            categoryNameAr: data['fund1_category_ar']?.toString() ?? 'صناديق الذهب',
+            categoryNameEn: 'Gold Funds',
+            percentage: (data['fund1_percentage'] as num?)?.toDouble() ?? 50.0,
+            badgeLabelAr: data['fund1_badge_ar']?.toString() ?? 'الملاذ الأول',
+            badgeLabelEn: 'Primary Haven',
+            categoryColor: const Color(0xFFF59E0B),
+          ));
+        }
+
+        if (fund2Name.isNotEmpty) {
+          mix.add(PortfolioFundAllocation(
+            fundName: fund2Name,
+            categoryNameAr: data['fund2_category_ar']?.toString() ?? 'معادن ومسبوكات',
+            categoryNameEn: 'Metals',
+            percentage: (data['fund2_percentage'] as num?)?.toDouble() ?? 30.0,
+            badgeLabelAr: data['fund2_badge_ar']?.toString() ?? 'نمو مرتفع',
+            badgeLabelEn: 'High Yield',
+            categoryColor: const Color(0xFF3B82F6),
+          ));
+        }
+
+        if (fund3Name.isNotEmpty) {
+          mix.add(PortfolioFundAllocation(
+            fundName: fund3Name,
+            categoryNameAr: data['fund3_category_ar']?.toString() ?? 'أدوات مركبة',
+            categoryNameEn: 'Derivatives',
+            percentage: (data['fund3_percentage'] as num?)?.toDouble() ?? 20.0,
+            badgeLabelAr: data['fund3_badge_ar']?.toString() ?? 'فرص مضاعفة',
+            badgeLabelEn: 'Multiplied Growth',
+            categoryColor: const Color(0xFF8B5CF6),
+          ));
+        }
+
+        if (mix.isNotEmpty) {
+          return RiskAssessmentResult(
+            riskCategoryAr: titleAr,
+            riskCategoryEn: defaultResult.riskCategoryEn,
+            expectedRoiPercentage: roi,
+            descriptionAr: descAr,
+            descriptionEn: defaultResult.descriptionEn,
+            recommendedPortfolioMix: mix,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Dynamic Robo-Advisor config notice: $e');
+    }
+
+    return defaultResult;
+  }
+
+  String _getGoalKey(InvestmentGoal goal) {
+    switch (goal) {
+      case InvestmentGoal.goldHedging:
+        return 'goldHedging';
+      case InvestmentGoal.islamicSharia:
+        return 'islamicSharia';
+      case InvestmentGoal.capitalPreservation:
+        return 'capitalPreservation';
+      case InvestmentGoal.balancedGrowth:
+      case InvestmentGoal.highYield:
+        return 'balancedGrowth';
+    }
   }
 
   RiskAssessmentResult calculateRiskProfile({

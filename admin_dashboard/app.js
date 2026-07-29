@@ -448,6 +448,7 @@ async function refreshLiveData() {
     fetchPortfolios(),
     fetchTransactions(),
     fetchUsers(),
+    fetchRoboConfigs(),
   ]);
   
   computeTopPerformingFundsDynamically();
@@ -1845,3 +1846,176 @@ function logMessage(msg, type = 'info') {
     fullContainer.insertBefore(clone, fullContainer.firstChild);
   }
 }
+
+// =====================================================================
+// ROBO-ADVISOR RECOMMENDATIONS CONFIGURATOR (DYNAMIC SUPABASE SYNC)
+// =====================================================================
+let liveRoboConfigs = {};
+
+async function fetchRoboConfigs() {
+  if (!db) return;
+  try {
+    const { data, error } = await db.from('robo_advisor_configs').select('*');
+    if (!error && data) {
+      liveRoboConfigs = {};
+      data.forEach(cfg => {
+        liveRoboConfigs[cfg.goal_key] = cfg;
+      });
+      logMessage(`[DB LOG] Loaded ${data.length} custom Robo-Advisor goal configs from Supabase.`, 'success');
+      populateRoboFundDropdowns();
+      const currentGoal = document.getElementById('roboGoalSelector')?.value || 'goldHedging';
+      loadRoboConfigForGoal(currentGoal);
+    }
+  } catch (err) {
+    logMessage(`[DB NOTICE] Fetch Robo configs notice: ${err.message}`, 'info');
+  }
+}
+
+function populateRoboFundDropdowns() {
+  const dropdowns = document.querySelectorAll('.robo-fund-dropdown');
+  if (!dropdowns || dropdowns.length === 0) return;
+
+  dropdowns.forEach(select => {
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">-- اختر الصندوق من القائمة (197 صندوق) --</option>';
+    
+    // Group funds by category for clean admin selection hint
+    const categoriesMap = new Map();
+    liveFunds.forEach(f => {
+      const cat = f.category || 'عام';
+      if (!categoriesMap.has(cat)) categoriesMap.set(cat, []);
+      categoriesMap.get(cat).push(f);
+    });
+
+    categoriesMap.forEach((funds, catName) => {
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = `📁 تصنيف: ${catName} (${funds.length} صندوق)`;
+      funds.forEach(f => {
+        const option = document.createElement('option');
+        option.value = f.name;
+        option.innerText = `${f.name} — [المدير: ${f.manager_name || f.manager || 'مباشر'}] (YTD: +${f.ytd_return || 0}%)`;
+        optgroup.appendChild(option);
+      });
+      select.appendChild(optgroup);
+    });
+
+    if (currentVal) select.value = currentVal;
+  });
+}
+
+function loadRoboConfigForGoal(goalKey) {
+  const config = liveRoboConfigs[goalKey];
+  if (!config) return;
+
+  const titleInput = document.getElementById('roboGoalTitleAr');
+  const roiInput = document.getElementById('roboExpectedRoi');
+  const descInput = document.getElementById('roboDescriptionAr');
+
+  if (titleInput) titleInput.value = config.goal_title_ar || '';
+  if (roiInput) roiInput.value = config.expected_roi || 25.0;
+  if (descInput) descInput.value = config.description_ar || '';
+
+  const fund1Sel = document.getElementById('roboFund1Select');
+  const fund1Pct = document.getElementById('roboFund1Pct');
+  const fund1Badge = document.getElementById('roboFund1Badge');
+
+  const fund2Sel = document.getElementById('roboFund2Select');
+  const fund2Pct = document.getElementById('roboFund2Pct');
+  const fund2Badge = document.getElementById('roboFund2Badge');
+
+  const fund3Sel = document.getElementById('roboFund3Select');
+  const fund3Pct = document.getElementById('roboFund3Pct');
+  const fund3Badge = document.getElementById('roboFund3Badge');
+
+  if (fund1Sel) fund1Sel.value = config.fund1_name || '';
+  if (fund1Pct) fund1Pct.value = config.fund1_percentage || 50;
+  if (fund1Badge) fund1Badge.value = config.fund1_badge_ar || 'الملاذ الأول';
+
+  if (fund2Sel) fund2Sel.value = config.fund2_name || '';
+  if (fund2Pct) fund2Pct.value = config.fund2_percentage || 30;
+  if (fund2Badge) fund2Badge.value = config.fund2_badge_ar || 'نمو مرتفع';
+
+  if (fund3Sel) fund3Sel.value = config.fund3_name || '';
+  if (fund3Pct) fund3Pct.value = config.fund3_percentage || 20;
+  if (fund3Badge) fund3Badge.value = config.fund3_badge_ar || 'فرص مضاعفة';
+}
+
+async function saveRoboConfig() {
+  if (!db) {
+    alert('الاتصال بقاعدة البيانات غير نشط!');
+    return;
+  }
+
+  const goalKey = document.getElementById('roboGoalSelector')?.value;
+  if (!goalKey) return;
+
+  const goalTitleAr = document.getElementById('roboGoalTitleAr')?.value.trim();
+  const expectedRoi = parseFloat(document.getElementById('roboExpectedRoi')?.value) || 25.0;
+  const descriptionAr = document.getElementById('roboDescriptionAr')?.value.trim();
+
+  const fund1Name = document.getElementById('roboFund1Select')?.value;
+  const fund1Pct = parseFloat(document.getElementById('roboFund1Pct')?.value) || 50.0;
+  const fund1Badge = document.getElementById('roboFund1Badge')?.value.trim();
+
+  const fund2Name = document.getElementById('roboFund2Select')?.value;
+  const fund2Pct = parseFloat(document.getElementById('roboFund2Pct')?.value) || 30.0;
+  const fund2Badge = document.getElementById('roboFund2Badge')?.value.trim();
+
+  const fund3Name = document.getElementById('roboFund3Select')?.value;
+  const fund3Pct = parseFloat(document.getElementById('roboFund3Pct')?.value) || 20.0;
+  const fund3Badge = document.getElementById('roboFund3Badge')?.value.trim();
+
+  if (!fund1Name || !fund2Name || !fund3Name) {
+    alert('يرجى اختيار الصناديق الثلاثة الموصى بها لهذا الهدف الاستثماري!');
+    return;
+  }
+
+  const payload = {
+    goal_key: goalKey,
+    goal_title_ar: goalTitleAr || 'محفظة موصى بها',
+    expected_roi: expectedRoi,
+    description_ar: descriptionAr || '',
+    fund1_name: fund1Name,
+    fund1_category_ar: 'صناديق الذهب',
+    fund1_percentage: fund1Pct,
+    fund1_badge_ar: fund1Badge || 'الملاذ الأول',
+    fund2_name: fund2Name,
+    fund2_category_ar: 'معادن ومسبوكات',
+    fund2_percentage: fund2Pct,
+    fund2_badge_ar: fund2Badge || 'نمو مرتفع',
+    fund3_name: fund3Name,
+    fund3_category_ar: 'أدوات مركبة',
+    fund3_percentage: fund3Pct,
+    fund3_badge_ar: fund3Badge || 'فرص مضاعفة',
+    updated_at: new Date().toISOString()
+  };
+
+  try {
+    const { error } = await db.from('robo_advisor_configs').upsert(payload, { onConflict: 'goal_key' });
+    if (error) throw error;
+
+    liveRoboConfigs[goalKey] = payload;
+    logMessage(`[DB SUCCESS] Saved Robo-Advisor recommendations for goal "${goalKey}" directly to Supabase DB!`, 'success');
+    alert('✅ تم حفظ وتحديث توصيات المستشار الذكي بنجاح في قاعدة البيانات سوبابيز! ستظهر الصناديق المحددة فوراً لكل مستخدمي الموبايل 🚀');
+  } catch (err) {
+    alert(`حدث خطأ أثناء حفظ التوصيات: ${err.message}`);
+    logMessage(`[DB ERROR] Save Robo config error: ${err.message}`, 'danger');
+  }
+}
+
+// Event Listeners Registration for Robo Advisor
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const goalSelector = document.getElementById('roboGoalSelector');
+    if (goalSelector) {
+      goalSelector.addEventListener('change', (e) => {
+        loadRoboConfigForGoal(e.target.value);
+      });
+    }
+
+    const btnSave = document.getElementById('btnSaveRoboConfig');
+    if (btnSave) {
+      btnSave.addEventListener('click', saveRoboConfig);
+    }
+  }, 1000);
+});
