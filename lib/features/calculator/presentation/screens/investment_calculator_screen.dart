@@ -300,7 +300,7 @@ class _InvestmentCalculatorContentState extends State<_InvestmentCalculatorConte
                   SizedBox(height: 8.h),
                   _buildComparisonTile(
                     context: context,
-                    title: isAr ? 'شهادة بنكية تقليدية (23.5% سنويًا)' : 'Traditional Bank Certificate (23.5% p.a.)',
+                    title: isAr ? 'شهادة بنكية تقليدية (17.25% - 19.25% سنويًا)' : 'Traditional Bank Certificate (17.25% - 19.25% p.a.)',
                     amount: calculatedState.bankCertificateReturn,
                     color: Colors.blueAccent,
                     icon: FontAwesomeIcons.landmark,

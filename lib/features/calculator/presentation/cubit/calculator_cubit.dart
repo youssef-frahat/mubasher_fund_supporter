@@ -40,8 +40,8 @@ class CalculatorCubit extends Cubit<CalculatorState> {
         ? 1.0
         : (selectedDuration == InvestmentDuration.mediumTerm ? 2.0 : 3.0);
 
-    // Bank Cert constant rate (e.g., 23.5% per annum)
-    double bankRate = 0.235;
+    // Bank Cert rate range (17.25% - 19.25% per annum, avg 18.25%)
+    double bankRate = 0.1825;
     double bankCertReturn = selectedAmount * (1 + (bankRate * years));
 
     // Recommended Multi-Fund Portfolio Mix Rate
