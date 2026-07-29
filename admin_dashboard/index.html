@@ -81,6 +81,10 @@
           <i class="fa-solid fa-star"></i>
           <span>الصناديق الرعائية والموصى بها</span>
         </button>
+        <button class="nav-item" data-tab="robo-config">
+          <i class="fa-solid fa-robot"></i>
+          <span>توصيات المستشار الذكي 🤖</span>
+        </button>
         <button class="nav-item" data-tab="portfolios">
           <i class="fa-solid fa-wallet"></i>
           <span>محافظ العملاء وطلبات التداول</span>
@@ -475,6 +479,57 @@
         </div>
       </section>
 
+      <!-- TAB: ROBO-ADVISOR CONFIGURATIONS (5 Goals x 3 Durations = 15 Blends) -->
+      <section id="tab-robo-config" class="tab-content">
+        <div class="section-header">
+          <div class="section-title">
+            <h2><i class="fa-solid fa-robot" style="color:#00E5FF"></i> إدارة التوليفات والتوزيعات الذكية (Robo-Advisor 15 Blends) 🤖</h2>
+          </div>
+          <button class="btn btn-primary" id="btnRefreshRoboConfigs">
+            <i class="fa-solid fa-rotate"></i> تحديث من السيرفر
+          </button>
+        </div>
+
+        <div class="card glass-card">
+          <p class="section-desc">تحكم كامل من السيرفر في التوليفات الـ 15 للمستشار الذكي (5 أهداف استثمارية × 3 مدد زمنية). أي تعديل هنا يظهر مباشرة في تطبيق الموبايل دون الحاجة لتحديث الكود!</p>
+          
+          <div class="table-controls" style="margin-top:14px; margin-bottom:14px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <select id="roboGoalFilter" class="form-select" style="min-width:220px;">
+              <option value="ALL">جميع الأهداف الاستثمارية (All Goals)</option>
+              <option value="goldHedging">🪙 التحوط بالذهب والفضة (Gold & Silver)</option>
+              <option value="capitalPreservation">🛡️ حفظ رأس المال وأمان مرتفع (Capital Preservation)</option>
+              <option value="highYield">🚀 أقصى نمو وأرباح - أسهم (High Yield)</option>
+              <option value="islamicSharia">🌙 استثمار إسلامي 100% (Islamic Sharia)</option>
+              <option value="balancedGrowth">⚖️ نمو متوازن (Balanced Growth)</option>
+            </select>
+
+            <select id="roboDurationFilter" class="form-select" style="min-width:180px;">
+              <option value="ALL">جميع المدد الزمنية (All Durations)</option>
+              <option value="shortTerm">⏱️ قصير الأجل (<1 سنة)</option>
+              <option value="mediumTerm">🗓️ متوسط الأجل (1-3 سنوات)</option>
+              <option value="longTerm">🚀 طويل الأجل (>3 سنوات)</option>
+            </select>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead id="roboConfigsTableHead">
+                <tr>
+                  <th>الهدف الاستثماري</th>
+                  <th>المدة الزمنية</th>
+                  <th>العائد المتوقع %</th>
+                  <th>توزيع الصناديق والمكونات (Mix Allocation)</th>
+                  <th>التحكم والتعديل ⚡</th>
+                </tr>
+              </thead>
+              <tbody id="roboConfigsTableBody">
+                <!-- Loaded dynamically from Supabase DB table `robo_advisor_configs` -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- TAB: USER PORTFOLIOS & ORDERS MANAGEMENT -->
       <section id="tab-portfolios" class="tab-content">
         <div class="section-title">
@@ -715,6 +770,104 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" id="btnCancelFundModal">إلغاء</button>
           <button type="submit" class="btn btn-primary">حفظ وتعديل الباك إند</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EDIT ROBO-ADVISOR CONFIG MODAL -->
+  <div class="modal-overlay" id="editRoboModal">
+    <div class="modal-card" style="max-width:720px; width:95%;">
+      <div class="modal-header">
+        <h3 id="editRoboModalTitle">تعديل توليفة المستشار الذكي 🤖</h3>
+        <button class="close-btn" id="btnCloseRoboModal">&times;</button>
+      </div>
+      <form id="editRoboForm">
+        <input type="hidden" id="editRoboConfigId">
+        <input type="hidden" id="editRoboGoalKey">
+        <input type="hidden" id="editRoboDurationKey">
+
+        <div class="grid-2col">
+          <div class="form-group">
+            <label>عنوان الهدف بالعربي</label>
+            <input type="text" id="editRoboTitleAr" required class="form-input">
+          </div>
+          <div class="form-group">
+            <label>العائد السنوي المتوقع % (Expected ROI)</label>
+            <input type="number" step="0.1" id="editRoboExpectedRoi" required class="form-input">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>وصف التوليفة للمستثمر (بالعربي)</label>
+          <textarea id="editRoboDescAr" class="form-input" rows="2" style="resize:vertical;"></textarea>
+        </div>
+
+        <h4 style="color:#00E5FF; margin-top:14px; margin-bottom:8px; font-size:14px;"><i class="fa-solid fa-layer-group"></i> تفاصيل توزيع الصناديق الاربعة:</h4>
+        
+        <!-- Slot 1 -->
+        <div style="background:rgba(15,23,42,0.6); padding:10px; border-radius:8px; margin-bottom:8px; border:1px solid #1e293b;">
+          <strong style="color:#F59E0B;">الصندوق الأول (الأهم / الملاذ الأول):</strong>
+          <div class="grid-2col" style="margin-top:6px;">
+            <select id="editRoboFund1Select" class="form-select robo-modal-fund-select" required style="width:100%;">
+              <option value="">-- اختر الصندوق من القائمة (197 صندوق) --</option>
+            </select>
+            <input type="text" id="editRoboFund1Category" placeholder="الفئة (مثال: ذهب / أسهم)" class="form-input">
+          </div>
+          <div class="grid-2col" style="margin-top:6px;">
+            <input type="number" step="0.1" id="editRoboFund1Pct" placeholder="النسبة % (مثال: 50)" class="form-input" required>
+            <input type="text" id="editRoboFund1Badge" placeholder="الوسام (مثال: ذهب نقي 🪙)" class="form-input">
+          </div>
+        </div>
+
+        <!-- Slot 2 -->
+        <div style="background:rgba(15,23,42,0.6); padding:10px; border-radius:8px; margin-bottom:8px; border:1px solid #1e293b;">
+          <strong style="color:#3B82F6;">الصندوق الثاني (اختياري):</strong>
+          <div class="grid-2col" style="margin-top:6px;">
+            <select id="editRoboFund2Select" class="form-select robo-modal-fund-select" style="width:100%;">
+              <option value="">-- اختر الصندوق الثاني --</option>
+            </select>
+            <input type="text" id="editRoboFund2Category" placeholder="الفئة" class="form-input">
+          </div>
+          <div class="grid-2col" style="margin-top:6px;">
+            <input type="number" step="0.1" id="editRoboFund2Pct" placeholder="النسبة %" class="form-input">
+            <input type="text" id="editRoboFund2Badge" placeholder="الوسام" class="form-input">
+          </div>
+        </div>
+
+        <!-- Slot 3 -->
+        <div style="background:rgba(15,23,42,0.6); padding:10px; border-radius:8px; margin-bottom:8px; border:1px solid #1e293b;">
+          <strong style="color:#10B981;">الصندوق الثالث (اختياري):</strong>
+          <div class="grid-2col" style="margin-top:6px;">
+            <select id="editRoboFund3Select" class="form-select robo-modal-fund-select" style="width:100%;">
+              <option value="">-- اختر الصندوق الثالث --</option>
+            </select>
+            <input type="text" id="editRoboFund3Category" placeholder="الفئة" class="form-input">
+          </div>
+          <div class="grid-2col" style="margin-top:6px;">
+            <input type="number" step="0.1" id="editRoboFund3Pct" placeholder="النسبة %" class="form-input">
+            <input type="text" id="editRoboFund3Badge" placeholder="الوسام" class="form-input">
+          </div>
+        </div>
+
+        <!-- Slot 4 -->
+        <div style="background:rgba(15,23,42,0.6); padding:10px; border-radius:8px; margin-bottom:8px; border:1px solid #1e293b;">
+          <strong style="color:#8B5CF6;">الصندوق الرابع (اختياري):</strong>
+          <div class="grid-2col" style="margin-top:6px;">
+            <select id="editRoboFund4Select" class="form-select robo-modal-fund-select" style="width:100%;">
+              <option value="">-- اختر الصندوق الرابع --</option>
+            </select>
+            <input type="text" id="editRoboFund4Category" placeholder="الفئة" class="form-input">
+          </div>
+          <div class="grid-2col" style="margin-top:6px;">
+            <input type="number" step="0.1" id="editRoboFund4Pct" placeholder="النسبة %" class="form-input">
+            <input type="text" id="editRoboFund4Badge" placeholder="الوسام" class="form-input">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btnCancelRoboModal">إلغاء</button>
+          <button type="submit" class="btn btn-primary">حفظ التعديلات بالسيرفر 🚀</button>
         </div>
       </form>
     </div>
