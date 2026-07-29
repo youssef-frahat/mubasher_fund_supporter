@@ -43,22 +43,21 @@ class PortfolioRepository {
             .order('created_at', ascending: false)
             .timeout(const Duration(seconds: 5));
 
-        if (response is List && response.isNotEmpty) {
+        if ((response as List).isNotEmpty) {
           final List<PortfolioModel> dbPortfolios = response
               .map((e) => PortfolioModel.fromJson(Map<String, dynamic>.from(e as Map)))
               .toList();
 
-            // Cache to local SharedPreferences
-            await _savePortfoliosToLocal(dbPortfolios);
-            return dbPortfolios;
-          } else {
-            // First time user in Supabase DB: Create default portfolio in DB
-            final defaultPortfolio = await _createDefaultPortfolioInSupabase(user.id);
-            if (defaultPortfolio != null) {
-              final list = [defaultPortfolio];
-              await _savePortfoliosToLocal(list);
-              return list;
-            }
+          // Cache to local SharedPreferences
+          await _savePortfoliosToLocal(dbPortfolios);
+          return dbPortfolios;
+        } else {
+          // First time user in Supabase DB: Create default portfolio in DB
+          final defaultPortfolio = await _createDefaultPortfolioInSupabase(user.id);
+          if (defaultPortfolio != null) {
+            final list = [defaultPortfolio];
+            await _savePortfoliosToLocal(list);
+            return list;
           }
         }
       } catch (e) {
@@ -152,7 +151,7 @@ class PortfolioRepository {
     if (client != null && user != null) {
       try {
         await client.from('portfolios').insert(newPortfolio.toSupabaseJson(user.id));
-        debugPrint('✅ Created portfolio "${name}" in Supabase DB');
+        debugPrint('✅ Created portfolio "$name" in Supabase DB');
       } catch (e) {
         debugPrint('⚠️ Supabase createPortfolio notice: $e');
       }

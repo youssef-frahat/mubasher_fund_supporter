@@ -483,17 +483,17 @@ async function fetchFunds() {
   }
 }
 
-// 2. Fetch Portfolios directly from Supabase
+// 2. Fetch Portfolios directly from Supabase with joined items and user profile
 async function fetchPortfolios() {
   if (!db) return;
   const deletedPortIds = new Set(JSON.parse(localStorage.getItem('watheqa_deleted_portfolio_ids') || '[]'));
   try {
-    const { data, error } = await db.from('portfolios').select('*, portfolio_items(*)').order('created_at', { ascending: false });
+    const { data, error } = await db.from('portfolios').select('*, portfolio_items(*), profiles(full_name, phone_number, phone)').order('created_at', { ascending: false });
     if (error) throw error;
     if (data) {
       livePortfolios = data.filter(p => !deletedPortIds.has(p.id.toString()));
       document.getElementById('dbPortfoliosCount').innerText = `${livePortfolios.length} محفظة`;
-      logMessage(`[DB] Loaded ${livePortfolios.length} portfolios with live items from 'portfolios' table.`, 'success');
+      logMessage(`[DB] Loaded ${livePortfolios.length} portfolios with live items & investor profiles from Supabase.`, 'success');
     }
   } catch (err) {
     logMessage(`[DB NOTICE] Fetch portfolios notice: ${err.message}`, 'info');
@@ -1251,7 +1251,7 @@ function initUserModalEvents() {
   });
 }
 
-// Render Portfolios Table directly from DB
+// Render Portfolios Table directly from DB (Resolving Investor Full Name & Phone)
 function renderPortfoliosTable() {
   const tbody = document.getElementById('portfoliosTableBody');
   if (!tbody) return;
@@ -1261,8 +1261,8 @@ function renderPortfoliosTable() {
 
   if (livePortfolios.length === 0) {
     tbody.innerHTML = isEn
-      ? '<tr><td colspan="5" style="text-align:center; color:#9ca3af">No registered portfolios in backend yet (0)</td></tr>'
-      : '<tr><td colspan="5" style="text-align:center; color:#9ca3af">لا توجد محافظ مسجلة بعد في الباك إند (0)</td></tr>';
+      ? '<tr><td colspan="6" style="text-align:center; color:#9ca3af">No registered portfolios in backend yet (0)</td></tr>'
+      : '<tr><td colspan="6" style="text-align:center; color:#9ca3af">لا توجد محافظ مسجلة بعد في الباك إند (0)</td></tr>';
     return;
   }
 
@@ -1270,6 +1270,15 @@ function renderPortfoliosTable() {
     const tr = document.createElement('tr');
     const portName = p.name || (isEn ? 'Main Portfolio' : 'المحفظة الرئيسية');
     const deleteText = isEn ? 'Delete' : 'مسح';
+
+    // 1. Resolve Investor Name & Phone/Email from liveUsers or joined profiles relation
+    let userObj = liveUsers.find(u => u.id === p.user_id);
+    let investorName = userObj ? userObj.full_name : (p.profiles?.full_name || 'مستثمر وثيقة');
+    let investorContact = userObj ? userObj.phone : (p.profiles?.phone_number || p.profiles?.phone || (p.user_id ? p.user_id.substring(0, 12) + '...' : ''));
+
+    const investorDisplay = `<strong>${investorName}</strong>${investorContact ? `<br><small style="color:#00E5FF; font-weight:600">${investorContact}</small>` : ''}`;
+
+    // 2. Resolve Items & Calculated Total Portfolio Value
     const itemsList = p.portfolio_items || [];
     const itemsCount = itemsList.length;
     let totalVal = 0;
@@ -1277,13 +1286,18 @@ function renderPortfoliosTable() {
       totalVal += (parseFloat(i.units) || 0) * (parseFloat(i.current_nav) || 0);
     });
 
-    const userDisplay = p.user_id ? p.user_id.substring(0, 16) + '...' : 'Anon User';
-    const assetsLabel = isEn ? `${itemsCount} Assets` : `${itemsCount} أصول/وثائق`;
+    const assetsBadgeStyle = itemsCount > 0 
+      ? 'background:rgba(16,185,129,0.15); color:#10B981;' 
+      : 'background:rgba(245,158,11,0.15); color:#F59E0B;';
+
+    const assetsLabel = isEn 
+      ? (itemsCount > 0 ? `${itemsCount} Assets` : '0 Assets (New)')
+      : (itemsCount > 0 ? `${itemsCount} أصول/وثائق` : '0 وثائق (محفظة جديدة)');
 
     tr.innerHTML = `
       <td><strong>${portName}</strong></td>
-      <td><code>${userDisplay}</code></td>
-      <td><span class="badge" style="background:rgba(16,185,129,0.15); color:#10B981">${assetsLabel}</span></td>
+      <td>${investorDisplay}</td>
+      <td><span class="badge" style="${assetsBadgeStyle}">${assetsLabel}</span></td>
       <td style="color:#00E676; font-weight:bold; white-space:nowrap">${totalVal.toFixed(2)} EGP</td>
       <td>${p.created_at ? p.created_at.split('T')[0] : '2026-07-26'}</td>
       <td>
