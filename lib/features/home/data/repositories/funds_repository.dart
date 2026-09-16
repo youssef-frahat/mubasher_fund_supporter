@@ -22,8 +22,9 @@ class SupabaseFundsRepository implements FundsRepository {
   @override
   Future<List<FundModel>> getFunds() async {
     final client = SupabaseService.client;
+    final officialFunds = OfficialEgyptianFundsData.allFunds;
     if (client == null) {
-      return OfficialEgyptianFundsData.allFunds;
+      return officialFunds;
     }
 
     try {
@@ -32,15 +33,52 @@ class SupabaseFundsRepository implements FundsRepository {
           .select()
           .order('name', ascending: true)
           .timeout(const Duration(seconds: 4));
-      if (response.isNotEmpty && response.length >= 10) {
-        return response
-            .map((item) => FundModel.fromMap(item))
-            .toList();
+
+      if (response.isNotEmpty) {
+        // Map official funds by ID and normalized names to retain full 36 institutional metadata fields
+        final Map<String, FundModel> fundsMap = {
+          for (var fund in officialFunds) fund.id: fund,
+        };
+        final Map<String, FundModel> nameMap = {
+          for (var fund in officialFunds) fund.name.trim().toLowerCase(): fund,
+        };
+
+        for (final item in response) {
+          try {
+            final remoteFund = FundModel.fromMap(item);
+            final key = remoteFund.id;
+            final normName = remoteFund.name.trim().toLowerCase();
+
+            // Match by ID or name
+            FundModel? baseFund = fundsMap[key] ?? nameMap[normName];
+
+            if (baseFund != null) {
+              // Overlay live price, YTD return, updated_at timestamp, and admin flags
+              final merged = baseFund.copyWith(
+                currentNav: remoteFund.currentNav,
+                ytdReturn: remoteFund.ytdReturn,
+                dailyChange: remoteFund.dailyChange != 0 ? remoteFund.dailyChange : baseFund.dailyChange,
+                updatedAt: remoteFund.updatedAt ?? DateTime.now(),
+                isSponsored: remoteFund.isSponsored,
+                isRecommended: remoteFund.isRecommended,
+                isTopPerforming: remoteFund.isTopPerforming,
+              );
+              fundsMap[baseFund.id] = merged;
+            } else {
+              // Newly added custom fund from Supabase admin
+              fundsMap[key] = remoteFund;
+            }
+          } catch (e) {
+            debugPrint('Error parsing remote fund item: $e');
+          }
+        }
+
+        return fundsMap.values.toList();
       }
-      return OfficialEgyptianFundsData.allFunds;
+      return officialFunds;
     } catch (e) {
       debugPrint('Error fetching funds from Supabase: $e');
-      return OfficialEgyptianFundsData.allFunds;
+      return officialFunds;
     }
   }
 

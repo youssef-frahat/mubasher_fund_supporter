@@ -13,9 +13,10 @@
   <!-- FontAwesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Chart.js & Supabase JS SDK -->
+  <!-- Chart.js & Supabase JS SDK & SheetJS Excel Engine -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   
   <link rel="stylesheet" href="styles.css?v=3.6.0">
 </head>
@@ -275,8 +276,23 @@
         <div class="card glass-card">
           <p class="section-desc">شاشة مخصصة لتغيير سعر الوثيقة (NAV EGP) والعائد السنوي فوراً بضغطة زر واحدة بدون الحاجة لفتح شاشات CRUD المعقدة.</p>
           
-          <div class="table-controls">
-            <input type="text" id="quickPriceSearch" placeholder="بحث سريع عن صندوق لتعديل السعر..." class="form-input">
+          <div class="table-controls" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <input type="text" id="quickPriceSearch" placeholder="بحث سريع عن صندوق لتعديل السعر..." class="form-input" style="flex:1; min-width:240px;">
+            
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <!-- Export Excel Button -->
+              <button type="button" class="btn btn-secondary" id="btnExportQuickExcel" onclick="exportFundsToExcel()" style="display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-file-excel" style="color:#00E676;"></i>
+                <span id="btnExportFundsLabel">تحميل شيت الأسعار (Excel) 📥</span>
+              </button>
+
+              <!-- Import Excel Button -->
+              <label class="btn btn-primary" style="display:flex; align-items:center; gap:6px; cursor:pointer; margin:0;">
+                <i class="fa-solid fa-file-import"></i>
+                <span id="btnImportFundsLabel">رفع وتحديث الأسعار (Excel / CSV) ⚡</span>
+                <input type="file" id="excelPriceFileInput" accept=".xlsx, .xls, .csv" style="display:none;" onchange="handleExcelPriceUpload(this.files)">
+              </label>
+            </div>
           </div>
 
           <div class="table-responsive">
@@ -394,9 +410,15 @@
           <div class="section-title">
             <h2><i class="fa-solid fa-box-archive"></i> إدارة كافة الصناديق الاستثمارية 💼</h2>
           </div>
-          <button class="btn btn-primary" id="btnOpenAddFundModal">
-            <i class="fa-solid fa-plus"></i> إضافة صندوق جديد
-          </button>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn btn-secondary" onclick="exportFundsToExcel()" style="display:flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-file-excel" style="color:#00E676;"></i>
+              <span class="lbl-export-funds-funds">تصدير إكسيل 📥</span>
+            </button>
+            <button class="btn btn-primary" id="btnOpenAddFundModal">
+              <i class="fa-solid fa-plus"></i> إضافة صندوق جديد
+            </button>
+          </div>
         </div>
 
         <div class="card glass-card">
@@ -916,6 +938,25 @@
       </div>
       <div class="modal-footer" style="padding-top:12px;">
         <button type="button" class="btn btn-secondary" id="btnCancelMaxChartModal"><i class="fa-solid fa-times"></i> إغلاق النافذة</button>
+      </div>
+    </div>
+  <!-- EXCEL BULK PRICE IMPORT RESULTS MODAL -->
+  <div class="modal-overlay" id="excelImportModal" style="display: none;">
+    <div class="modal-card" style="max-width: 620px; width: 95%;">
+      <div class="modal-header">
+        <h3 id="excelImportModalTitle" style="display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-file-circle-check" style="color: #00E676;"></i>
+          <span>تقرير تحديث أسعار الصناديق من الإكسيل (Excel Bulk Import)</span>
+        </h3>
+        <button class="close-btn" onclick="closeExcelImportModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="excelImportModalBody" style="padding: 18px; max-height: 400px; overflow-y: auto;">
+        <!-- Dynamically populated report -->
+      </div>
+      <div class="modal-footer" style="padding-top: 14px;">
+        <button type="button" class="btn btn-primary" onclick="closeExcelImportModal()" id="btnExcelImportClose">
+          <i class="fa-solid fa-check"></i> تطبيق وحفظ في اللوحة ✅
+        </button>
       </div>
     </div>
   </div>

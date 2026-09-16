@@ -148,6 +148,61 @@ void main() {
 
       expect(enRisk, 'High');
     });
+
+    testWidgets('isUpdatedToday and localizedPriceStatus return expected freshness label', (tester) async {
+      SharedPreferences.setMockInitialValues({'app_language': 'ar'});
+      final prefs = await SharedPreferences.getInstance();
+      final languageCubit = LanguageCubit(prefs);
+
+      final today = DateTime.now();
+      final updatedTodayFund = FundModel(
+        id: 'test-today',
+        name: 'Azimut Gold Fund',
+        nameAr: 'صندوق أزيموت للذهب',
+        managerName: 'Azimut Egypt',
+        currentNav: 15.50,
+        ytdReturn: 42.0,
+        riskLevel: 'Medium',
+        category: 'Gold',
+        updatedAt: today,
+      );
+
+      final pastDate = DateTime(2026, 1, 15);
+      final pastFund = FundModel(
+        id: 'test-past',
+        name: 'Misr Equity Fund',
+        nameAr: 'صندوق مصر للأسهم',
+        managerName: 'Hermes',
+        currentNav: 120.0,
+        ytdReturn: 25.0,
+        riskLevel: 'High',
+        category: 'Equity',
+        updatedAt: pastDate,
+      );
+
+      expect(updatedTodayFund.isUpdatedToday, true);
+      expect(pastFund.isUpdatedToday, false);
+
+      late String arStatusToday;
+      late String arStatusPast;
+
+      await tester.pumpWidget(
+        BlocProvider<LanguageCubit>.value(
+          value: languageCubit,
+          child: Builder(
+            builder: (context) {
+              arStatusToday = updatedTodayFund.localizedPriceStatus(context);
+              arStatusPast = pastFund.localizedPriceStatus(context);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      expect(arStatusToday.contains('سعر اليوم المحدث'), true);
+      expect(arStatusPast.contains('آخر سعر معلن'), true);
+      expect(arStatusPast.contains('2026-01-15'), true);
+    });
   });
 }
 

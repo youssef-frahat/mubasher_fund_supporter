@@ -333,6 +333,26 @@ function applyLanguage(lang) {
       : '<th>اسم الصندوق</th><th>المدير الرسمي</th><th>السعر الحالي (NAV EGP)</th><th>تعديل السعر الجديد ⚡</th><th>العائد السنوي %</th><th>حفظ السعر المباشر</th>';
   }
 
+  // Excel bulk updater & export buttons translation
+  const btnExportFundsLabel = document.getElementById('btnExportFundsLabel');
+  if (btnExportFundsLabel) {
+    btnExportFundsLabel.innerText = isEn ? 'Download Prices Sheet (Excel) 📥' : 'تحميل شيت الأسعار (Excel) 📥';
+  }
+
+  const btnImportFundsLabel = document.getElementById('btnImportFundsLabel');
+  if (btnImportFundsLabel) {
+    btnImportFundsLabel.innerText = isEn ? 'Bulk Upload Prices (Excel / CSV) ⚡' : 'رفع وتحديث الأسعار (Excel / CSV) ⚡';
+  }
+
+  document.querySelectorAll('.lbl-export-funds-funds').forEach(el => {
+    el.innerText = isEn ? 'Export Excel 📥' : 'تصدير إكسيل 📥';
+  });
+
+  const btnExcelImportClose = document.getElementById('btnExcelImportClose');
+  if (btnExcelImportClose) {
+    btnExcelImportClose.innerHTML = isEn ? '<i class="fa-solid fa-check"></i> Apply & Save to Dashboard ✅' : '<i class="fa-solid fa-check"></i> تطبيق وحفظ في اللوحة ✅';
+  }
+
   const fundsHead = document.querySelector('#fundsTableHead tr');
   if (fundsHead) {
     fundsHead.innerHTML = isEn
@@ -918,6 +938,446 @@ async function saveQuickPrice(fundId) {
       }
     }
   }
+}
+
+// ==========================================
+// 📊 EXCEL EXPORT & BULK PRICE IMPORT ENGINE
+// ==========================================
+
+/**
+ * Exports all funds currently in database/state to an Excel (.xlsx) or CSV file
+ */
+function exportFundsToExcel() {
+  if (!liveFunds || liveFunds.length === 0) {
+    alert(currentLang === 'en' ? 'No funds available to export!' : 'لا توجد بيانات صناديق لتصديرها!');
+    return;
+  }
+
+  const isEn = currentLang === 'en';
+  const timestamp = new Date().toISOString().substring(0, 10);
+  
+  // Format data clearly with intuitive header names
+  const exportRows = liveFunds.map(f => {
+    const navVal = parseFloat(f.current_nav) || 0;
+    const ytdVal = getOfficialFundYtd(f);
+    return {
+      "ID": f.id,
+      "اسم الصندوق": f.name_ar || f.name,
+      "Fund Name": f.name_en || f.name,
+      "المدير الرسمي": f.manager_name || f.manager || 'Mubasher Capital',
+      "الفئة": f.category,
+      "سعر الوثيقة الحالي (NAV)": navVal,
+      "العائد السنوي (YTD %)": ytdVal,
+      "العملة": f.currency || 'EGP',
+      "تاريخ التحديث": f.updated_at ? f.updated_at.substring(0, 10) : timestamp
+    };
+  });
+
+  if (window.XLSX) {
+    try {
+      const ws = XLSX.utils.json_to_sheet(exportRows);
+      
+      // Auto-fit column widths
+      const colWidths = [
+        { wch: 12 }, // ID
+        { wch: 42 }, // اسم الصندوق
+        { wch: 38 }, // Fund Name
+        { wch: 25 }, // المدير
+        { wch: 18 }, // الفئة
+        { wch: 24 }, // سعر الوثيقة
+        { wch: 20 }, // العائد
+        { wch: 8 },  // العملة
+        { wch: 14 }  // تاريخ التحديث
+      ];
+      ws['!cols'] = colWidths;
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Watheqa_Funds");
+      XLSX.writeFile(wb, `Watheqa_Mutual_Funds_${timestamp}.xlsx`);
+      
+      logMessage(`[EXCEL EXPORT] Successfully exported ${liveFunds.length} funds to Excel (.xlsx) file.`, 'success');
+      return;
+    } catch (e) {
+      console.warn('SheetJS export error, falling back to CSV:', e);
+    }
+  }
+
+  // Fallback to UTF-8 BOM CSV if XLSX library is unavailable
+  exportFundsToCsvFallback(exportRows, timestamp);
+}
+
+function exportFundsToCsvFallback(rows, timestamp) {
+  if (!rows || rows.length === 0) return;
+  const headers = Object.keys(rows[0]);
+  let csvContent = "\uFEFF"; // UTF-8 BOM for Arabic support in Excel
+  csvContent += headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + '\r\n';
+
+  rows.forEach(r => {
+    const rowStr = headers.map(h => {
+      const val = r[h] != null ? String(r[h]) : '';
+      return `"${val.replace(/"/g, '""')}"`;
+    }).join(',');
+    csvContent += rowStr + '\r\n';
+  });
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute('download', `Watheqa_Mutual_Funds_${timestamp}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  logMessage(`[CSV EXPORT] Exported ${rows.length} funds to CSV with UTF-8 BOM.`, 'success');
+}
+
+/**
+ * Handles uploading an Excel (.xlsx, .xls) or CSV sheet and updating prices in DB & UI
+ */
+async function handleExcelPriceUpload(files) {
+  if (!files || files.length === 0) return;
+  const file = files[0];
+  const fileInput = document.getElementById('excelPriceFileInput');
+  if (fileInput) fileInput.value = ''; // Reset input to allow re-selection
+
+  logMessage(`[EXCEL IMPORT] Processing uploaded file: ${file.name} (${(file.size / 1024).toFixed(1)} KB)...`, 'info');
+
+  const fileName = file.name.toLowerCase();
+  
+  if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+    if (!window.XLSX) {
+      alert(currentLang === 'en' ? 'Excel parser library is loading. Please try again or use CSV.' : 'مكتبة معالجة الإكسيل قيد التحميل، يرجى المحاولة بعد قليل أو استخدام ملف CSV.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+        await processBulkPriceRows(jsonRows, file.name);
+      } catch (err) {
+        logMessage(`[EXCEL ERROR] Failed to parse Excel sheet: ${err.message}`, 'danger');
+        alert((currentLang === 'en' ? 'Error parsing Excel sheet: ' : 'حدث خطأ في قراءة ملف الإكسيل: ') + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else if (fileName.endsWith('.csv')) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const text = e.target.result;
+        const jsonRows = parseCsvText(text);
+        await processBulkPriceRows(jsonRows, file.name);
+      } catch (err) {
+        logMessage(`[CSV ERROR] Failed to parse CSV: ${err.message}`, 'danger');
+        alert((currentLang === 'en' ? 'Error parsing CSV file: ' : 'حدث خطأ في قراءة ملف CSV: ') + err.message);
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
+  } else {
+    alert(currentLang === 'en' ? 'Please upload a valid Excel (.xlsx, .xls) or CSV file.' : 'يرجى رفع ملف بصيغة إكسيل (.xlsx, .xls) أو CSV صحيح.');
+  }
+}
+
+/**
+ * Lightweight standard CSV parser fallback
+ */
+function parseCsvText(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+  if (lines.length < 2) return [];
+
+  function parseLine(line) {
+    const result = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (c === ',' && !inQuotes) {
+        result.push(cur.trim());
+        cur = '';
+      } else {
+        cur += c;
+      }
+    }
+    result.push(cur.trim());
+    return result;
+  }
+
+  const rawHeaders = parseLine(lines[0]);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseLine(lines[i]);
+    const rowObj = {};
+    rawHeaders.forEach((h, idx) => {
+      rowObj[h] = cols[idx] != null ? cols[idx] : '';
+    });
+    rows.push(rowObj);
+  }
+  return rows;
+}
+
+/**
+ * Normalizes Arabic strings for resilient fuzzy matching
+ */
+function normalizeFundName(str) {
+  if (!str) return '';
+  return str
+    .toString()
+    .toLowerCase()
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .replace(/[()_.\-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Match fund from row data and batch-update prices in Supabase and state
+ */
+async function processBulkPriceRows(rows, filename) {
+  if (!rows || rows.length === 0) {
+    alert(currentLang === 'en' ? 'The uploaded file contains no data rows!' : 'الملف المرفوع لا يحتوي على أي صفوف بيانات!');
+    return;
+  }
+
+  logMessage(`[BULK PRICE] Analyzing ${rows.length} rows from ${filename}...`, 'info');
+
+  let updatedCount = 0;
+  let skippedCount = 0;
+  const updatedFundsList = [];
+  const unmatchedList = [];
+  const nowIso = new Date().toISOString();
+
+  // Create fast lookup structures
+  const idMap = new Map();
+  const nameMap = new Map();
+
+  liveFunds.forEach(fund => {
+    idMap.set(fund.id.toString().trim(), fund);
+    if (fund.name_ar) nameMap.set(normalizeFundName(fund.name_ar), fund);
+    if (fund.name_en) nameMap.set(normalizeFundName(fund.name_en), fund);
+    if (fund.name) nameMap.set(normalizeFundName(fund.name), fund);
+  });
+
+  const dbUpdatePromises = [];
+
+  for (let idx = 0; idx < rows.length; idx++) {
+    const row = rows[idx];
+    const keys = Object.keys(row);
+
+    // 1. Detect ID
+    let rowId = null;
+    const idKey = keys.find(k => /^(id|كود|رمز|code)$/i.test(k.trim()));
+    if (idKey && row[idKey]) {
+      rowId = row[idKey].toString().trim();
+    }
+
+    // 2. Detect Name
+    let rowName = '';
+    const nameKey = keys.find(k => /^(اسم|صندوق|fund|name|fund name|اسم الصندوق)/i.test(k.trim()));
+    if (nameKey && row[nameKey]) {
+      rowName = row[nameKey].toString().trim();
+    }
+
+    // 3. Detect Price / NAV
+    let rawPrice = null;
+    const priceKey = keys.find(k => /(nav|price|سعر|سعر الوثيقة|السعر|closing)/i.test(k.trim()));
+    if (priceKey && row[priceKey] !== '') {
+      rawPrice = row[priceKey];
+    }
+
+    // 4. Detect optional YTD Return
+    let rawYtd = null;
+    const ytdKey = keys.find(k => /(ytd|عائد|العائد|return)/i.test(k.trim()));
+    if (ytdKey && row[ytdKey] !== '') {
+      rawYtd = row[ytdKey];
+    }
+
+    // Clean price string
+    let parsedPrice = NaN;
+    if (rawPrice != null) {
+      const cleanStr = rawPrice.toString().replace(/[^\d.-]/g, '');
+      parsedPrice = parseFloat(cleanStr);
+    }
+
+    if (isNaN(parsedPrice) || parsedPrice <= 0) {
+      skippedCount++;
+      continue;
+    }
+
+    // Match fund
+    let matchedFund = null;
+    if (rowId && idMap.has(rowId)) {
+      matchedFund = idMap.get(rowId);
+    } else if (rowName) {
+      const norm = normalizeFundName(rowName);
+      if (nameMap.has(norm)) {
+        matchedFund = nameMap.get(norm);
+      } else {
+        // Partial substring search
+        matchedFund = liveFunds.find(f => {
+          const fNormAr = normalizeFundName(f.name_ar || '');
+          const fNormEn = normalizeFundName(f.name_en || '');
+          const fNorm = normalizeFundName(f.name || '');
+          return norm.includes(fNormAr) || fNormAr.includes(norm) ||
+                 norm.includes(fNormEn) || fNormEn.includes(norm) ||
+                 norm.includes(fNorm) || fNorm.includes(norm);
+        });
+      }
+    }
+
+    if (matchedFund) {
+      const oldNav = parseFloat(matchedFund.current_nav) || 0;
+      let newYtd = getOfficialFundYtd(matchedFund, parsedPrice);
+      if (rawYtd != null) {
+        const parsedYtd = parseFloat(rawYtd.toString().replace(/[^\d.-]/g, ''));
+        if (!isNaN(parsedYtd)) newYtd = parsedYtd;
+      }
+
+      // Update fund object in memory
+      matchedFund.current_nav = parsedPrice;
+      matchedFund.ytd_return = newYtd;
+      matchedFund.updated_at = nowIso;
+      updatedCount++;
+
+      updatedFundsList.push({
+        id: matchedFund.id,
+        name: matchedFund.name_ar || matchedFund.name,
+        oldPrice: oldNav,
+        newPrice: parsedPrice,
+        newYtd: newYtd
+      });
+
+      // Queue Supabase DB update
+      if (db) {
+        dbUpdatePromises.push(
+          db.from('funds').update({
+            current_nav: parsedPrice,
+            ytd_return: newYtd,
+            updated_at: nowIso
+          }).eq('id', matchedFund.id)
+        );
+      }
+    } else {
+      unmatchedList.push({
+        rowNum: idx + 2,
+        name: rowName || rowId || 'بدون اسم',
+        price: parsedPrice
+      });
+    }
+  }
+
+  // Execute database updates in parallel
+  if (dbUpdatePromises.length > 0) {
+    try {
+      await Promise.allSettled(dbUpdatePromises);
+      logMessage(`[SUPABASE SYNC] Batch updated ${dbUpdatePromises.length} fund prices in Supabase DB.`, 'success');
+    } catch (e) {
+      logMessage(`[DB ERROR] Batch update encountered errors: ${e.message}`, 'warning');
+    }
+  }
+
+  // Refresh UI tables & charts
+  computeTopPerformingFundsDynamically();
+  renderQuickPriceTable();
+  renderFundsTable();
+  renderSponsoredTable();
+  updateDynamicCharts();
+
+  // Display rich summary modal
+  showExcelImportModal({
+    totalRows: rows.length,
+    updatedCount,
+    skippedCount,
+    updatedFunds: updatedFundsList,
+    unmatched: unmatchedList,
+    filename
+  });
+}
+
+function showExcelImportModal(result) {
+  const modal = document.getElementById('excelImportModal');
+  const body = document.getElementById('excelImportModalBody');
+  if (!modal || !body) return;
+
+  const isEn = currentLang === 'en';
+
+  let html = `
+    <div style="margin-bottom:14px; background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.3); border-radius:10px; padding:12px;">
+      <h4 style="color:#00E676; margin:0 0 6px 0; font-size:15px;">
+        <i class="fa-solid fa-check-circle"></i> 
+        ${isEn ? `Successfully updated ${result.updatedCount} funds!` : `تم تحديث أسعار ${result.updatedCount} صندوق بنجاح!`}
+      </h4>
+      <p style="margin:0; font-size:12px; color:#cbd5e1;">
+        ${isEn ? `Processed ${result.totalRows} rows from <strong>${result.filename}</strong>.` : `تمت معالجة ${result.totalRows} صف من الملف <strong>${result.filename}</strong>.`}
+      </p>
+    </div>
+  `;
+
+  if (result.updatedFunds.length > 0) {
+    html += `
+      <h5 style="color:#3B82F6; margin:10px 0 6px 0;">
+        <i class="fa-solid fa-arrow-trend-up"></i> 
+        ${isEn ? 'Updated Funds Preview:' : 'عينة من الصناديق المحدثة:'}
+      </h5>
+      <div style="max-height:160px; overflow-y:auto; border:1px solid #334155; border-radius:8px; margin-bottom:12px;">
+        <table class="data-table" style="font-size:11.5px; width:100%;">
+          <thead>
+            <tr>
+              <th>${isEn ? 'Fund' : 'الصندوق'}</th>
+              <th>${isEn ? 'Old Price' : 'السعر السابق'}</th>
+              <th>${isEn ? 'New Price' : 'السعر المحدث'}</th>
+              <th>${isEn ? 'YTD %' : 'العائد %'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${result.updatedFunds.slice(0, 15).map(f => `
+              <tr>
+                <td><strong>${f.name}</strong></td>
+                <td style="color:#9ca3af;">${f.oldPrice.toFixed(2)} EGP</td>
+                <td style="color:#00E676; font-weight:bold;">${f.newPrice.toFixed(4)} EGP</td>
+                <td style="color:#3B82F6; font-weight:bold;">${f.newYtd >= 0 ? '+' : ''}${f.newYtd.toFixed(2)}%</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  if (result.unmatched.length > 0) {
+    html += `
+      <h5 style="color:#EF4444; margin:12px 0 6px 0;">
+        <i class="fa-solid fa-triangle-exclamation"></i> 
+        ${isEn ? `Unmatched Rows (${result.unmatched.length}):` : `صفوف لم يتم العثور على صناديق مطابقة لها (${result.unmatched.length}):`}
+      </h5>
+      <div style="max-height:120px; overflow-y:auto; border:1px solid #7f1d1d; border-radius:8px; background:rgba(239,68,68,0.05); padding:6px 10px; font-size:11.5px;">
+        ${result.unmatched.map(u => `
+          <div style="padding:3px 0; border-bottom:1px dashed rgba(255,255,255,0.08);">
+            • <strong>${isEn ? 'Row' : 'الصف'} ${u.rowNum}:</strong> ${u.name} (${u.price} EGP)
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  body.innerHTML = html;
+  modal.style.display = 'flex';
+}
+
+function closeExcelImportModal() {
+  const modal = document.getElementById('excelImportModal');
+  if (modal) modal.style.display = 'none';
 }
 
 // 🔑 ADMINS MANAGEMENT TABLE

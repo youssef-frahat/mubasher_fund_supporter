@@ -147,7 +147,7 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
         return catLower.contains('equity') || catLower.contains('growth') || nameLower.contains('أسهم') || nameLower.contains('نمو') || nameLower.contains('مباشر أسهم');
       }
       if (_selectedCategoryKey == 'catIslamic') {
-        return catLower.contains('islamic') || catLower.contains('sharia') || nameLower.contains('إسلامي') || nameLower.contains('شريعة') || nameLower.contains('وفاق');
+        return fund.isShariahCompliant || catLower.contains('islamic') || catLower.contains('sharia') || nameLower.contains('إسلامي') || nameLower.contains('شريعة') || nameLower.contains('وفاق');
       }
       if (_selectedCategoryKey == 'catTreasury') {
         return catLower.contains('fixed') || catLower.contains('treasury') || catLower.contains('bill') || catLower.contains('bond') || nameLower.contains('أذون') || nameLower.contains('سندات') || nameLower.contains('خزانة') || nameLower.contains('دخل ثابت') || nameLower.contains('مرابحة');

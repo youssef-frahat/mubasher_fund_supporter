@@ -11,6 +11,8 @@ import '../../../../core/services/wishlist_service.dart';
 import '../../../home/data/models/fund_model.dart';
 import '../../../home/data/repositories/funds_repository.dart';
 import '../../../home/presentation/widgets/fund_list_tile.dart';
+import '../../domain/models/fund_sort_option.dart';
+import '../widgets/fund_sort_bar.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({super.key});
@@ -23,6 +25,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
   List<FundModel> _allFunds = [];
   List<FundModel> _savedFundsList = [];
   bool _isLoading = true;
+  FundSortOption _sortOption = FundSortOption.highestReturn;
 
   @override
   void initState() {
@@ -169,12 +172,14 @@ class _WishlistScreenState extends State<WishlistScreen> {
                   );
                 }
 
+                final sortedSaved = _sortOption.sort(currentSaved, isArabic: context.isArabic);
+
                 return Column(
                   children: [
                     // Interactive Drag & Drop Reorder Tip Banner
                     Container(
                       width: double.infinity,
-                      margin: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 12.h),
+                      margin: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 6.h),
                       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.12),
@@ -199,22 +204,31 @@ class _WishlistScreenState extends State<WishlistScreen> {
                       ),
                     ),
 
+                    // Interactive Universal Sorting Bar
+                    FundSortBar(
+                      currentSort: _sortOption,
+                      onSortChanged: (opt) {
+                        setState(() => _sortOption = opt);
+                      },
+                      totalCount: sortedSaved.length,
+                    ),
+
                     // Interactive Reorderable List
                     Expanded(
                       child: ReorderableListView.builder(
                         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-                        itemCount: currentSaved.length,
+                        itemCount: sortedSaved.length,
                         onReorderItem: (oldIndex, newIndex) async {
                           setState(() {
-                            final item = currentSaved.removeAt(oldIndex);
-                            currentSaved.insert(newIndex, item);
-                            _savedFundsList = List.from(currentSaved);
+                            final item = sortedSaved.removeAt(oldIndex);
+                            sortedSaved.insert(newIndex, item);
+                            _savedFundsList = List.from(sortedSaved);
                           });
-                          final updatedIds = currentSaved.map((f) => f.id).toList();
+                          final updatedIds = sortedSaved.map((f) => f.id).toList();
                           await wishlistService.reorderWishlist(updatedIds);
                         },
                         itemBuilder: (context, index) {
-                          final fund = currentSaved[index];
+                          final fund = sortedSaved[index];
                           return KeyedSubtree(
                             key: ValueKey(fund.id),
                             child: FundListTile(

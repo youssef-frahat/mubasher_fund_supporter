@@ -202,6 +202,109 @@ class FundModel {
     }
   }
 
+  /// Whether the fund NAV price was updated today
+  bool get isUpdatedToday {
+    if (updatedAt == null) return false;
+    final now = DateTime.now();
+    return updatedAt!.year == now.year &&
+        updatedAt!.month == now.month &&
+        updatedAt!.day == now.day;
+  }
+
+  /// Returns localized price update freshness label
+  String localizedPriceStatus(BuildContext context) {
+    final isAr = _checkIsArabic(context);
+    final now = DateTime.now();
+    if (isUpdatedToday) {
+      final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      return isAr ? '🟢 سعر اليوم المحدث ($todayStr)' : '🟢 Today\'s Updated Price ($todayStr)';
+    } else {
+      if (updatedAt != null) {
+        final dateStr = '${updatedAt!.year}-${updatedAt!.month.toString().padLeft(2, '0')}-${updatedAt!.day.toString().padLeft(2, '0')}';
+        return isAr ? '⏳ آخر سعر معلن ($dateStr)' : '⏳ Last Declared Price ($dateStr)';
+      }
+      return isAr ? '⏳ آخر سعر معلن' : '⏳ Last Declared Price';
+    }
+  }
+
+  FundModel copyWith({
+    String? id,
+    String? name,
+    String? nameAr,
+    String? nameEn,
+    String? managerName,
+    double? currentNav,
+    double? ytdReturn,
+    double? weeklyReturn,
+    double? fourWeeksReturn,
+    double? last12mReturn,
+    double? dailyChange,
+    String? riskLevel,
+    String? category,
+    String? subCategory,
+    String? currency,
+    String? inceptionDate,
+    double? initialValue,
+    String? logoUrl,
+    bool? isRecommended,
+    bool? isSponsored,
+    bool? isTopPerforming,
+    int? rank,
+    DateTime? updatedAt,
+    bool? isShariahCompliant,
+    String? shariahBoard,
+    String? issuingEntity,
+    String? issuingEntityAr,
+    String? issuingEntityEn,
+    int? inceptionYear,
+    String? custodian,
+    String? custodianAr,
+    String? custodianEn,
+    String? fundAdministrator,
+    String? auditor,
+    String? managerLogo,
+    String? dividendPolicy,
+  }) {
+    return FundModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      nameAr: nameAr ?? this.nameAr,
+      nameEn: nameEn ?? this.nameEn,
+      managerName: managerName ?? this.managerName,
+      currentNav: currentNav ?? this.currentNav,
+      ytdReturn: ytdReturn ?? this.ytdReturn,
+      weeklyReturn: weeklyReturn ?? this.weeklyReturn,
+      fourWeeksReturn: fourWeeksReturn ?? this.fourWeeksReturn,
+      last12mReturn: last12mReturn ?? this.last12mReturn,
+      dailyChange: dailyChange ?? this.dailyChange,
+      riskLevel: riskLevel ?? this.riskLevel,
+      category: category ?? this.category,
+      subCategory: subCategory ?? this.subCategory,
+      currency: currency ?? this.currency,
+      inceptionDate: inceptionDate ?? this.inceptionDate,
+      initialValue: initialValue ?? this.initialValue,
+      logoUrl: logoUrl ?? this.logoUrl,
+      isRecommended: isRecommended ?? this.isRecommended,
+      isSponsored: isSponsored ?? this.isSponsored,
+      isTopPerforming: isTopPerforming ?? this.isTopPerforming,
+      rank: rank ?? this.rank,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isShariahCompliant: isShariahCompliant ?? this.isShariahCompliant,
+      shariahBoard: shariahBoard ?? this.shariahBoard,
+      issuingEntity: issuingEntity ?? this.issuingEntity,
+      issuingEntityAr: issuingEntityAr ?? this.issuingEntityAr,
+      issuingEntityEn: issuingEntityEn ?? this.issuingEntityEn,
+      inceptionYear: inceptionYear ?? this.inceptionYear,
+      custodian: custodian ?? this.custodian,
+      custodianAr: custodianAr ?? this.custodianAr,
+      custodianEn: custodianEn ?? this.custodianEn,
+      fundAdministrator: fundAdministrator ?? this.fundAdministrator,
+      auditor: auditor ?? this.auditor,
+      managerLogo: managerLogo ?? this.managerLogo,
+      dividendPolicy: dividendPolicy ?? this.dividendPolicy,
+    );
+  }
+
   factory FundModel.fromMap(Map<String, dynamic> map) {
     final cat = (map['category'] ?? 'Equity').toString().toLowerCase();
     final nameStr = (map['name'] ?? '').toString().toLowerCase();

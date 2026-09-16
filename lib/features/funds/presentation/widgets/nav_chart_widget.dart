@@ -283,6 +283,15 @@ class _NavChartWidgetState extends State<NavChartWidget>
                             : 'Official Closing NAV: ${widget.fund.currentNav.toStringAsFixed(4)} ${widget.fund.currency}',
                         style: TextStyle(color: textSecondary, fontSize: 10.sp),
                       ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        widget.fund.localizedPriceStatus(context),
+                        style: TextStyle(
+                          color: widget.fund.isUpdatedToday ? AppColors.success : AppColors.primary,
+                          fontSize: 9.5.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 ),

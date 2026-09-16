@@ -193,22 +193,38 @@ class FundDetailsScreen extends StatelessWidget {
                     runSpacing: 8.h,
                     children: [
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.12),
+                          color: resolvedFund.isUpdatedToday
+                              ? AppColors.success.withValues(alpha: 0.15)
+                              : AppColors.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8.r),
-                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                          border: Border.all(
+                            color: resolvedFund.isUpdatedToday
+                                ? AppColors.success.withValues(alpha: 0.5)
+                                : AppColors.primary.withValues(alpha: 0.4),
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            FaIcon(FontAwesomeIcons.clock, color: AppColors.primary, size: 12.r),
+                            FaIcon(
+                              resolvedFund.isUpdatedToday
+                                  ? FontAwesomeIcons.circleCheck
+                                  : FontAwesomeIcons.clock,
+                              color: resolvedFund.isUpdatedToday
+                                  ? AppColors.success
+                                  : AppColors.primary,
+                              size: 12.r,
+                            ),
                             SizedBox(width: 6.w),
                             Text(
-                              context.tr('lastNavUpdate'),
+                              resolvedFund.localizedPriceStatus(context),
                               style: TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 10.sp,
+                                color: resolvedFund.isUpdatedToday
+                                    ? AppColors.success
+                                    : AppColors.primary,
+                                fontSize: 10.5.sp,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
