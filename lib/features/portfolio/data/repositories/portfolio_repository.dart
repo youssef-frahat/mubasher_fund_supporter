@@ -287,6 +287,7 @@ class PortfolioRepository {
 
           itemsJson.add({
             'portfolio_id': dbPortfolioId,
+            'fund_id': 'fund-${itemsJson.length + 1}',
             'fund_name': alloc.fundName,
             'category': cat.name,
             'units': units,
@@ -410,7 +411,11 @@ class PortfolioRepository {
         }
 
         if (dbPortfolios.isNotEmpty) {
-          final targetP = dbPortfolios.first;
+          final activeId = await getActivePortfolioId();
+          final targetP = dbPortfolios.firstWhere(
+            (p) => p.id == activeId,
+            orElse: () => dbPortfolios.first,
+          );
           await client.from('portfolio_items').insert(newItem.toSupabaseJson(targetP.id));
           debugPrint('✅ Added portfolio item ${newItem.fundName} to Supabase DB for portfolio ${targetP.id}');
         }

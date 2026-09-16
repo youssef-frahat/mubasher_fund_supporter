@@ -61,5 +61,27 @@ void main() {
       expect(emptyPortfolio.totalProfitLoss, 0.0);
       expect(emptyPortfolio.totalProfitLossPercentage, 0.0);
     });
+
+    test('PortfolioItem preserves fund_id during toSupabaseJson and fromJson cycles', () {
+      final item = PortfolioItem(
+        id: '25a7538d-ec82-4f3f-981f-ebcfa3b59325',
+        fundId: 'eg_fund_001',
+        fundName: 'صندوق سهمي 70',
+        category: FundCategory.equity,
+        units: 50.0,
+        purchasePrice: 100.0,
+        currentNav: 120.0,
+        purchaseDate: DateTime(2026, 1, 1),
+      );
+
+      final supabaseJson = item.toSupabaseJson('portfolio-uuid-123');
+      expect(supabaseJson['fund_id'], 'eg_fund_001');
+      expect(supabaseJson['portfolio_id'], 'portfolio-uuid-123');
+      expect(supabaseJson['fund_name'], 'صندوق سهمي 70');
+
+      final reconstructed = PortfolioItem.fromJson(supabaseJson);
+      expect(reconstructed.fundId, 'eg_fund_001');
+      expect(reconstructed.fundName, 'صندوق سهمي 70');
+    });
   });
 }

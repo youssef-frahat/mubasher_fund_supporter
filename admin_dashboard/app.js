@@ -4,6 +4,17 @@ const SUPABASE_ANON_KEY = 'sb_publishable_wok63F-3n02BsQTgPvHPxw_gJTyGWU7';
 
 const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
+// HTML Escaper for XSS Prevention
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // Global State Loaded Dynamically from Supabase DB
 let liveFunds = [];
 let livePortfolios = [];
@@ -873,23 +884,27 @@ function renderQuickPriceTable() {
     const reportBadge = isEn ? '(Official EIMA Report)' : '(تقرير EIMA الرسمي)';
     const btnLabel = isEn ? '<i class="fa-solid fa-floppy-disk"></i> Save Live Price ⚡' : '<i class="fa-solid fa-floppy-disk"></i> حفظ السعر المباشر ⚡';
 
+    const safeId = escapeHtml(fund.id);
+    const safeName = escapeHtml(displayName);
+    const safeManager = escapeHtml(displayManager);
+
     tr.innerHTML = `
-      <td><strong>${displayName}</strong></td>
-      <td>${displayManager}</td>
+      <td><strong>${safeName}</strong></td>
+      <td>${safeManager}</td>
       <td style="color:#00E676; font-weight:bold">${navVal.toFixed(4)} EGP</td>
       <td>
-        <input type="number" step="0.0001" id="quickNavInput_${fund.id}" value="${navVal}" 
-               oninput="updateQuickYtdDisplay('${fund.id}')" 
+        <input type="number" step="0.0001" id="quickNavInput_${safeId}" value="${navVal}" 
+               oninput="updateQuickYtdDisplay('${safeId}')" 
                class="form-input" style="width:140px; font-weight:bold; color:#00E676;">
       </td>
       <td>
-        <span id="quickYtdDisplay_${fund.id}" style="font-size:14px; font-weight:900; color:#3B82F6;">
+        <span id="quickYtdDisplay_${safeId}" style="font-size:14px; font-weight:900; color:#3B82F6;">
           ${computedYtd >= 0 ? '+' : ''}${computedYtd.toFixed(2)}%
         </span>
         <br><small style="color:#9ca3af; font-size:10px;">${reportBadge}</small>
       </td>
       <td>
-        <button class="btn btn-primary" onclick="saveQuickPrice('${fund.id}')">
+        <button class="btn btn-primary" onclick="saveQuickPrice('${safeId}')">
           ${btnLabel}
         </button>
       </td>
@@ -1434,10 +1449,10 @@ function showExcelAiVerificationModal(data) {
                 <tr>
                   <td style="color:#64748b;">${idx + 1}</td>
                   <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#f1f5f9;">
-                    ${m.matchedText}
+                    ${escapeHtml(m.matchedText)}
                   </td>
                   <td>
-                    <strong style="color:#38BDF8;">${f.name_ar || f.name}</strong>
+                    <strong style="color:#38BDF8;">${escapeHtml(f.name_ar || f.name)}</strong>
                   </td>
                   <td>
                     <span style="background:${confColor}22; color:${confColor}; border:1px solid ${confColor}66; padding:2px 6px; border-radius:6px; font-weight:bold; font-size:10px;">
@@ -1465,7 +1480,7 @@ function showExcelAiVerificationModal(data) {
       <div style="max-height:90px; overflow-y:auto; border:1px solid #7f1d1d; border-radius:8px; background:rgba(239,68,68,0.05); padding:6px 10px; font-size:11px;">
         ${unmatched.slice(0, 10).map(u => `
           <div style="padding:2px 0; border-bottom:1px dashed rgba(255,255,255,0.08); color:#fca5a5;">
-            • ${isEn ? 'Row' : 'الصف'} ${u.rowIndex}: ${u.matchedText || 'بدون بيانات'} ${u.detectedPrice ? `(${u.detectedPrice} EGP)` : ''}
+            • ${isEn ? 'Row' : 'الصف'} ${u.rowIndex}: ${escapeHtml(u.matchedText || 'بدون بيانات')} ${u.detectedPrice ? `(${u.detectedPrice} EGP)` : ''}
           </div>
         `).join('')}
         ${unmatched.length > 10 ? `<div style="padding:2px 0; color:#94a3b8;">... ${unmatched.length - 10} ${isEn ? 'more unmatched rows' : 'صفوف أخرى'}</div>` : ''}
@@ -1571,7 +1586,7 @@ function renderAdminsTable() {
 
   const superTr = document.createElement('tr');
   superTr.innerHTML = `
-    <td><strong>${activeAdminUser}</strong></td>
+    <td><strong>${escapeHtml(activeAdminUser)}</strong></td>
     <td><code>super_admin</code></td>
     <td><span class="badge" style="background:rgba(0,230,118,0.15); color:#00E676">${superRole}</span></td>
     <td>${superPerms}</td>
@@ -1586,12 +1601,12 @@ function renderAdminsTable() {
     const removeText = isEn ? 'Remove Admin' : 'إزالة الأدمن';
 
     tr.innerHTML = `
-      <td><strong>${admin.name}</strong></td>
-      <td><code>${admin.username}</code></td>
+      <td><strong>${escapeHtml(admin.name)}</strong></td>
+      <td><code>${escapeHtml(admin.username)}</code></td>
       <td><span class="badge" style="background:rgba(59,130,246,0.15); color:#3B82F6">${roleText}</span></td>
       <td>${permsText}</td>
       <td>
-        <button class="btn btn-danger" onclick="deleteAdmin('${admin.id}')"><i class="fa-solid fa-trash"></i> ${removeText}</button>
+        <button class="btn btn-danger" onclick="deleteAdmin('${escapeHtml(admin.id)}')"><i class="fa-solid fa-trash"></i> ${removeText}</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -2234,7 +2249,12 @@ function renderPortfoliosTable() {
     let investorName = userObj ? userObj.full_name : (p.profiles?.full_name || 'مستثمر وثيقة');
     let investorContact = userObj ? userObj.phone : (p.profiles?.phone_number || p.profiles?.phone || (p.user_id ? p.user_id.substring(0, 12) + '...' : ''));
 
-    const investorDisplay = `<strong>${investorName}</strong>${investorContact ? `<br><small style="color:#00E5FF; font-weight:600">${investorContact}</small>` : ''}`;
+    const safePortName = escapeHtml(portName);
+    const safeInvestorName = escapeHtml(investorName);
+    const safeInvestorContact = escapeHtml(investorContact);
+    const safePortId = escapeHtml(p.id);
+
+    const investorDisplay = `<strong>${safeInvestorName}</strong>${safeInvestorContact ? `<br><small style="color:#00E5FF; font-weight:600">${safeInvestorContact}</small>` : ''}`;
 
     // 2. Resolve Items & Calculated Total Portfolio Value
     const itemsList = p.portfolio_items || [];
@@ -2253,13 +2273,13 @@ function renderPortfoliosTable() {
       : (itemsCount > 0 ? `${itemsCount} أصول/وثائق` : '0 وثائق (محفظة جديدة)');
 
     tr.innerHTML = `
-      <td><strong>${portName}</strong></td>
+      <td><strong>${safePortName}</strong></td>
       <td>${investorDisplay}</td>
       <td><span class="badge" style="${assetsBadgeStyle}">${assetsLabel}</span></td>
       <td style="color:#00E676; font-weight:bold; white-space:nowrap">${totalVal.toFixed(2)} EGP</td>
       <td>${p.created_at ? p.created_at.split('T')[0] : '2026-07-26'}</td>
       <td>
-        <button class="btn btn-danger" onclick="deletePortfolio('${p.id}')"><i class="fa-solid fa-trash"></i> ${deleteText}</button>
+        <button class="btn btn-danger" onclick="deletePortfolio('${safePortId}')"><i class="fa-solid fa-trash"></i> ${deleteText}</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -2284,6 +2304,10 @@ function renderUsersTable() {
   liveUsers.forEach(u => {
     const tr = document.createElement('tr');
     const userName = u.full_name || u.name || u.email || (isEn ? 'Watheqa Investor' : 'مستثمر وثيقة');
+    const safeUserName = escapeHtml(userName);
+    const safeContact = escapeHtml(u.phone || u.id);
+    const safeUserId = escapeHtml(u.id);
+
     const verifiedBadge = (u.is_verified || u.email_confirmed_at)
       ? (isEn ? '<span class="badge badge-sponsored"><i class="fa-solid fa-circle-check"></i> Verified 🟢</span>' : '<span class="badge badge-sponsored"><i class="fa-solid fa-circle-check"></i> موثّق 🟢</span>')
       : (isEn ? '<span class="badge badge-recommended"><i class="fa-solid fa-triangle-exclamation"></i> Unverified ⚠️</span>' : '<span class="badge badge-recommended"><i class="fa-solid fa-triangle-exclamation"></i> غير موثّق ⚠️</span>');
@@ -2295,16 +2319,16 @@ function renderUsersTable() {
     const deleteText = isEn ? 'Delete Account 🗑️' : 'مسح الحساب 🗑️';
 
     tr.innerHTML = `
-      <td><strong>${userName}</strong></td>
-      <td>${u.phone || u.id}</td>
+      <td><strong>${safeUserName}</strong></td>
+      <td>${safeContact}</td>
       <td>${verifiedBadge}</td>
       <td>${u.created_at ? u.created_at.split('T')[0] : '2026-07-26'}</td>
       <td class="actions-cell">
         <div class="btn-action-group">
-          <button class="btn ${u.is_verified ? 'btn-secondary' : 'btn-primary'}" onclick="toggleUserVerification('${u.id}', ${!u.is_verified})">
+          <button class="btn ${u.is_verified ? 'btn-secondary' : 'btn-primary'}" onclick="toggleUserVerification('${safeUserId}', ${!u.is_verified})">
             ${toggleText}
           </button>
-          <button class="btn btn-danger" onclick="deleteUserAccount('${u.id}')" title="${isEn ? 'Delete account permanently' : 'مسح الحساب نهائياً'}">
+          <button class="btn btn-danger" onclick="deleteUserAccount('${safeUserId}')" title="${isEn ? 'Delete account permanently' : 'مسح الحساب نهائياً'}">
             <i class="fa-solid fa-trash"></i> ${deleteText}
           </button>
         </div>

@@ -141,6 +141,7 @@ class PortfolioItem {
   Map<String, dynamic> toSupabaseJson(String portfolioId) {
     final map = <String, dynamic>{
       'portfolio_id': portfolioId,
+      'fund_id': fundId.isNotEmpty ? fundId : null,
       'fund_name': fundName,
       'category': category.name,
       'units': units,
