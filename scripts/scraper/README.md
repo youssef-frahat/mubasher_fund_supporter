@@ -1,62 +1,52 @@
-# Watheqa - Fund Price Auto-Scraper 🤖
+# Watheqa - Snduk.com Fund Price Auto-Scraper 🤖
 
 ## الفكرة العامة
-سكربت Python يسحب أسعار وثائق صناديق الاستثمار يومياً من موقع **iinvest.org.eg** ويحدّث جدول `funds` في **Supabase** تلقائياً عبر **GitHub Actions** كل صباح الساعة 8:00 بتوقيت القاهرة — **بدون أي تدخل يدوي**.
+سكربت Python متطور يسحب أسعار وثائق صناديق الاستثمار المصرية يومياً من موقع **snduk.com** ويحدّث جدول `funds` في **Supabase** تلقائياً عبر **GitHub Actions** كل صباح الساعة 8:00 بتوقيت القاهرة — **بدون أي تدخل يدوي**.
+
+---
+
+## المعمارية الهندسية (Multi-Tier Red-Team Fallback)
+1. **[المسار الأول - السريع والأدق ⚡] Direct tRPC API (`/api/trpc/funds.list`):**
+   - استخراج مباشر لبيانات الـ JSON الخام بدون أي تحميل للـ DOM أو تشغيل المتصفح (يستغرق ~3 ثوانٍ فقط) مع دقة 100% للأرقام.
+2. **[المسار الثاني - الاحتياطي 🔄] Next.js HTML RSC Stream (`self.__next_f.push`):**
+   - استخراج الحزم والبيانات المدمجة في الـ HTML في حال تغيرت مسارات الـ tRPC.
+3. **[المسار الثالث - الدفاعي 🛡️] Headless Browser with Stealth Fingerprint (Playwright):**
+   - متصفح مخفي بتوقيع بشري كامل لتجاوز أي حواجز أمنية أو Cloudflare WAF في حال تفعيلها مستقبلاً.
 
 ---
 
 ## الملفات
 ```
 scripts/scraper/
-├── iinvest_scraper.py     ← السكربت الرئيسي
+├── snduk_scraper.py       ← السكربت الرئيسي المحدث لـ snduk.com
 ├── requirements.txt       ← مكتبات Python
-├── debug_page.html        ← HTML للتشخيص (يُنشأ عند التشغيل)
-└── scraped_funds.json     ← نتيجة dry-run (يُنشأ عند التشغيل)
+├── debug_page.html        ← HTML للتشخيص (يُنشأ عند التشغيل في حال الخطأ)
+└── scraped_funds.json     ← أرشيف البيانات المستخرجة
 
 .github/workflows/
-└── update_fund_prices.yml ← GitHub Action التلقائي
+└── update_fund_prices.yml ← سير عمل GitHub Actions التلقائي
 ```
 
 ---
 
-## الخطوة الوحيدة المطلوبة منك: إضافة GitHub Secrets
-
-اذهب إلى: **GitHub → Repository → Settings → Secrets and variables → Actions → New repository secret**
-
-أضف Secret جديد:
-
-| اسم الـ Secret | القيمة |
-|---|---|
-| `SUPABASE_URL` | `https://maorabzkqtqmlrakqlya.supabase.co` |
-| `SUPABASE_SERVICE_KEY` | (مفتاح الـ Service Role من Supabase → Settings → API) |
-
-> ⚠️ **مهم:** استخدم **Service Role Key** (مش Anon Key) عشان له صلاحية UPDATE على جدول funds.
+## متطلبات التشغيل على GitHub (Secrets)
+- `SUPABASE_URL`: رابط مشروعك على Supabase.
+- `SUPABASE_SERVICE_KEY`: مفتاح الـ `service_role` (للسماح بالـ UPDATE على جدول `funds`).
 
 ---
 
-## كيفية الحصول على Service Role Key
-1. افتح [Supabase Dashboard](https://supabase.com/dashboard)
-2. اختار مشروعك
-3. **Settings → API**
-4. انسخ **`service_role` key** (مش `anon`)
-
----
-
-## التشغيل اليدوي (اختبار)
+## التشغيل اليدوي (اختبار محلي)
 ```bash
-# Dry-run: يعرض الأسعار بدون حفظ
-python scripts/scraper/iinvest_scraper.py --dry-run
+# وضع الفحص الآمن (Dry-run): يستخرج الأسعار ويعرضها دون تعديل قاعدة البيانات
+python scripts/scraper/snduk_scraper.py --dry-run
 
-# تشغيل حقيقي: يحدّث Supabase
-python scripts/scraper/iinvest_scraper.py
+# وضع التشغيل الحقيقي: يستخرج ويحدث قاعدة بيانات Supabase
+python scripts/scraper/snduk_scraper.py
 ```
-
-## التشغيل من GitHub يدوياً
-**GitHub → Actions → Watheqa Fund Prices Auto-Update → Run workflow**
 
 ---
 
 ## جدول التشغيل التلقائي
-- **الأيام**: الاثنين → الجمعة (أيام عمل)
-- **الوقت**: 6:00 AM UTC = **8:00 صباحاً بتوقيت القاهرة**
-- **المصدر**: iinvest.org.eg
+- **الأيام**: الأحد ← الخميس (أيام عمل البورصة المصرية والبنوك)
+- **الوقت**: 06:00 UTC = **08:00 صباحاً بتوقيت القاهرة**
+- **المصدر الرسمي**: https://snduk.com/eg/funds

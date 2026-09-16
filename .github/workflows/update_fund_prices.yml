@@ -62,7 +62,7 @@ jobs:
           if [ "${{ github.event.inputs.verbose }}" = "true" ]; then
             FLAGS="$FLAGS --verbose"
           fi
-          python scripts/scraper/iinvest_scraper.py $FLAGS
+          python scripts/scraper/snduk_scraper.py $FLAGS
 
       - name: Upload Debug HTML (on failure)
         if: failure()
