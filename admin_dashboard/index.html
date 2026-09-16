@@ -32,8 +32,8 @@
 
       <form id="superAdminLoginForm">
         <div class="form-group">
-          <label><i class="fa-solid fa-user-shield"></i> اسم المستخدم (Username)</label>
-          <input type="text" id="adminUsername" class="form-input" required placeholder="ادخل اسم المستخدم (Username)" autocorrect="off" autocapitalize="none" spellcheck="false">
+          <label><i class="fa-solid fa-user-shield"></i> البريد الإلكتروني أو اسم المشرف (Email / Admin Username)</label>
+          <input type="text" id="adminUsername" class="form-input" required placeholder="admin@watheqa.com" autocorrect="off" autocapitalize="none" spellcheck="false">
         </div>
 
         <div class="form-group">
@@ -137,8 +137,8 @@
           <div class="user-profile">
             <div class="avatar-icon"><i class="fa-solid fa-user-shield"></i></div>
             <div class="user-meta">
-              <span class="name" id="displayAdminName">Youssef_Frahat</span>
-              <span class="role">Super Admin 🔑</span>
+              <span class="name" id="displayAdminName">Admin Portal</span>
+              <span class="role">RBAC Verified 🔑</span>
             </div>
             <button class="btn btn-danger btn-sm" id="btnLogoutAdmin" title="تسجيل الخروج" style="margin-right:8px;">
               <i class="fa-solid fa-right-from-bracket"></i>
@@ -213,7 +213,7 @@
             <div class="step completed">
               <div class="step-icon"><i class="fa-solid fa-shield-cat"></i></div>
               <div class="step-label">Super Admin Gate</div>
-              <div class="step-status">Youssef_Frahat 🔑</div>
+              <div class="step-status" id="gateStatusBadge">Authenticated 🔑</div>
             </div>
             <div class="line active"></div>
 

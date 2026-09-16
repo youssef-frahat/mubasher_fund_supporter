@@ -10,7 +10,7 @@ let livePortfolios = [];
 let liveUsers = [];
 let liveTransactions = [];
 
-// Secondary Admins List (Managed by Super Admin Youssef_Frahat)
+// Secondary Admins List (Managed by Super Admin)
 let secondaryAdmins = JSON.parse(localStorage.getItem('watheqa_secondary_admins') || '[]') || [
   { id: 'a1', name: 'أدمن مساعد 1', username: 'Assistant_Admin', role: 'Fund & Price Manager', password: 'pass123', created: '2026-07-26' }
 ];
@@ -445,28 +445,74 @@ function initSuperAdminAuth() {
     const userVal = (document.getElementById('adminUsername')?.value || '').trim();
     const passVal = (document.getElementById('adminPassword')?.value || '').trim();
 
+    if (!userVal || !passVal) {
+      if (errorMsg) {
+        errorMsg.innerText = 'يرجى إدخال البريد الإلكتروني وكلمة المرور';
+        errorMsg.style.display = 'block';
+      }
+      return;
+    }
+
     const cleanUser = userVal.toLowerCase();
     const passHash = await sha256Hash(passVal);
 
-    // Secure SHA-256 cryptographic hashes
-    const validHashes = [
-      '87cb85b2e56d6576e8c83d97fb88fcba3b953017d8ce42762a154cd93f75dc39',
-      'cfe9e323470b1e959b1c1b84ce200292f5ef2b55c0eecda27dc92d221031b068',
-    ];
+    let authenticatedAdmin = null;
 
-    const isSuperAdmin = (
-      cleanUser === 'youssef_frahat' ||
-      cleanUser === 'youssef' ||
-      cleanUser === 'admin'
-    ) && validHashes.includes(passHash);
+    // 1. Authenticate via Supabase Auth & Verify Role in user_roles Table
+    if (db && db.auth && userVal.includes('@')) {
+      try {
+        const { data: authData, error: authError } = await db.auth.signInWithPassword({
+          email: userVal,
+          password: passVal,
+        });
 
-    const secondaryAdminMatch = secondaryAdmins.find(a => 
-      a.username.trim().toLowerCase() === cleanUser && (a.password === passVal || a.password?.trim().toLowerCase() === passVal.toLowerCase())
-    );
+        if (!authError && authData?.user) {
+          // Check role in user_roles table
+          const { data: roles } = await db
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', authData.user.id)
+            .in('role', ['super_admin', 'admin']);
 
-    if (isSuperAdmin || secondaryAdminMatch) {
-      const activeName = secondaryAdminMatch ? secondaryAdminMatch.name : 'Youssef_Frahat';
+          if (roles && roles.length > 0) {
+            authenticatedAdmin = {
+              name: authData.user.user_metadata?.full_name || authData.user.email.split('@')[0],
+              email: authData.user.email,
+              role: roles[0].role === 'super_admin' ? 'Super Admin' : 'Admin',
+            };
+          } else {
+            await db.auth.signOut();
+            if (errorMsg) {
+              errorMsg.innerText = 'عفواً، هذا الحساب لا يمتلك صلاحيات إدارة النظام (Admin Privilege Required)';
+              errorMsg.style.display = 'block';
+            }
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('[AUTH] Supabase Auth login attempt notice:', err);
+      }
+    }
+
+    // 2. Check Managed Authorized Secondary System Admins
+    if (!authenticatedAdmin) {
+      const match = secondaryAdmins.find(a => 
+        (a.username?.toLowerCase() === cleanUser || a.email?.toLowerCase() === cleanUser) &&
+        (a.password === passVal || a.passwordHash === passHash)
+      );
+      if (match) {
+        authenticatedAdmin = {
+          name: match.name || match.username,
+          email: match.email || match.username,
+          role: match.role || 'Admin',
+        };
+      }
+    }
+
+    if (authenticatedAdmin) {
+      const activeName = authenticatedAdmin.name;
       sessionStorage.setItem('watheqa_super_admin_user', activeName);
+      sessionStorage.setItem('watheqa_super_admin_role', authenticatedAdmin.role);
       localStorage.setItem('watheqa_super_admin_user', activeName);
 
       if (loginOverlay) loginOverlay.style.display = 'none';
@@ -474,11 +520,18 @@ function initSuperAdminAuth() {
       if (errorMsg) errorMsg.style.display = 'none';
 
       const disp = document.getElementById('displayAdminName');
-      if (disp) disp.innerText = activeName;
+      if (disp) disp.innerText = `${activeName} (${authenticatedAdmin.role})`;
+
+      const badge = document.getElementById('gateStatusBadge');
+      if (badge) badge.innerText = `${activeName} 🔑`;
+
       refreshLiveData();
-      logMessage(`[AUTH] Admin ${activeName} authenticated successfully 🔑`, 'success');
+      logMessage(`[AUTH] Admin ${activeName} (${authenticatedAdmin.role}) authenticated successfully 🔑`, 'success');
     } else {
-      if (errorMsg) errorMsg.style.display = 'block';
+      if (errorMsg) {
+        errorMsg.innerText = 'بيانات الدخول غير صحيحة أو لا تمتلك صلاحيات كافية ⚠️';
+        errorMsg.style.display = 'block';
+      }
     }
   });
 }
@@ -748,15 +801,15 @@ function renderAdminsTable() {
   tbody.innerHTML = '';
   const isEn = currentLang === 'en';
 
-  const superName = isEn ? 'Youssef Frahat (Super Admin)' : 'يوسف فرحات (Super Admin)';
+  const activeAdminUser = sessionStorage.getItem('watheqa_super_admin_user') || (isEn ? 'System Administrator' : 'مشرف النظام الرئيسي');
   const superRole = isEn ? 'System Owner & Super Admin 🔑' : 'مالك النظام وسوبر أدمن 🔑';
   const superPerms = isEn ? 'Full Unrestricted Access 100%' : 'صلاحية مطلقة 100%';
-  const superTag = isEn ? 'Main Account' : 'الحساب الرئيسي';
+  const superTag = isEn ? 'Active Admin' : 'الحساب النشط';
 
   const superTr = document.createElement('tr');
   superTr.innerHTML = `
-    <td><strong>${superName}</strong></td>
-    <td><code>Youssef_Frahat</code></td>
+    <td><strong>${activeAdminUser}</strong></td>
+    <td><code>super_admin</code></td>
     <td><span class="badge" style="background:rgba(0,230,118,0.15); color:#00E676">${superRole}</span></td>
     <td>${superPerms}</td>
     <td><span class="badge live">${superTag}</span></td>
@@ -1442,7 +1495,7 @@ function renderPortfoliosTable() {
   });
 }
 
-// Render Users Table directly from DB (Including Wird, Youssef, Anan)
+// Render Users Table directly from DB
 function renderUsersTable() {
   const tbody = document.getElementById('usersTableBody');
   if (!tbody) return;

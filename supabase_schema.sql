@@ -125,8 +125,63 @@ CREATE TABLE IF NOT EXISTS public.robo_advisor_configs (
 );
 
 -- =====================================================================
--- 7. PRODUCTION HARDENED ROW LEVEL SECURITY (RLS) POLICIES
+-- 7. PRODUCTION HARDENED ROLE-BASED ACCESS CONTROL (RBAC) & RLS
 -- =====================================================================
+
+-- Role Enum Definition
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
+        CREATE TYPE public.app_role AS ENUM ('super_admin', 'admin', 'compliance_auditor', 'support_agent', 'investor');
+    END IF;
+END $$;
+
+-- Normalized user roles table
+CREATE TABLE IF NOT EXISTS public.user_roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    role public.app_role NOT NULL DEFAULT 'investor',
+    assigned_by UUID REFERENCES auth.users(id),
+    assigned_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+    CONSTRAINT unique_user_role UNIQUE (user_id, role)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON public.user_roles(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_roles_role ON public.user_roles(role);
+
+-- Security Definer Role Checker
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = auth.uid()
+      AND role IN ('super_admin', 'admin')
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE OR REPLACE FUNCTION public.is_super_admin()
+RETURNS boolean AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = auth.uid()
+      AND role = 'super_admin'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- User Roles Table Security
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow_Read_Own_Role" ON public.user_roles;
+DROP POLICY IF EXISTS "Super_Admin_Manage_Roles" ON public.user_roles;
+
+CREATE POLICY "Allow_Read_Own_Role" ON public.user_roles
+FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Super_Admin_Manage_Roles" ON public.user_roles
+FOR ALL USING (public.is_super_admin()) WITH CHECK (public.is_super_admin());
 
 -- Profiles RLS Policies
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -151,11 +206,9 @@ DROP POLICY IF EXISTS "Users_Manage_Own_Portfolios" ON public.portfolios;
 
 CREATE POLICY "Users_Manage_Own_Portfolios" ON public.portfolios
 FOR ALL USING (
-    auth.uid() = user_id OR
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+    auth.uid() = user_id OR public.is_admin()
 ) WITH CHECK (
-    auth.uid() = user_id OR
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+    auth.uid() = user_id OR public.is_admin()
 );
 
 -- Portfolio Items RLS Policies
@@ -168,13 +221,13 @@ FOR ALL USING (
     EXISTS (
         SELECT 1 FROM public.portfolios
         WHERE portfolios.id = portfolio_items.portfolio_id
-        AND (portfolios.user_id = auth.uid() OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true))
+        AND (portfolios.user_id = auth.uid() OR public.is_admin())
     )
 ) WITH CHECK (
     EXISTS (
         SELECT 1 FROM public.portfolios
         WHERE portfolios.id = portfolio_items.portfolio_id
-        AND (portfolios.user_id = auth.uid() OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true))
+        AND (portfolios.user_id = auth.uid() OR public.is_admin())
     )
 );
 
@@ -189,14 +242,14 @@ FOR ALL USING (
     EXISTS (
         SELECT 1 FROM public.portfolios
         WHERE portfolios.id = portfolio_transactions.portfolio_id
-        AND (portfolios.user_id = auth.uid() OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true))
+        AND (portfolios.user_id = auth.uid() OR public.is_admin())
     )
 ) WITH CHECK (
     auth.uid() = user_id OR
     EXISTS (
         SELECT 1 FROM public.portfolios
         WHERE portfolios.id = portfolio_transactions.portfolio_id
-        AND (portfolios.user_id = auth.uid() OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true))
+        AND (portfolios.user_id = auth.uid() OR public.is_admin())
     )
 );
 
