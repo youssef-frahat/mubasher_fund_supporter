@@ -79,12 +79,27 @@ CREATE TABLE IF NOT EXISTS public.portfolio_transactions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- In-App Transactions Sheet Log (Used by fund_transaction_history_sheet)
+CREATE TABLE IF NOT EXISTS public.transactions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    fund_name TEXT NOT NULL,
+    category TEXT,
+    type TEXT NOT NULL DEFAULT 'BUY',
+    units NUMERIC(14, 4) NOT NULL DEFAULT 0,
+    purchase_price NUMERIC(12, 4) NOT NULL DEFAULT 0,
+    current_nav NUMERIC(12, 4),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS public.wishlist (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     fund_id TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     UNIQUE(user_id, fund_id)
+);
+
 -- =====================================================================
 -- 5.1. CREATE FUND NAV HISTORY TABLE (Real Technical Financial Chart Prices)
 -- =====================================================================
@@ -261,6 +276,14 @@ DROP POLICY IF EXISTS "Users_Manage_Own_Wishlist" ON public.wishlist;
 CREATE POLICY "Users_Manage_Own_Wishlist" ON public.wishlist
 FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
+-- Transactions Sheet RLS Policies
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow_All_Transactions_Sheet" ON public.transactions;
+DROP POLICY IF EXISTS "Users_Manage_Own_Transactions_Sheet" ON public.transactions;
+
+CREATE POLICY "Users_Manage_Own_Transactions_Sheet" ON public.transactions
+FOR ALL USING (auth.uid() = user_id OR public.is_admin()) WITH CHECK (auth.uid() = user_id OR public.is_admin());
+
 -- Robo Advisor Configs RLS Policies
 ALTER TABLE public.robo_advisor_configs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow_All_Robo_Configs" ON public.robo_advisor_configs;
@@ -271,7 +294,7 @@ FOR SELECT USING (true);
 
 -- Grant privileges to anon and authenticated roles
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
-GRANT ALL ON public.portfolios, public.portfolio_items, public.portfolio_transactions, public.wishlist, public.profiles TO authenticated;
+GRANT ALL ON public.portfolios, public.portfolio_items, public.portfolio_transactions, public.transactions, public.wishlist, public.profiles TO authenticated;
 
 -- Seed Initial Default Recommendations into robo_advisor_configs
 INSERT INTO public.robo_advisor_configs (

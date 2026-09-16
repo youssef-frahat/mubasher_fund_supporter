@@ -141,15 +141,24 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone_number TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now());
+
 -- Mutual Funds Table
 CREATE TABLE IF NOT EXISTS public.funds (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL DEFAULT 'صندوق استثماري',
     name_ar TEXT,
     name_en TEXT,
-    manager_name TEXT NOT NULL,
+    manager_name TEXT NOT NULL DEFAULT 'مباشر كابيتال',
     manager TEXT,
-    current_nav NUMERIC(12, 4) NOT NULL,
+    current_nav NUMERIC(12, 4) NOT NULL DEFAULT 100.0,
+    nav_date TEXT,
     ytd_return NUMERIC(8, 2) NOT NULL DEFAULT 0.0,
     weekly_return NUMERIC(8, 2) DEFAULT 0.0,
     four_weeks_return NUMERIC(8, 2) DEFAULT 0.0,
@@ -170,16 +179,93 @@ CREATE TABLE IF NOT EXISTS public.funds (
     updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Idempotent Column Harmonization for Existing Deployments
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS name_ar TEXT;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS name_en TEXT;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS manager_name TEXT;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS manager TEXT;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS current_nav NUMERIC(12, 4) DEFAULT 100.0;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS nav_date TEXT;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS ytd_return NUMERIC(8, 2) DEFAULT 0.0;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS weekly_return NUMERIC(8, 2) DEFAULT 0.0;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS four_weeks_return NUMERIC(8, 2) DEFAULT 0.0;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS last_12m_return NUMERIC(8, 2) DEFAULT 0.0;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS daily_change NUMERIC(8, 2) DEFAULT 0.0;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS risk_level TEXT DEFAULT 'Medium';
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'Equity';
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS sub_category TEXT;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'EGP';
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS inception_date TEXT;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS initial_value NUMERIC(12, 4);
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS logo_url TEXT;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS is_recommended BOOLEAN DEFAULT false;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS is_sponsored BOOLEAN DEFAULT false;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS is_top_performing BOOLEAN DEFAULT false;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS rank INTEGER;
+ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now());
+
 -- Fund NAV History Table (Real Deterministic Technical Chart Data)
-CREATE TABLE IF NOT EXISTS public.fund_nav_history (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    fund_id TEXT NOT NULL REFERENCES public.funds(id) ON DELETE CASCADE,
-    nav NUMERIC(12, 4) NOT NULL,
-    recorded_date DATE NOT NULL,
-    daily_change NUMERIC(8, 4) DEFAULT 0.0,
-    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
-    CONSTRAINT unique_fund_nav_date UNIQUE(fund_id, recorded_date)
-);
+-- Dynamic Polymorphic FK Detection: Automatically aligns fund_id type with public.funds(id) (UUID or TEXT)
+DO $$ 
+DECLARE
+    v_funds_id_type text;
+    v_nav_fund_id_type text;
+BEGIN
+    SELECT data_type INTO v_funds_id_type 
+    FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+      AND table_name = 'funds' 
+      AND column_name = 'id';
+
+    IF v_funds_id_type IS NULL THEN
+        v_funds_id_type := 'uuid';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'fund_nav_history'
+    ) THEN
+        SELECT data_type INTO v_nav_fund_id_type
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'fund_nav_history'
+          AND column_name = 'fund_id';
+
+        IF v_nav_fund_id_type IS DISTINCT FROM v_funds_id_type THEN
+            EXECUTE 'DROP TABLE public.fund_nav_history CASCADE;';
+        END IF;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'fund_nav_history'
+    ) THEN
+        IF v_funds_id_type = 'uuid' THEN
+            EXECUTE '
+            CREATE TABLE public.fund_nav_history (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                fund_id UUID NOT NULL REFERENCES public.funds(id) ON DELETE CASCADE,
+                nav NUMERIC(12, 4) NOT NULL,
+                recorded_date DATE NOT NULL,
+                daily_change NUMERIC(8, 4) DEFAULT 0.0,
+                created_at TIMESTAMPTZ DEFAULT timezone(''utc''::text, now()) NOT NULL,
+                CONSTRAINT unique_fund_nav_date UNIQUE(fund_id, recorded_date)
+            );';
+        ELSE
+            EXECUTE '
+            CREATE TABLE public.fund_nav_history (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                fund_id TEXT NOT NULL REFERENCES public.funds(id) ON DELETE CASCADE,
+                nav NUMERIC(12, 4) NOT NULL,
+                recorded_date DATE NOT NULL,
+                daily_change NUMERIC(8, 4) DEFAULT 0.0,
+                created_at TIMESTAMPTZ DEFAULT timezone(''utc''::text, now()) NOT NULL,
+                CONSTRAINT unique_fund_nav_date UNIQUE(fund_id, recorded_date)
+            );';
+        END IF;
+    END IF;
+END $$;
 
 -- Portfolios Table
 CREATE TABLE IF NOT EXISTS public.portfolios (
@@ -189,6 +275,9 @@ CREATE TABLE IF NOT EXISTS public.portfolios (
     created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+ALTER TABLE public.portfolios ADD COLUMN IF NOT EXISTS name TEXT DEFAULT 'المحفظة الرئيسية';
+ALTER TABLE public.portfolios ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now());
 
 -- Portfolio Items Table
 CREATE TABLE IF NOT EXISTS public.portfolio_items (
@@ -204,6 +293,14 @@ CREATE TABLE IF NOT EXISTS public.portfolio_items (
     created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+ALTER TABLE public.portfolio_items ADD COLUMN IF NOT EXISTS fund_id TEXT;
+ALTER TABLE public.portfolio_items ADD COLUMN IF NOT EXISTS fund_name TEXT;
+ALTER TABLE public.portfolio_items ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'Equity';
+ALTER TABLE public.portfolio_items ADD COLUMN IF NOT EXISTS units NUMERIC(14, 4) DEFAULT 0;
+ALTER TABLE public.portfolio_items ADD COLUMN IF NOT EXISTS purchase_price NUMERIC(12, 4) DEFAULT 0;
+ALTER TABLE public.portfolio_items ADD COLUMN IF NOT EXISTS current_nav NUMERIC(12, 4) DEFAULT 0;
+ALTER TABLE public.portfolio_items ADD COLUMN IF NOT EXISTS purchase_date TIMESTAMPTZ DEFAULT timezone('utc'::text, now());
+
 -- Portfolio Transactions Table
 CREATE TABLE IF NOT EXISTS public.portfolio_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -215,6 +312,27 @@ CREATE TABLE IF NOT EXISTS public.portfolio_transactions (
     units NUMERIC(14, 4) NOT NULL,
     purchase_price NUMERIC(12, 4) NOT NULL,
     transaction_date TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.portfolio_transactions ADD COLUMN IF NOT EXISTS portfolio_id UUID REFERENCES public.portfolios(id) ON DELETE CASCADE;
+ALTER TABLE public.portfolio_transactions ADD COLUMN IF NOT EXISTS fund_name TEXT;
+ALTER TABLE public.portfolio_transactions ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'MoneyMarket';
+ALTER TABLE public.portfolio_transactions ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'BUY';
+ALTER TABLE public.portfolio_transactions ADD COLUMN IF NOT EXISTS units NUMERIC(14, 4) DEFAULT 0;
+ALTER TABLE public.portfolio_transactions ADD COLUMN IF NOT EXISTS purchase_price NUMERIC(12, 4) DEFAULT 0;
+ALTER TABLE public.portfolio_transactions ADD COLUMN IF NOT EXISTS transaction_date TIMESTAMPTZ DEFAULT timezone('utc'::text, now());
+
+-- In-App Transactions Sheet Log (Used by fund_transaction_history_sheet)
+CREATE TABLE IF NOT EXISTS public.transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    fund_name TEXT NOT NULL,
+    category TEXT,
+    type TEXT NOT NULL DEFAULT 'BUY',
+    units NUMERIC(14, 4) NOT NULL DEFAULT 0,
+    purchase_price NUMERIC(12, 4) NOT NULL DEFAULT 0,
+    current_nav NUMERIC(12, 4),
     created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -263,6 +381,7 @@ CREATE INDEX IF NOT EXISTS idx_portfolio_items_portfolio ON public.portfolio_ite
 CREATE INDEX IF NOT EXISTS idx_portfolio_transactions_user ON public.portfolio_transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_portfolio_transactions_portfolio ON public.portfolio_transactions(portfolio_id);
 CREATE INDEX IF NOT EXISTS idx_wishlist_user ON public.wishlist(user_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_user ON public.transactions(user_id);
 
 -- ---------------------------------------------------------------------
 -- 5. TAMPER-PROOF TRIGGERS & AUTO USER INITIALIZATION
@@ -419,6 +538,18 @@ FOR ALL USING (
     )
 );
 
+-- transactions (sheet orders) RLS
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow_All_Transactions_Sheet" ON public.transactions;
+DROP POLICY IF EXISTS "Users_Manage_Own_Transactions_Sheet" ON public.transactions;
+
+CREATE POLICY "Users_Manage_Own_Transactions_Sheet" ON public.transactions
+FOR ALL USING (
+    auth.uid() = user_id OR public.is_admin()
+) WITH CHECK (
+    auth.uid() = user_id OR public.is_admin()
+);
+
 -- wishlist RLS
 ALTER TABLE public.wishlist ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow_All_Wishlist" ON public.wishlist;
@@ -447,7 +578,7 @@ CREATE POLICY "Allow_Read_Robo_Configs" ON public.robo_advisor_configs FOR SELEC
 -- 7. PRIVILEGE GRANTS
 -- ---------------------------------------------------------------------
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
-GRANT ALL ON public.portfolios, public.portfolio_items, public.portfolio_transactions, public.wishlist, public.profiles TO authenticated;
+GRANT ALL ON public.portfolios, public.portfolio_items, public.portfolio_transactions, public.transactions, public.wishlist, public.profiles, public.fund_nav_history TO authenticated;
 
 -- ---------------------------------------------------------------------
 -- 8. DEFAULT ROBO ADVISOR CONFIGURATIONS SEED
@@ -496,6 +627,9 @@ ON CONFLICT (goal_key) DO UPDATE SET
 -- ---------------------------------------------------------------------
 -- 9. OFFICIAL EGYPTIAN MUTUAL FUNDS ARABIC & ENGLISH LOCALIZATION (201 FUNDS)
 -- ---------------------------------------------------------------------
+UPDATE public.funds SET name = COALESCE(name_ar, name_en, 'صندوق استثماري') WHERE name IS NULL;
+UPDATE public.funds SET manager_name = COALESCE(manager, manager_name, 'إدارة الصندوق') WHERE manager_name IS NULL;
+
 UPDATE public.funds SET name_ar = 'صندوق استثمار بنك كريدي أجريكول مصر الأول (أسهم)', name_en = 'Credit Agricole Egypt Fund I' WHERE name LIKE '%Credit Agricole Egypt Fund I%';
 UPDATE public.funds SET name_ar = 'صندوق استثمار بنك الإسكندرية الأول', name_en = 'ALEXBANK Fund I' WHERE name LIKE '%ALEXBANK Fund I%';
 UPDATE public.funds SET name_ar = 'صندوق استثمار جي آي جي للتأمين الأول', name_en = 'GIG Insurance - Egypt Fund I' WHERE name LIKE '%GIG Insurance - Egypt Fund I%';
