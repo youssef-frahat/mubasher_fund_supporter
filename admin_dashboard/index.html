@@ -940,22 +940,25 @@
         <button type="button" class="btn btn-secondary" id="btnCancelMaxChartModal"><i class="fa-solid fa-times"></i> إغلاق النافذة</button>
       </div>
     </div>
-  <!-- EXCEL BULK PRICE IMPORT RESULTS MODAL -->
+  <!-- EXCEL BULK PRICE IMPORT RESULTS & AI VERIFICATION MODAL -->
   <div class="modal-overlay" id="excelImportModal" style="display: none;">
-    <div class="modal-card" style="max-width: 620px; width: 95%;">
+    <div class="modal-card" style="max-width: 880px; width: 95%;">
       <div class="modal-header">
         <h3 id="excelImportModalTitle" style="display: flex; align-items: center; gap: 8px;">
-          <i class="fa-solid fa-file-circle-check" style="color: #00E676;"></i>
-          <span>تقرير تحديث أسعار الصناديق من الإكسيل (Excel Bulk Import)</span>
+          <i class="fa-solid fa-wand-magic-sparkles" style="color: #00E676;"></i>
+          <span>فاحص وتحديث أسعار الصناديق بالذكاء الاصطناعي (Universal AI Excel Price Matcher)</span>
         </h3>
         <button class="close-btn" onclick="closeExcelImportModal()">&times;</button>
       </div>
-      <div class="modal-body" id="excelImportModalBody" style="padding: 18px; max-height: 400px; overflow-y: auto;">
-        <!-- Dynamically populated report -->
+      <div class="modal-body" id="excelImportModalBody" style="padding: 18px; max-height: 520px; overflow-y: auto;">
+        <!-- Dynamically populated AI report & preview -->
       </div>
-      <div class="modal-footer" style="padding-top: 14px;">
-        <button type="button" class="btn btn-primary" onclick="closeExcelImportModal()" id="btnExcelImportClose">
-          <i class="fa-solid fa-check"></i> تطبيق وحفظ في اللوحة ✅
+      <div class="modal-footer" id="excelImportModalFooter" style="padding-top: 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <button type="button" class="btn btn-secondary" onclick="closeExcelImportModal()" id="btnExcelImportCancel">
+          <i class="fa-solid fa-times"></i> إلغاء
+        </button>
+        <button type="button" class="btn btn-primary" onclick="confirmAndCommitBulkPriceUpdates()" id="btnExcelImportCommit" style="background: linear-gradient(135deg, #00E676, #00B0FF); color: #000; font-weight: bold;">
+          <i class="fa-solid fa-cloud-arrow-up"></i> تأكيد وحفظ التحديثات في قاعدة بيانات سوبابيز 🚀
         </button>
       </div>
     </div>

@@ -203,6 +203,80 @@ void main() {
       expect(arStatusPast.contains('آخر سعر معلن'), true);
       expect(arStatusPast.contains('2026-01-15'), true);
     });
+
+    test('effectiveInitialNav and inceptionReturn calculate accurately for El Wefaq and low par funds', () {
+      // El Wefaq Islamic Fund launched at par 10.0 EGP, currently 47.4784 EGP
+      final elWefaq = FundModel(
+        id: 'eg_fund_062',
+        name: 'صندوق الوفاق الإسلامي',
+        managerName: 'CI Capital',
+        currentNav: 47.4784,
+        initialNav: 10.0,
+        ytdReturn: 41.59,
+        riskLevel: 'High',
+        category: 'Equity',
+        subscriptionSchedule: 'أسبوعياً - تنفيذ يوم الأحد بسعر وثيقة الإقفال',
+        subscriptionScheduleEn: 'Weekly - executed on Sunday at closing NAV',
+        redemptionSchedule: 'أسبوعياً - طلبات حتى الخميس والتنفيذ الأحد (تسوية T+2)',
+        redemptionScheduleEn: 'Weekly - orders by Thursday, executed Sunday (T+2)',
+        executionCutoffTime: 'الخميس الساعة 1:00 ظهراً',
+        executionCutoffTimeEn: 'Thursday at 1:00 PM',
+      );
+
+      // Verify par value is 10.0 EGP
+      expect(elWefaq.effectiveInitialNav, 10.0);
+      // ((47.4784 - 10.0) / 10.0) * 100 = 374.784% gain! (Never negative -52%)
+      expect(elWefaq.inceptionReturn, closeTo(374.78, 0.01));
+
+      // Test intelligent fallback when initialNav is null
+      final unconfiguredFund = FundModel(
+        id: 'test-heuristic',
+        name: 'Heuristic Fund',
+        managerName: 'Manager',
+        currentNav: 45.0,
+        ytdReturn: 20.0,
+        riskLevel: 'Medium',
+        category: 'Equity',
+      );
+      // NAV between 5 and 90 -> fallback is 10.0
+      expect(unconfiguredFund.effectiveInitialNav, 10.0);
+      expect(unconfiguredFund.inceptionReturn, closeTo(350.0, 0.01));
+    });
+
+    test('FundModel serializes and deserializes prospectus schedules correctly', () {
+      final map = {
+        'id': 'eg_fund_001',
+        'name': 'Sahmy 70',
+        'name_ar': 'صندوق سهمي 70',
+        'name_en': 'Sahmy 70',
+        'manager_name': 'NI Capital',
+        'current_nav': 21.9448,
+        'initial_nav': 10.0,
+        'ytd_return': 94.10,
+        'risk_level': 'High',
+        'category': 'Equity',
+        'subscription_schedule': 'أسبوعياً - الأحد',
+        'subscription_schedule_en': 'Weekly - Sunday',
+        'redemption_schedule': 'أسبوعياً - الأحد',
+        'redemption_schedule_en': 'Weekly - Sunday',
+        'execution_cutoff_time': 'الخميس 1:00 ظهراً',
+        'execution_cutoff_time_en': 'Thursday 1:00 PM',
+      };
+
+      final fund = FundModel.fromMap(map);
+      expect(fund.initialNav, 10.0);
+      expect(fund.subscriptionSchedule, 'أسبوعياً - الأحد');
+      expect(fund.subscriptionScheduleEn, 'Weekly - Sunday');
+      expect(fund.redemptionSchedule, 'أسبوعياً - الأحد');
+      expect(fund.redemptionScheduleEn, 'Weekly - Sunday');
+      expect(fund.executionCutoffTime, 'الخميس 1:00 ظهراً');
+      expect(fund.executionCutoffTimeEn, 'Thursday 1:00 PM');
+
+      final serialized = fund.toMap();
+      expect(serialized['initial_nav'], 10.0);
+      expect(serialized['subscription_schedule'], 'أسبوعياً - الأحد');
+      expect(serialized['execution_cutoff_time_en'], 'Thursday 1:00 PM');
+    });
   });
 }
 

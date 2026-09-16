@@ -54,11 +54,6 @@ class _NavChartWidgetState extends State<NavChartWidget>
 
   /// Backward Actual Historical Return for selected timeframe based on EIMA & Official Data
   double get _actualHistoricalReturn {
-    final nav = widget.fund.currentNav;
-    final initialVal = (widget.fund.initialValue != null && widget.fund.initialValue! > 0)
-        ? widget.fund.initialValue!
-        : 100.0;
-
     switch (_selectedPeriod) {
       case NavChartPeriod.day:
         return widget.fund.dailyChange;
@@ -77,8 +72,7 @@ class _NavChartWidgetState extends State<NavChartWidget>
             ? widget.fund.last12mReturn
             : widget.fund.ytdReturn;
       case NavChartPeriod.allTime:
-        if (initialVal <= 0) return widget.fund.ytdReturn;
-        return ((nav - initialVal) / initialVal) * 100;
+        return widget.fund.inceptionReturn;
     }
   }
 
@@ -94,9 +88,7 @@ class _NavChartWidgetState extends State<NavChartWidget>
   /// Zero random noise or fake brownian motion.
   List<FlSpot> _buildRealFinancialSpots() {
     final nav = widget.fund.currentNav;
-    final initialVal = (widget.fund.initialValue != null && widget.fund.initialValue! > 0)
-        ? widget.fund.initialValue!
-        : 100.0;
+    final initialVal = widget.fund.effectiveInitialNav;
 
     final List<FlSpot> spots = [];
 
@@ -522,7 +514,9 @@ class _NavChartWidgetState extends State<NavChartWidget>
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _statItem(
-                    label: isAr ? 'العائد الفعلي للفترة 🟢' : 'Actual Period Return',
+                    label: isAr
+                        ? (_actualHistoricalReturn >= 0 ? 'العائد الفعلي للفترة 🟢' : 'العائد الفعلي للفترة 🔴')
+                        : (_actualHistoricalReturn >= 0 ? 'Actual Period Return 🟢' : 'Actual Period Return 🔴'),
                     value: '${_actualHistoricalReturn >= 0 ? '+' : ''}${_actualHistoricalReturn.toStringAsFixed(2)}%',
                     color: _actualHistoricalReturn >= 0 ? AppColors.success : AppColors.error,
                     textSecondary: textSecondary,

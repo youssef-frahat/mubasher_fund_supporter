@@ -431,34 +431,54 @@ class FundDetailsScreen extends StatelessWidget {
             textSecondary: textSecondary,
           ),
 
-          // 5. Fund Administration
+          // 5. Inception Par Value / Initial NAV
           _buildInfoRow(
-            icon: Icons.storefront_outlined,
-            label: context.tr('fundAdminLabel'),
-            value: fund.fundAdministrator ?? 'فروع البنك وتطبيق مباشر كابيتال',
+            icon: Icons.price_change_outlined,
+            label: context.tr('inceptionNavLabel'),
+            value: '${fund.effectiveInitialNav.toStringAsFixed(fund.effectiveInitialNav == 1.0 ? 2 : (fund.effectiveInitialNav == 10.0 ? 2 : 0))} ${fund.currency}',
             textPrimary: textPrimary,
             textSecondary: textSecondary,
           ),
 
-          // 6. Independent Auditor
+          // 6. Subscription / Buy Schedule
           _buildInfoRow(
-            icon: Icons.verified_user_outlined,
-            label: context.tr('independentAuditor'),
-            value: fund.auditor ?? 'حازم حسن (KPMG) ومراقبون مستقلون',
+            icon: Icons.add_shopping_cart_outlined,
+            label: context.tr('subscriptionScheduleLabel'),
+            value: fund.localizedSubscriptionSchedule(context),
             textPrimary: textPrimary,
             textSecondary: textSecondary,
           ),
 
-          // 7. Trading Currency
+          // 7. Redemption / Sell Schedule
+          _buildInfoRow(
+            icon: Icons.sell_outlined,
+            label: context.tr('redemptionScheduleLabel'),
+            value: fund.localizedRedemptionSchedule(context),
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+          ),
+
+          // 8. Order Cutoff Time
+          _buildInfoRow(
+            icon: Icons.alarm_outlined,
+            label: context.tr('orderCutoffLabel'),
+            value: fund.localizedCutoffTime(context),
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+          ),
+
+          // 9. Trading Currency
           _buildInfoRow(
             icon: Icons.monetization_on_outlined,
             label: context.tr('nominalCurrency'),
-            value: fund.currency == 'USD' ? 'دولار أمريكي (USD)' : 'الجنيه المصري (EGP)',
+            value: fund.currency == 'USD'
+                ? context.tr('usdCurrencyName')
+                : context.tr('egpCurrencyName'),
             textPrimary: textPrimary,
             textSecondary: textSecondary,
           ),
 
-          // 8. Valuation Frequency
+          // 10. Valuation Frequency
           _buildInfoRow(
             icon: Icons.update_rounded,
             label: context.tr('tradingFrequency'),
@@ -467,11 +487,11 @@ class FundDetailsScreen extends StatelessWidget {
             textSecondary: textSecondary,
           ),
 
-          // 9. Dividend Policy
+          // 11. Dividend Policy
           _buildInfoRow(
             icon: Icons.pie_chart_outline,
             label: context.tr('dividendPolicyLabel'),
-            value: fund.dividendPolicy ?? 'إعادة استثمار العوائد تلقائياً (Growth)',
+            value: fund.dividendPolicy ?? context.tr('growthDividendPolicy'),
             textPrimary: textPrimary,
             textSecondary: textSecondary,
             isLast: true,

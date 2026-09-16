@@ -20,6 +20,7 @@ class FundModel {
   final String currency; // EGP, USD, EUR
   final String? inceptionDate;
   final double? initialValue;
+  final double? initialNav; // Nominal initial subscription price at fund inception
   final String? logoUrl;
   final bool isRecommended;
   final bool isSponsored;
@@ -42,6 +43,14 @@ class FundModel {
   final String? managerLogo;
   final String? dividendPolicy;
 
+  // Prospectus Execution & Dealing Schedules
+  final String? subscriptionSchedule;
+  final String? subscriptionScheduleEn;
+  final String? redemptionSchedule;
+  final String? redemptionScheduleEn;
+  final String? executionCutoffTime;
+  final String? executionCutoffTimeEn;
+
   FundModel({
     required this.id,
     required this.name,
@@ -60,6 +69,7 @@ class FundModel {
     this.currency = 'EGP',
     this.inceptionDate,
     this.initialValue,
+    this.initialNav,
     this.logoUrl,
     this.isRecommended = false,
     this.isSponsored = false,
@@ -79,7 +89,28 @@ class FundModel {
     this.auditor,
     this.managerLogo,
     this.dividendPolicy,
+    this.subscriptionSchedule,
+    this.subscriptionScheduleEn,
+    this.redemptionSchedule,
+    this.redemptionScheduleEn,
+    this.executionCutoffTime,
+    this.executionCutoffTimeEn,
   });
+
+  /// Effective initial nominal NAV with intelligent category/price fallback
+  double get effectiveInitialNav {
+    if (initialNav != null && initialNav! > 0) return initialNav!;
+    if (currentNav < 5.0) return 1.0;
+    if (currentNav < 90.0) return 10.0;
+    return 100.0;
+  }
+
+  /// Cumulative return since fund inception based on initial nominal price
+  double get inceptionReturn {
+    final base = effectiveInitialNav;
+    final calc = ((currentNav - base) / base) * 100;
+    return double.parse(calc.toStringAsFixed(2));
+  }
 
   /// Returns main name without parentheses e.g. "AAIB" from "AAIB (Gozoor)"
   String get displayNameOnly {
@@ -91,9 +122,9 @@ class FundModel {
     return name;
   }
 
-  /// Dynamically computed YTD return based on price change
+  /// Dynamically computed return based on price change
   double get dynamicYtdReturn {
-    final basePrice = (initialValue != null && initialValue! > 0) ? initialValue! : 100.0;
+    final basePrice = effectiveInitialNav;
     if (basePrice <= 0) return ytdReturn;
     final calc = ((currentNav - basePrice) / basePrice) * 100;
     return double.parse(calc.toStringAsFixed(2));
@@ -202,6 +233,33 @@ class FundModel {
     }
   }
 
+  /// Returns localized subscription schedule per prospectus
+  String localizedSubscriptionSchedule(BuildContext context) {
+    final isAr = _checkIsArabic(context);
+    if (!isAr && subscriptionScheduleEn != null && subscriptionScheduleEn!.isNotEmpty) {
+      return subscriptionScheduleEn!;
+    }
+    return subscriptionSchedule ?? (isAr ? 'يومي حتى الساعة 12:00 ظهراً' : 'Daily until 12:00 PM');
+  }
+
+  /// Returns localized redemption schedule per prospectus
+  String localizedRedemptionSchedule(BuildContext context) {
+    final isAr = _checkIsArabic(context);
+    if (!isAr && redemptionScheduleEn != null && redemptionScheduleEn!.isNotEmpty) {
+      return redemptionScheduleEn!;
+    }
+    return redemptionSchedule ?? (isAr ? 'أسبوعي (يوم الأحد حتى 12:00 ظهراً)' : 'Weekly (Sunday until 12:00 PM)');
+  }
+
+  /// Returns localized daily cutoff time
+  String localizedCutoffTime(BuildContext context) {
+    final isAr = _checkIsArabic(context);
+    if (!isAr && executionCutoffTimeEn != null && executionCutoffTimeEn!.isNotEmpty) {
+      return executionCutoffTimeEn!;
+    }
+    return executionCutoffTime ?? (isAr ? 'الساعة 12:00 ظهراً' : '12:00 PM');
+  }
+
   /// Whether the fund NAV price was updated today
   bool get isUpdatedToday {
     if (updatedAt == null) return false;
@@ -245,6 +303,7 @@ class FundModel {
     String? currency,
     String? inceptionDate,
     double? initialValue,
+    double? initialNav,
     String? logoUrl,
     bool? isRecommended,
     bool? isSponsored,
@@ -264,6 +323,12 @@ class FundModel {
     String? auditor,
     String? managerLogo,
     String? dividendPolicy,
+    String? subscriptionSchedule,
+    String? subscriptionScheduleEn,
+    String? redemptionSchedule,
+    String? redemptionScheduleEn,
+    String? executionCutoffTime,
+    String? executionCutoffTimeEn,
   }) {
     return FundModel(
       id: id ?? this.id,
@@ -283,6 +348,7 @@ class FundModel {
       currency: currency ?? this.currency,
       inceptionDate: inceptionDate ?? this.inceptionDate,
       initialValue: initialValue ?? this.initialValue,
+      initialNav: initialNav ?? this.initialNav,
       logoUrl: logoUrl ?? this.logoUrl,
       isRecommended: isRecommended ?? this.isRecommended,
       isSponsored: isSponsored ?? this.isSponsored,
@@ -302,6 +368,12 @@ class FundModel {
       auditor: auditor ?? this.auditor,
       managerLogo: managerLogo ?? this.managerLogo,
       dividendPolicy: dividendPolicy ?? this.dividendPolicy,
+      subscriptionSchedule: subscriptionSchedule ?? this.subscriptionSchedule,
+      subscriptionScheduleEn: subscriptionScheduleEn ?? this.subscriptionScheduleEn,
+      redemptionSchedule: redemptionSchedule ?? this.redemptionSchedule,
+      redemptionScheduleEn: redemptionScheduleEn ?? this.redemptionScheduleEn,
+      executionCutoffTime: executionCutoffTime ?? this.executionCutoffTime,
+      executionCutoffTimeEn: executionCutoffTimeEn ?? this.executionCutoffTimeEn,
     );
   }
 
@@ -319,13 +391,16 @@ class FundModel {
         nameStr.contains('هلال') ||
         nameStr.contains('بشائر');
 
+    final double currentNavVal = (map['current_nav'] as num?)?.toDouble() ?? 100.0;
+    final double? initNavVal = (map['initial_nav'] as num?)?.toDouble() ?? (map['initial_value'] as num?)?.toDouble();
+
     return FundModel(
       id: map['id']?.toString() ?? '',
       name: map['name'] ?? map['name_ar'] ?? map['name_en'] ?? '',
       nameAr: map['name_ar'],
       nameEn: map['name_en'],
       managerName: map['manager_name'] ?? map['manager'] ?? 'مباشر كابيتال',
-      currentNav: (map['current_nav'] as num?)?.toDouble() ?? 100.0,
+      currentNav: currentNavVal,
       ytdReturn: (map['ytd_return'] as num?)?.toDouble() ?? 0.0,
       weeklyReturn: (map['weekly_return'] as num?)?.toDouble() ?? 0.0,
       fourWeeksReturn: (map['four_weeks_return'] as num?)?.toDouble() ?? 0.0,
@@ -336,7 +411,8 @@ class FundModel {
       subCategory: map['sub_category'],
       currency: map['currency'] ?? 'EGP',
       inceptionDate: map['inception_date'],
-      initialValue: (map['initial_value'] as num?)?.toDouble(),
+      initialValue: initNavVal,
+      initialNav: initNavVal,
       logoUrl: map['logo_url'],
       isRecommended: map['is_recommended'] ?? false,
       isSponsored: map['is_sponsored'] ?? false,
@@ -356,6 +432,12 @@ class FundModel {
       auditor: map['auditor'] ?? 'حازم حسن (KPMG) ومراقبون مستقلون',
       managerLogo: map['manager_logo'] ?? map['logo_url'],
       dividendPolicy: map['dividend_policy'] ?? 'إعادة استثمار العوائد تلقائياً (Reinvestment / Growth)',
+      subscriptionSchedule: map['subscription_schedule'],
+      subscriptionScheduleEn: map['subscription_schedule_en'],
+      redemptionSchedule: map['redemption_schedule'],
+      redemptionScheduleEn: map['redemption_schedule_en'],
+      executionCutoffTime: map['execution_cutoff_time'] ?? map['order_cutoff_time'],
+      executionCutoffTimeEn: map['execution_cutoff_time_en'],
     );
   }
 
@@ -378,7 +460,8 @@ class FundModel {
       'sub_category': subCategory,
       'currency': currency,
       'inception_date': inceptionDate,
-      'initial_value': initialValue,
+      'initial_value': initialValue ?? initialNav,
+      'initial_nav': initialNav ?? initialValue,
       'logo_url': logoUrl,
       'is_recommended': isRecommended,
       'is_sponsored': isSponsored,
@@ -398,6 +481,12 @@ class FundModel {
       if (auditor != null) 'auditor': auditor,
       if (managerLogo != null) 'manager_logo': managerLogo,
       if (dividendPolicy != null) 'dividend_policy': dividendPolicy,
+      if (subscriptionSchedule != null) 'subscription_schedule': subscriptionSchedule,
+      if (subscriptionScheduleEn != null) 'subscription_schedule_en': subscriptionScheduleEn,
+      if (redemptionSchedule != null) 'redemption_schedule': redemptionSchedule,
+      if (redemptionScheduleEn != null) 'redemption_schedule_en': redemptionScheduleEn,
+      if (executionCutoffTime != null) 'execution_cutoff_time': executionCutoffTime,
+      if (executionCutoffTimeEn != null) 'execution_cutoff_time_en': executionCutoffTimeEn,
     };
   }
 

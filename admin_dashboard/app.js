@@ -1126,23 +1126,213 @@ function parseCsvText(text) {
 }
 
 /**
- * Normalizes Arabic strings for resilient fuzzy matching
+ * Advanced Cross-Lingual String Normalization for AI Fund Matching
  */
 function normalizeFundName(str) {
   if (!str) return '';
-  return str
-    .toString()
-    .toLowerCase()
-    .replace(/[أإآ]/g, 'ا')
-    .replace(/ة/g, 'ه')
-    .replace(/ى/g, 'ي')
-    .replace(/[()_.\-]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  let s = str.toString().toLowerCase();
+  // Normalize Arabic letters and diacritics
+  s = s.replace(/[أإآ]/g, 'ا')
+       .replace(/ة/g, 'ه')
+       .replace(/ى/g, 'ي')
+       .replace(/[ًٌٍَُِّْـ]/g, '');
+  // Normalize Roman Numerals to digits
+  s = s.replace(/\bviii\b/g, '8')
+       .replace(/\bvii\b/g, '7')
+       .replace(/\bvi\b/g, '6')
+       .replace(/\biv\b/g, '4')
+       .replace(/\bv\b/g, '5')
+       .replace(/\biii\b/g, '3')
+       .replace(/\bii\b/g, '2')
+       .replace(/\bi\b/g, '1');
+  // Normalize Ordinal words
+  s = s.replace(/\bfirst\b/g, '1')
+       .replace(/\bsecond\b/g, '2')
+       .replace(/\bthird\b/g, '3')
+       .replace(/\bfourth\b/g, '4')
+       .replace(/\bfifth\b/g, '5')
+       .replace(/الاول|الأول/g, '1')
+       .replace(/الثاني|الثانى/g, '2')
+       .replace(/الثالث/g, '3')
+       .replace(/الرابع/g, '4')
+       .replace(/الخامس/g, '5');
+  // Strip common financial noise words
+  s = s.replace(/\b(fund|mutual|portfolio|asset|management|bank|egypt|egyptian|holding|capital|investment|no|\.|\-|\(|\)|\/)\b/g, ' ')
+       .replace(/صندوق|استثمار|بنك|مصر|المصري|المصرية|القابضة|كابيتال|لإدارة|الأصول/g, ' ');
+  // Remove non-alphanumeric characters
+  s = s.replace(/[^a-z0-9\u0600-\u06FF]/g, ' ').replace(/\s+/g, ' ').trim();
+  return s;
 }
 
 /**
- * Match fund from row data and batch-update prices in Supabase and state
+ * Calculates AI Matching Confidence between arbitrary text and a Fund
+ */
+function computeAiMatchScore(candidateText, fund) {
+  if (!candidateText || !fund) return { confidence: 0, matchType: 'none' };
+  const rawCandidate = candidateText.toString().trim().toLowerCase();
+  if (rawCandidate.length < 2) return { confidence: 0, matchType: 'none' };
+
+  // 1. Direct ID match
+  if (fund.id && fund.id.toString().toLowerCase() === rawCandidate) {
+    return { confidence: 100, matchType: 'exact_id' };
+  }
+
+  // 2. Exact Name match (Arabic, English, or canonical)
+  const fundAr = (fund.name_ar || '').trim().toLowerCase();
+  const fundEn = (fund.name_en || '').trim().toLowerCase();
+  const fundName = (fund.name || '').trim().toLowerCase();
+  if (rawCandidate === fundAr || rawCandidate === fundEn || rawCandidate === fundName) {
+    return { confidence: 100, matchType: 'exact_name' };
+  }
+
+  // 3. Normalized string equality
+  const normCandidate = normalizeFundName(rawCandidate);
+  const normAr = normalizeFundName(fund.name_ar || '');
+  const normEn = normalizeFundName(fund.name_en || '');
+  const normName = normalizeFundName(fund.name || '');
+
+  if (normCandidate && (normCandidate === normAr || normCandidate === normEn || normCandidate === normName)) {
+    return { confidence: 98, matchType: 'normalized_exact' };
+  }
+
+  // 4. Substring containment
+  if (normCandidate.length >= 4) {
+    if (normAr.includes(normCandidate) || (normAr.length >= 4 && normCandidate.includes(normAr)) ||
+        normEn.includes(normCandidate) || (normEn.length >= 4 && normCandidate.includes(normEn))) {
+      return { confidence: 92, matchType: 'substring' };
+    }
+  }
+
+  // 5. Token overlap score
+  const cTokens = normCandidate.split(' ').filter(t => t.length >= 2);
+  const targetTokens = `${normAr} ${normEn} ${normName}`.split(' ').filter(t => t.length >= 2);
+
+  if (cTokens.length > 0 && targetTokens.length > 0) {
+    let matches = 0;
+    for (const token of cTokens) {
+      if (targetTokens.some(tt => tt.includes(token) || token.includes(tt))) {
+        matches++;
+      }
+    }
+    const ratio = matches / cTokens.length;
+    if (ratio >= 0.75) {
+      return { confidence: Math.round(75 + ratio * 20), matchType: 'high_token_overlap' };
+    } else if (ratio >= 0.50) {
+      return { confidence: Math.round(55 + ratio * 25), matchType: 'token_overlap' };
+    }
+  }
+
+  return { confidence: 0, matchType: 'none' };
+}
+
+/**
+ * Universal layout scanner: scans an arbitrary row to identify candidate fund & NAV
+ */
+function universalScanRow(row, rowIndex) {
+  const keys = Object.keys(row);
+  const values = Object.values(row);
+
+  let explicitId = null;
+  let explicitName = null;
+  let explicitPrice = null;
+  let explicitYtd = null;
+
+  for (const k of keys) {
+    const val = row[k];
+    if (val === null || val === undefined || val === '') continue;
+    const cleanKey = k.trim().toLowerCase();
+
+    if (!explicitId && /^(id|كود|رمز|code)$/i.test(cleanKey)) {
+      explicitId = val.toString().trim();
+    }
+    if (!explicitName && /^(اسم|صندوق|fund|name|fund_name|اسم الصندوق)/i.test(cleanKey)) {
+      explicitName = val.toString().trim();
+    }
+    if (explicitPrice === null && /(nav|price|سعر|سعر الوثيقة|السعر|closing|closing_price)/i.test(cleanKey)) {
+      const p = parseFloat(val.toString().replace(/[^\d.-]/g, ''));
+      if (!isNaN(p) && p > 0) explicitPrice = p;
+    }
+    if (explicitYtd === null && /(ytd|عائد|العائد|return)/i.test(cleanKey)) {
+      const y = parseFloat(val.toString().replace(/[^\d.-]/g, ''));
+      if (!isNaN(y)) explicitYtd = y;
+    }
+  }
+
+  let bestFund = null;
+  let bestConfidence = 0;
+  let bestMatchType = 'none';
+  let matchedText = explicitName || explicitId || '';
+
+  if (explicitId || explicitName) {
+    for (const fund of liveFunds) {
+      const resId = explicitId ? computeAiMatchScore(explicitId, fund) : { confidence: 0 };
+      const resName = explicitName ? computeAiMatchScore(explicitName, fund) : { confidence: 0 };
+      const maxConf = Math.max(resId.confidence, resName.confidence);
+      if (maxConf > bestConfidence) {
+        bestConfidence = maxConf;
+        bestMatchType = resId.confidence >= resName.confidence ? resId.matchType : resName.matchType;
+        bestFund = fund;
+      }
+    }
+  }
+
+  if (bestConfidence < 90) {
+    for (const val of values) {
+      if (val === null || val === undefined) continue;
+      const strVal = val.toString().trim();
+      if (strVal.length < 3 || /^\d+(\.\d+)?$/.test(strVal) || /^\d{4}-\d{2}-\d{2}/.test(strVal)) continue;
+
+      for (const fund of liveFunds) {
+        const res = computeAiMatchScore(strVal, fund);
+        if (res.confidence > bestConfidence) {
+          bestConfidence = res.confidence;
+          bestMatchType = res.matchType;
+          bestFund = fund;
+          matchedText = strVal;
+        }
+      }
+    }
+  }
+
+  let detectedPrice = explicitPrice;
+  if (detectedPrice === null) {
+    const numericCandidates = [];
+    for (const val of values) {
+      if (val === null || val === undefined) continue;
+      const cleanNum = val.toString().replace(/[^\d.-]/g, '');
+      const parsed = parseFloat(cleanNum);
+      if (!isNaN(parsed) && parsed > 0) {
+        if (parsed >= 1990 && parsed <= 2035 && Number.isInteger(parsed)) continue;
+        numericCandidates.push(parsed);
+      }
+    }
+    if (numericCandidates.length === 1) {
+      detectedPrice = numericCandidates[0];
+    } else if (numericCandidates.length > 1) {
+      if (bestFund && bestFund.current_nav) {
+        const cur = parseFloat(bestFund.current_nav);
+        numericCandidates.sort((a, b) => Math.abs(a - cur) - Math.abs(b - cur));
+        detectedPrice = numericCandidates[0];
+      } else {
+        detectedPrice = numericCandidates.find(n => !Number.isInteger(n)) || numericCandidates[0];
+      }
+    }
+  }
+
+  return {
+    rowIndex: rowIndex + 1,
+    matchedFund: bestFund,
+    confidence: bestConfidence,
+    matchType: bestMatchType,
+    matchedText: matchedText || (values[0] ? values[0].toString() : 'Row ' + (rowIndex + 1)),
+    detectedPrice: detectedPrice,
+    explicitYtd: explicitYtd,
+    originalRow: row
+  };
+}
+
+/**
+ * Universal AI Bulk Price Processor: analyzes arbitrary layouts & presents verification modal
  */
 async function processBulkPriceRows(rows, filename) {
   if (!rows || rows.length === 0) {
@@ -1150,229 +1340,216 @@ async function processBulkPriceRows(rows, filename) {
     return;
   }
 
-  logMessage(`[BULK PRICE] Analyzing ${rows.length} rows from ${filename}...`, 'info');
+  logMessage(`[AI SCANNER] Deep scanning ${rows.length} rows from ${filename} with universal AI matching...`, 'info');
 
-  let updatedCount = 0;
-  let skippedCount = 0;
-  const updatedFundsList = [];
-  const unmatchedList = [];
-  const nowIso = new Date().toISOString();
+  const scannedResults = rows.map((r, i) => universalScanRow(r, i));
 
-  // Create fast lookup structures
-  const idMap = new Map();
-  const nameMap = new Map();
+  const confidentMatches = scannedResults.filter(r => r.matchedFund && r.detectedPrice && r.confidence >= 65);
+  const reviewMatches = scannedResults.filter(r => r.matchedFund && r.detectedPrice && r.confidence >= 40 && r.confidence < 65);
+  const unmatched = scannedResults.filter(r => !r.matchedFund || !r.detectedPrice || r.confidence < 40);
 
-  liveFunds.forEach(fund => {
-    idMap.set(fund.id.toString().trim(), fund);
-    if (fund.name_ar) nameMap.set(normalizeFundName(fund.name_ar), fund);
-    if (fund.name_en) nameMap.set(normalizeFundName(fund.name_en), fund);
-    if (fund.name) nameMap.set(normalizeFundName(fund.name), fund);
-  });
-
-  const dbUpdatePromises = [];
-
-  for (let idx = 0; idx < rows.length; idx++) {
-    const row = rows[idx];
-    const keys = Object.keys(row);
-
-    // 1. Detect ID
-    let rowId = null;
-    const idKey = keys.find(k => /^(id|كود|رمز|code)$/i.test(k.trim()));
-    if (idKey && row[idKey]) {
-      rowId = row[idKey].toString().trim();
-    }
-
-    // 2. Detect Name
-    let rowName = '';
-    const nameKey = keys.find(k => /^(اسم|صندوق|fund|name|fund name|اسم الصندوق)/i.test(k.trim()));
-    if (nameKey && row[nameKey]) {
-      rowName = row[nameKey].toString().trim();
-    }
-
-    // 3. Detect Price / NAV
-    let rawPrice = null;
-    const priceKey = keys.find(k => /(nav|price|سعر|سعر الوثيقة|السعر|closing)/i.test(k.trim()));
-    if (priceKey && row[priceKey] !== '') {
-      rawPrice = row[priceKey];
-    }
-
-    // 4. Detect optional YTD Return
-    let rawYtd = null;
-    const ytdKey = keys.find(k => /(ytd|عائد|العائد|return)/i.test(k.trim()));
-    if (ytdKey && row[ytdKey] !== '') {
-      rawYtd = row[ytdKey];
-    }
-
-    // Clean price string
-    let parsedPrice = NaN;
-    if (rawPrice != null) {
-      const cleanStr = rawPrice.toString().replace(/[^\d.-]/g, '');
-      parsedPrice = parseFloat(cleanStr);
-    }
-
-    if (isNaN(parsedPrice) || parsedPrice <= 0) {
-      skippedCount++;
-      continue;
-    }
-
-    // Match fund
-    let matchedFund = null;
-    if (rowId && idMap.has(rowId)) {
-      matchedFund = idMap.get(rowId);
-    } else if (rowName) {
-      const norm = normalizeFundName(rowName);
-      if (nameMap.has(norm)) {
-        matchedFund = nameMap.get(norm);
-      } else {
-        // Partial substring search
-        matchedFund = liveFunds.find(f => {
-          const fNormAr = normalizeFundName(f.name_ar || '');
-          const fNormEn = normalizeFundName(f.name_en || '');
-          const fNorm = normalizeFundName(f.name || '');
-          return norm.includes(fNormAr) || fNormAr.includes(norm) ||
-                 norm.includes(fNormEn) || fNormEn.includes(norm) ||
-                 norm.includes(fNorm) || fNorm.includes(norm);
-        });
-      }
-    }
-
-    if (matchedFund) {
-      const oldNav = parseFloat(matchedFund.current_nav) || 0;
-      let newYtd = getOfficialFundYtd(matchedFund, parsedPrice);
-      if (rawYtd != null) {
-        const parsedYtd = parseFloat(rawYtd.toString().replace(/[^\d.-]/g, ''));
-        if (!isNaN(parsedYtd)) newYtd = parsedYtd;
-      }
-
-      // Update fund object in memory
-      matchedFund.current_nav = parsedPrice;
-      matchedFund.ytd_return = newYtd;
-      matchedFund.updated_at = nowIso;
-      updatedCount++;
-
-      updatedFundsList.push({
-        id: matchedFund.id,
-        name: matchedFund.name_ar || matchedFund.name,
-        oldPrice: oldNav,
-        newPrice: parsedPrice,
-        newYtd: newYtd
-      });
-
-      // Queue Supabase DB update
-      if (db) {
-        dbUpdatePromises.push(
-          db.from('funds').update({
-            current_nav: parsedPrice,
-            ytd_return: newYtd,
-            updated_at: nowIso
-          }).eq('id', matchedFund.id)
-        );
-      }
-    } else {
-      unmatchedList.push({
-        rowNum: idx + 2,
-        name: rowName || rowId || 'بدون اسم',
-        price: parsedPrice
-      });
-    }
-  }
-
-  // Execute database updates in parallel
-  if (dbUpdatePromises.length > 0) {
-    try {
-      await Promise.allSettled(dbUpdatePromises);
-      logMessage(`[SUPABASE SYNC] Batch updated ${dbUpdatePromises.length} fund prices in Supabase DB.`, 'success');
-    } catch (e) {
-      logMessage(`[DB ERROR] Batch update encountered errors: ${e.message}`, 'warning');
-    }
-  }
-
-  // Refresh UI tables & charts
-  computeTopPerformingFundsDynamically();
-  renderQuickPriceTable();
-  renderFundsTable();
-  renderSponsoredTable();
-  updateDynamicCharts();
-
-  // Display rich summary modal
-  showExcelImportModal({
+  window.pendingBulkPriceUpdates = {
+    filename,
     totalRows: rows.length,
-    updatedCount,
-    skippedCount,
-    updatedFunds: updatedFundsList,
-    unmatched: unmatchedList,
-    filename
-  });
+    confidentMatches,
+    reviewMatches,
+    allValidMatches: [...confidentMatches, ...reviewMatches],
+    unmatched
+  };
+
+  showExcelAiVerificationModal(window.pendingBulkPriceUpdates);
 }
 
-function showExcelImportModal(result) {
+/**
+ * Displays rich interactive AI Verification Modal before committing updates
+ */
+function showExcelAiVerificationModal(data) {
   const modal = document.getElementById('excelImportModal');
   const body = document.getElementById('excelImportModalBody');
   if (!modal || !body) return;
 
   const isEn = currentLang === 'en';
+  const validMatches = data.allValidMatches || [];
+  const unmatched = data.unmatched || [];
 
   let html = `
-    <div style="margin-bottom:14px; background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.3); border-radius:10px; padding:12px;">
-      <h4 style="color:#00E676; margin:0 0 6px 0; font-size:15px;">
-        <i class="fa-solid fa-check-circle"></i> 
-        ${isEn ? `Successfully updated ${result.updatedCount} funds!` : `تم تحديث أسعار ${result.updatedCount} صندوق بنجاح!`}
-      </h4>
-      <p style="margin:0; font-size:12px; color:#cbd5e1;">
-        ${isEn ? `Processed ${result.totalRows} rows from <strong>${result.filename}</strong>.` : `تمت معالجة ${result.totalRows} صف من الملف <strong>${result.filename}</strong>.`}
-      </p>
+    <div style="margin-bottom:14px; background:linear-gradient(135deg, rgba(0,230,118,0.1), rgba(0,176,255,0.08)); border:1px solid rgba(0,230,118,0.3); border-radius:12px; padding:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          <h4 style="color:#00E676; margin:0 0 4px 0; font-size:16px; font-weight:bold;">
+            <i class="fa-solid fa-brain"></i> 
+            ${isEn ? 'Universal AI Layout Scanner Report' : 'فاحص الذكاء الاصطناعي لتخطيط ملف الإكسيل'}
+          </h4>
+          <p style="margin:0; font-size:12px; color:#cbd5e1;">
+            ${isEn ? `Scanned <strong>${data.totalRows}</strong> rows from <strong>${data.filename}</strong>.` : `تم فحص وتدقيق <strong>${data.totalRows}</strong> صف من الملف <strong>${data.filename}</strong>.`}
+          </p>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <span style="background:rgba(0,230,118,0.2); color:#00E676; border:1px solid #00E676; padding:4px 10px; border-radius:8px; font-size:12px; font-weight:bold;">
+            ✅ ${validMatches.length} ${isEn ? 'Matched' : 'مطابق'}
+          </span>
+          <span style="background:rgba(239,68,68,0.2); color:#EF4444; border:1px solid #EF4444; padding:4px 10px; border-radius:8px; font-size:12px; font-weight:bold;">
+            ⚠️ ${unmatched.length} ${isEn ? 'Unmatched' : 'غير مطابق'}
+          </span>
+        </div>
+      </div>
     </div>
   `;
 
-  if (result.updatedFunds.length > 0) {
+  if (validMatches.length > 0) {
     html += `
-      <h5 style="color:#3B82F6; margin:10px 0 6px 0;">
-        <i class="fa-solid fa-arrow-trend-up"></i> 
-        ${isEn ? 'Updated Funds Preview:' : 'عينة من الصناديق المحدثة:'}
-      </h5>
-      <div style="max-height:160px; overflow-y:auto; border:1px solid #334155; border-radius:8px; margin-bottom:12px;">
-        <table class="data-table" style="font-size:11.5px; width:100%;">
-          <thead>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h5 style="color:#38BDF8; margin:0; font-size:13px; font-weight:bold;">
+          <i class="fa-solid fa-list-check"></i> 
+          ${isEn ? 'AI Verified Matched Funds (Review & Confirm):' : 'الصناديق التي تم التعرف عليها وتطابقها (مراجعة وتأكيد):'}
+        </h5>
+        <span style="font-size:11px; color:#94a3b8;">
+          ${isEn ? 'Auto-detected regardless of column order' : 'تم التعرف تلقائياً بغض النظر عن ترتيب الأعمدة'}
+        </span>
+      </div>
+      <div style="max-height:240px; overflow-y:auto; border:1px solid #334155; border-radius:8px; margin-bottom:14px;">
+        <table class="data-table" style="font-size:11px; width:100%; text-align:right;">
+          <thead style="position:sticky; top:0; background:#1e293b; z-index:1;">
             <tr>
-              <th>${isEn ? 'Fund' : 'الصندوق'}</th>
-              <th>${isEn ? 'Old Price' : 'السعر السابق'}</th>
-              <th>${isEn ? 'New Price' : 'السعر المحدث'}</th>
-              <th>${isEn ? 'YTD %' : 'العائد %'}</th>
+              <th>#</th>
+              <th>${isEn ? 'Excel Extracted Text' : 'نص الإكسيل المكتشف'}</th>
+              <th>${isEn ? 'System Matched Fund' : 'الصندوق المطابق في النظام'}</th>
+              <th>${isEn ? 'AI Confidence' : 'ثقة الذكاء'}</th>
+              <th>${isEn ? 'Old NAV' : 'السعر الحالي'}</th>
+              <th>${isEn ? 'New NAV' : 'السعر الجديد'}</th>
+              <th>${isEn ? 'Change %' : 'التغير %'}</th>
             </tr>
           </thead>
           <tbody>
-            ${result.updatedFunds.slice(0, 15).map(f => `
-              <tr>
-                <td><strong>${f.name}</strong></td>
-                <td style="color:#9ca3af;">${f.oldPrice.toFixed(2)} EGP</td>
-                <td style="color:#00E676; font-weight:bold;">${f.newPrice.toFixed(4)} EGP</td>
-                <td style="color:#3B82F6; font-weight:bold;">${f.newYtd >= 0 ? '+' : ''}${f.newYtd.toFixed(2)}%</td>
-              </tr>
-            `).join('')}
+            ${validMatches.map((m, idx) => {
+              const f = m.matchedFund;
+              const oldPrice = parseFloat(f.current_nav) || 0;
+              const newPrice = m.detectedPrice;
+              const diff = oldPrice > 0 ? ((newPrice - oldPrice) / oldPrice) * 100 : 0;
+              const diffSign = diff >= 0 ? '+' : '';
+              const diffColor = diff > 0 ? '#00E676' : (diff < 0 ? '#EF4444' : '#94a3b8');
+              const confColor = m.confidence >= 90 ? '#00E676' : '#F59E0B';
+
+              return `
+                <tr>
+                  <td style="color:#64748b;">${idx + 1}</td>
+                  <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#f1f5f9;">
+                    ${m.matchedText}
+                  </td>
+                  <td>
+                    <strong style="color:#38BDF8;">${f.name_ar || f.name}</strong>
+                  </td>
+                  <td>
+                    <span style="background:${confColor}22; color:${confColor}; border:1px solid ${confColor}66; padding:2px 6px; border-radius:6px; font-weight:bold; font-size:10px;">
+                      🤖 ${m.confidence}%
+                    </span>
+                  </td>
+                  <td style="color:#94a3b8;">${oldPrice.toFixed(2)}</td>
+                  <td style="color:#00E676; font-weight:bold;">${newPrice.toFixed(4)} EGP</td>
+                  <td style="color:${diffColor}; font-weight:bold;">${diffSign}${diff.toFixed(2)}%</td>
+                </tr>
+              `;
+            }).join('')}
           </tbody>
         </table>
       </div>
     `;
   }
 
-  if (result.unmatched.length > 0) {
+  if (unmatched.length > 0) {
     html += `
-      <h5 style="color:#EF4444; margin:12px 0 6px 0;">
+      <h5 style="color:#EF4444; margin:10px 0 6px 0; font-size:12px;">
         <i class="fa-solid fa-triangle-exclamation"></i> 
-        ${isEn ? `Unmatched Rows (${result.unmatched.length}):` : `صفوف لم يتم العثور على صناديق مطابقة لها (${result.unmatched.length}):`}
+        ${isEn ? `Unmatched Rows (${unmatched.length}):` : `صفوف لم يتم العثور على صناديق مطابقة لها (${unmatched.length}):`}
       </h5>
-      <div style="max-height:120px; overflow-y:auto; border:1px solid #7f1d1d; border-radius:8px; background:rgba(239,68,68,0.05); padding:6px 10px; font-size:11.5px;">
-        ${result.unmatched.map(u => `
-          <div style="padding:3px 0; border-bottom:1px dashed rgba(255,255,255,0.08);">
-            • <strong>${isEn ? 'Row' : 'الصف'} ${u.rowNum}:</strong> ${u.name} (${u.price} EGP)
+      <div style="max-height:90px; overflow-y:auto; border:1px solid #7f1d1d; border-radius:8px; background:rgba(239,68,68,0.05); padding:6px 10px; font-size:11px;">
+        ${unmatched.slice(0, 10).map(u => `
+          <div style="padding:2px 0; border-bottom:1px dashed rgba(255,255,255,0.08); color:#fca5a5;">
+            • ${isEn ? 'Row' : 'الصف'} ${u.rowIndex}: ${u.matchedText || 'بدون بيانات'} ${u.detectedPrice ? `(${u.detectedPrice} EGP)` : ''}
           </div>
         `).join('')}
+        ${unmatched.length > 10 ? `<div style="padding:2px 0; color:#94a3b8;">... ${unmatched.length - 10} ${isEn ? 'more unmatched rows' : 'صفوف أخرى'}</div>` : ''}
       </div>
     `;
   }
 
   body.innerHTML = html;
   modal.style.display = 'flex';
+}
+
+/**
+ * Commits the verified AI bulk updates to Supabase DB and local state
+ */
+async function confirmAndCommitBulkPriceUpdates() {
+  const data = window.pendingBulkPriceUpdates;
+  if (!data || !data.allValidMatches || data.allValidMatches.length === 0) {
+    alert(currentLang === 'en' ? 'No valid fund prices to commit!' : 'لا توجد أسعار صناديق مطابقة للحفظ!');
+    closeExcelImportModal();
+    return;
+  }
+
+  const commitBtn = document.getElementById('btnExcelImportCommit');
+  if (commitBtn) {
+    commitBtn.disabled = true;
+    commitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ في سوبابيز...`;
+  }
+
+  const isEn = currentLang === 'en';
+  const nowIso = new Date().toISOString();
+  const dbUpdatePromises = [];
+  let successCount = 0;
+
+  for (const match of data.allValidMatches) {
+    const fund = match.matchedFund;
+    const newPrice = match.detectedPrice;
+    let newYtd = getOfficialFundYtd(fund, newPrice);
+    if (match.explicitYtd !== null && match.explicitYtd !== undefined) {
+      newYtd = match.explicitYtd;
+    }
+
+    // Update in memory
+    fund.current_nav = newPrice;
+    fund.ytd_return = newYtd;
+    fund.updated_at = nowIso;
+    successCount++;
+
+    // Queue DB update
+    if (db) {
+      dbUpdatePromises.push(
+        db.from('funds').update({
+          current_nav: newPrice,
+          ytd_return: newYtd,
+          updated_at: nowIso
+        }).eq('id', fund.id)
+      );
+    }
+  }
+
+  if (dbUpdatePromises.length > 0) {
+    try {
+      await Promise.allSettled(dbUpdatePromises);
+      logMessage(`[SUPABASE BULK SYNC] Successfully updated ${dbUpdatePromises.length} fund prices in Supabase database! 🚀`, 'success');
+    } catch (err) {
+      logMessage(`[SUPABASE ERROR] Batch update encountered errors: ${err.message}`, 'warning');
+    }
+  }
+
+  // Refresh all dashboard views
+  computeTopPerformingFundsDynamically();
+  renderQuickPriceTable();
+  renderFundsTable();
+  renderSponsoredTable();
+  updateDynamicCharts();
+
+  if (commitBtn) {
+    commitBtn.disabled = false;
+    commitBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> تأكيد وحفظ التحديثات في قاعدة بيانات سوبابيز 🚀`;
+  }
+
+  closeExcelImportModal();
+  alert(isEn 
+    ? `🎉 Successfully synced ${successCount} fund prices to Supabase and Dashboard!` 
+    : `🎉 تم تحديث ومزامنة أسعار ${successCount} صندوق بنجاح في سوبابيز ولوحة التحكم!`);
 }
 
 function closeExcelImportModal() {
