@@ -2,33 +2,36 @@ name: Watheqa Fund Prices Auto-Update
 
 on:
   schedule:
-    # كل يوم الساعة 6:00 UTC = 8:00 صباحاً بتوقيت القاهرة (UTC+2)
-    - cron: '0 6 * * 1-5'   # الاثنين للجمعة (أيام عمل البورصة المصرية)
-  
-  # يسمح بالتشغيل اليدوي من GitHub UI في أي وقت
+    # 06:00 UTC = 08:00 صباحاً بتوقيت القاهرة (UTC+2)
+    # أيام الأحد → الخميس (أيام عمل مصر)
+    - cron: '0 6 * * 0-4'
+
+  # زر تشغيل يدوي من GitHub
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Dry Run (no Supabase update)'
+        description: 'Dry Run - show prices without saving to DB'
         required: false
         default: 'false'
         type: choice
-        options:
-          - 'false'
-          - 'true'
+        options: ['false', 'true']
+      verbose:
+        description: 'Verbose logging'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
 
 jobs:
   scrape-and-update:
-    name: Scrape iinvest.org.eg & Update Supabase
+    name: "Scrape snduk.com → Update Supabase"
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 12
 
     steps:
-      # 1. استنزال الكود
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. تثبيت Python 3.12
       - name: Setup Python 3.12
         uses: actions/setup-python@v5
         with:
@@ -36,39 +39,42 @@ jobs:
           cache: 'pip'
           cache-dependency-path: scripts/scraper/requirements.txt
 
-      # 3. تثبيت المكتبات
       - name: Install Python Dependencies
         run: pip install -r scripts/scraper/requirements.txt
 
-      # 4. تثبيت Chromium لـ Playwright
-      - name: Install Playwright Chromium
+      - name: Install Playwright Chromium + System Deps
         run: python -m playwright install chromium --with-deps
 
-      # 5. تشغيل السكربت
       - name: Run Fund Price Scraper
+        timeout-minutes: 10
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SCRAPER_TIMEOUT_MIN: "9"
         run: |
+          FLAGS=""
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            echo "Running in DRY-RUN mode..."
-            python scripts/scraper/iinvest_scraper.py --dry-run
+            FLAGS="$FLAGS --dry-run"
+            echo "Mode: DRY-RUN"
           else
-            echo "Running in LIVE mode - will update Supabase..."
-            python scripts/scraper/iinvest_scraper.py
+            echo "Mode: LIVE (will update Supabase)"
           fi
+          if [ "${{ github.event.inputs.verbose }}" = "true" ]; then
+            FLAGS="$FLAGS --verbose"
+          fi
+          python scripts/scraper/iinvest_scraper.py $FLAGS
 
-      # 6. رفع ملف debug_page.html كـ Artifact للتشخيص عند الحاجة
       - name: Upload Debug HTML (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: debug-page-html
-          path: scripts/scraper/debug_page.html
+          name: debug-page-${{ github.run_number }}
+          path: |
+            scripts/scraper/debug_page.html
           retention-days: 7
+          if-no-files-found: ignore
 
-      # 7. رفع scraped_funds.json عند التشغيل اليدوي
-      - name: Upload Scraped Funds JSON
+      - name: Upload Scraped JSON (always)
         if: always()
         uses: actions/upload-artifact@v4
         with:
