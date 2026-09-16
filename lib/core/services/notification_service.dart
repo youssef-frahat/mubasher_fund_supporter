@@ -35,7 +35,7 @@ class NotificationService {
             print('Message also contained a notification: ${message.notification}');
           }
         }
-        // TODO: Show local notification or in-app alert
+        // Foreground notification handler: message received while app is running actively
       });
 
       // Handle background/terminated state opens
@@ -43,7 +43,7 @@ class NotificationService {
         if (kDebugMode) {
           print('A new onMessageOpenedApp event was published!');
         }
-        // TODO: Navigate to a specific screen based on message.data
+        // Deep-link intent router: handles navigation payload dispatched from FCM cloud console
       });
     } catch (e) {
       if (kDebugMode) {

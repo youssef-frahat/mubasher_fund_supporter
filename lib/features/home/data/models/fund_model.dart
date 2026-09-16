@@ -424,17 +424,4 @@ class FundModel {
         return Colors.blue;
     }
   }
-
-  factory FundModel.mock(String id, String name, double ytd, {String category = "Equity", String riskLevel = "Medium"}) {
-    return FundModel(
-      id: id,
-      name: name,
-      managerName: "مباشر كابيتال",
-      currentNav: 150.25,
-      ytdReturn: ytd,
-      dailyChange: ytd / 10,
-      riskLevel: riskLevel,
-      category: category,
-    );
-  }
 }

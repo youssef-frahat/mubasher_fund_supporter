@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart' as google_auth;
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/supabase/supabase_service.dart';
 import 'auth_state.dart';
 
@@ -49,30 +50,36 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> _syncUserProfileToSupabase(User user) async {
     final client = SupabaseService.client;
     if (client == null) return;
+
     try {
-      final name = user.userMetadata?['full_name'] ??
-          user.userMetadata?['name'] ??
-          user.email?.split('@').first ??
-          'مستثمر وثيقة';
-      final phone = user.userMetadata?['phone'] ?? user.phone ?? user.email;
-      final avatarUrl = user.userMetadata?['avatar_url'];
-      final isVerified = user.emailConfirmedAt != null || user.appMetadata['provider'] == 'google';
+      final fullName = user.userMetadata?['full_name'] ?? 
+                         user.userMetadata?['name'] ?? 
+                         user.email?.split('@').first ?? 'مستثمر وثيقة';
+
+      final phone = user.phone ?? user.userMetadata?['phone'] ?? user.id;
 
       await client.from('profiles').upsert({
         'id': user.id,
-        'full_name': name,
+        'full_name': fullName,
         'phone': phone,
-        'avatar_url': avatarUrl,
-        'is_verified': isVerified,
+        'is_verified': user.emailConfirmedAt != null || user.appMetadata['provider'] == 'google',
         'updated_at': DateTime.now().toIso8601String(),
-      });
-      debugPrint('✅ User profile auto-synced to Supabase: ${user.id} ($name)');
+      }, onConflict: 'id');
     } catch (e) {
       debugPrint('⚠️ User profile auto-sync notice: $e');
     }
   }
 
-  String _sanitizeAuthError(dynamic error) {
+  Future<bool> _isArabicUser() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('app_language') != 'en';
+    } catch (_) {
+      return true;
+    }
+  }
+
+  String _sanitizeAuthError(dynamic error, [bool isAr = true]) {
     final errStr = error.toString().toLowerCase();
 
     // 1. User Already Exists
@@ -80,7 +87,9 @@ class AuthCubit extends Cubit<AuthState> {
         errStr.contains('user_already_exists') ||
         errStr.contains('already registered') ||
         errStr.contains('already exists')) {
-      return 'هذا البريد الإلكتروني مسجل بالفعل! يرجى الانتقال لتسجيل الدخول ⚠️';
+      return isAr
+          ? 'هذا البريد الإلكتروني مسجل بالفعل! يرجى الانتقال لتسجيل الدخول ⚠️'
+          : 'This email is already registered! Please sign in ⚠️';
     }
 
     // 2. Invalid Email Format / Fake Domain
@@ -89,7 +98,9 @@ class AuthCubit extends Cubit<AuthState> {
         errStr.contains('unable to validate') ||
         errStr.contains('invalid_email') ||
         errStr.contains('format is invalid')) {
-      return 'يرجى كتابة بريد إلكتروني حقيقي ونشط (مثل gmail.com أو outlook.com) ⚠️';
+      return isAr
+          ? 'يرجى كتابة بريد إلكتروني حقيقي ونشط (مثل gmail.com أو outlook.com) ⚠️'
+          : 'Please enter a valid active email address (e.g. gmail.com) ⚠️';
     }
 
     // 3. Database / Supabase Trigger Error
@@ -97,7 +108,9 @@ class AuthCubit extends Cubit<AuthState> {
         errStr.contains('unexpected_failure') ||
         errStr.contains('saving new user') ||
         errStr.contains('postgrestexception')) {
-      return 'هذا الحساب أو البريد مسجل بالفعل أو يتعذر حفظه مجدداً، يرجى تسجيل الدخول ⚠️';
+      return isAr
+          ? 'هذا الحساب أو البريد مسجل بالفعل أو يتعذر حفظه مجدداً، يرجى تسجيل الدخول ⚠️'
+          : 'Account already exists or cannot be saved. Please sign in ⚠️';
     }
 
     // 4. Invalid Credentials (Login)
@@ -105,7 +118,9 @@ class AuthCubit extends Cubit<AuthState> {
         errStr.contains('invalid_credentials') ||
         errStr.contains('wrong password') ||
         errStr.contains('user not found')) {
-      return 'البريد الإلكتروني أو كلمة المرور غير صحيحة ⚠️';
+      return isAr
+          ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة ⚠️'
+          : 'Invalid email or password ⚠️';
     }
 
     // 5. Network / Socket Exception
@@ -114,15 +129,21 @@ class AuthCubit extends Cubit<AuthState> {
         errStr.contains('authretryablefetchexception') ||
         errStr.contains('connection refused') ||
         errStr.contains('network_error')) {
-      return 'تعذر الاتصال بالسيرفر، يرجى التأكد من الاتصال بالإنترنت والمحاولة مجدداً ⚠️';
+      return isAr
+          ? 'تعذر الاتصال بالسيرفر، يرجى التأكد من الاتصال بالإنترنت والمحاولة مجدداً ⚠️'
+          : 'Unable to connect to server. Please check your internet connection ⚠️';
     }
 
     // 6. Password Complexity / Weak Password
     if (errStr.contains('weak_password') || errStr.contains('password should be')) {
-      return 'كلمة المرور ضعيفة، يجب أن تحتوي على 8 أحرف وأرقام على الأقل ⚠️';
+      return isAr
+          ? 'كلمة المرور ضعيفة، يجب أن تحتوي على 8 أحرف وأرقام على الأقل ⚠️'
+          : 'Password is too weak. Must contain at least 8 characters and numbers ⚠️';
     }
 
-    return 'حدث خطأ أثناء العملية، يرجى التأكد من البيانات والمحاولة مجدداً ⚠️';
+    return isAr
+        ? 'حدث خطأ أثناء العملية، يرجى التأكد من البيانات والمحاولة مجدداً ⚠️'
+        : 'An error occurred. Please verify your data and try again ⚠️';
   }
 
   // --- Email Registration ---
@@ -146,10 +167,14 @@ class AuthCubit extends Cubit<AuthState> {
           emit(OtpSent(email.trim()));
         }
       } else {
-        emit(AuthError('لم يكتمل التفاعل مع السيرفر، يرجى إعادة المحاولة ⚠️'));
+        final isAr = await _isArabicUser();
+        emit(AuthError(isAr
+            ? 'لم يكتمل التفاعل مع السيرفر، يرجى إعادة المحاولة ⚠️'
+            : 'Server response incomplete, please try again ⚠️'));
       }
     } catch (e) {
-      final cleanMsg = _sanitizeAuthError(e);
+      final isAr = await _isArabicUser();
+      final cleanMsg = _sanitizeAuthError(e, isAr);
       emit(AuthError(cleanMsg));
     }
   }
@@ -170,10 +195,14 @@ class AuthCubit extends Cubit<AuthState> {
         await _syncUserProfileToSupabase(response.user!);
         emit(Authenticated(response.user!));
       } else {
-        emit(AuthError('يرجى التحقق من البريد الإلكتروني وكلمة المرور ⚠️'));
+        final isAr = await _isArabicUser();
+        emit(AuthError(isAr
+            ? 'يرجى التحقق من البريد الإلكتروني وكلمة المرور ⚠️'
+            : 'Please check your email and password ⚠️'));
       }
     } catch (e) {
-      final cleanMsg = _sanitizeAuthError(e);
+      final isAr = await _isArabicUser();
+      final cleanMsg = _sanitizeAuthError(e, isAr);
       emit(AuthError(cleanMsg));
     }
   }
@@ -215,8 +244,9 @@ class AuthCubit extends Cubit<AuthState> {
         emit(Authenticated(authResponse.user!));
       }
     } catch (e) {
-      final cleanMsg = _sanitizeAuthError(e);
-      emit(AuthError('تسجيل الدخول عبر جوجل: $cleanMsg'));
+      final isAr = await _isArabicUser();
+      final cleanMsg = _sanitizeAuthError(e, isAr);
+      emit(AuthError(isAr ? 'تسجيل الدخول عبر جوجل: $cleanMsg' : 'Google Sign In: $cleanMsg'));
     }
   }
 
@@ -230,8 +260,9 @@ class AuthCubit extends Cubit<AuthState> {
       await client.auth.resetPasswordForEmail(email.trim());
       emit(Unauthenticated());
     } catch (e) {
-      final cleanMsg = _sanitizeAuthError(e);
-      emit(AuthError('استعادة كلمة المرور: $cleanMsg'));
+      final isAr = await _isArabicUser();
+      final cleanMsg = _sanitizeAuthError(e, isAr);
+      emit(AuthError(isAr ? 'استعادة كلمة المرور: $cleanMsg' : 'Password Reset: $cleanMsg'));
     }
   }
 

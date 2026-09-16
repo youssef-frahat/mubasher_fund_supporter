@@ -60,7 +60,7 @@ class _PortfolioContentView extends StatelessWidget {
       body: BlocBuilder<PortfolioCubit, PortfolioState>(
         builder: (context, state) {
           if (state is PortfolioLoading) {
-            return const AppLoadingIndicator(message: 'جاري حساب أداء وتحليل المحفظة...');
+            return AppLoadingIndicator(message: context.tr('calculatingPortfolioAnalysis'));
           } else if (state is PortfolioError) {
             return Center(
               child: Text(

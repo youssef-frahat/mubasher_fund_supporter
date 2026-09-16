@@ -272,7 +272,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Expanded(child: Divider(color: border)),
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 12.w),
-                            child: Text('أو', style: TextStyle(color: textSecondary, fontSize: 12.sp)),
+                            child: Text(context.tr('orDivider'), style: TextStyle(color: textSecondary, fontSize: 12.sp)),
                           ),
                           Expanded(child: Divider(color: border)),
                         ],

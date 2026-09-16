@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// import '../../../../core/app_config/font_styles.dart'; // removed unused import
+import '../../../../core/language/language_cubit.dart';
 import 'admin_funds_screen.dart';
 
 class AdminLayout extends StatefulWidget {
@@ -12,14 +12,14 @@ class AdminLayout extends StatefulWidget {
 class _AdminLayoutState extends State<AdminLayout> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const AdminFundsScreen(),
-    const Center(child: Text('Users Management (Coming Soon)')),
-    const Center(child: Text('Settings (Coming Soon)')),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final List<Widget> screens = [
+      const AdminFundsScreen(),
+      Center(child: Text('${context.tr('usersManagement')} (${context.tr('comingSoon')})')),
+      Center(child: Text('${context.tr('settings')} (${context.tr('comingSoon')})')),
+    ];
+
     return Scaffold(
       body: Row(
         children: [
@@ -31,27 +31,27 @@ class _AdminLayoutState extends State<AdminLayout> {
               });
             },
             labelType: NavigationRailLabelType.all,
-            destinations: const [
+            destinations: [
               NavigationRailDestination(
-                icon: Icon(Icons.account_balance_wallet_outlined),
-                selectedIcon: Icon(Icons.account_balance_wallet),
-                label: Text('Funds'),
+                icon: const Icon(Icons.account_balance_wallet_outlined),
+                selectedIcon: const Icon(Icons.account_balance_wallet),
+                label: Text(context.tr('funds')),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.people_outline),
-                selectedIcon: Icon(Icons.people),
-                label: Text('Users'),
+                icon: const Icon(Icons.people_outline),
+                selectedIcon: const Icon(Icons.people),
+                label: Text(context.tr('users')),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.settings_outlined),
-                selectedIcon: Icon(Icons.settings),
-                label: Text('Settings'),
+                icon: const Icon(Icons.settings_outlined),
+                selectedIcon: const Icon(Icons.settings),
+                label: Text(context.tr('settings')),
               ),
             ],
           ),
           const VerticalDivider(thickness: 1, width: 1),
           Expanded(
-            child: _screens[_selectedIndex],
+            child: screens[_selectedIndex],
           ),
         ],
       ),

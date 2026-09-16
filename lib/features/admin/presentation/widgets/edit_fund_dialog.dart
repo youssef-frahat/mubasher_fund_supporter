@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../home/data/models/fund_model.dart';
 
@@ -55,8 +56,10 @@ class _EditFundDialogState extends State<EditFundDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isAr = context.isArabic;
+
     return AlertDialog(
-      title: const Text('تعديل بيانات الصندوق'),
+      title: Text(context.tr('editFund')),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -65,18 +68,18 @@ class _EditFundDialogState extends State<EditFundDialog> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'اسم الصندوق'),
+                decoration: InputDecoration(labelText: context.tr('fundNameLabel')),
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'يرجى إدخال اسم الصندوق';
-                  if (val.trim().length < 3) return 'الاسم قصير جداً';
+                  if (val == null || val.trim().isEmpty) return context.tr('fundNameRequired');
+                  if (val.trim().length < 3) return context.tr('nameTooShort');
                   return null;
                 },
               ),
               SizedBox(height: 8.h),
               TextFormField(
                 controller: _managerController,
-                decoration: const InputDecoration(labelText: 'الشركة المديرة'),
-                validator: (val) => val == null || val.trim().isEmpty ? 'يرجى إدخال اسم المدير' : null,
+                decoration: InputDecoration(labelText: context.tr('managerLabel')),
+                validator: (val) => val == null || val.trim().isEmpty ? context.tr('managerNameRequired') : null,
               ),
               SizedBox(height: 8.h),
               Row(
@@ -85,10 +88,10 @@ class _EditFundDialogState extends State<EditFundDialog> {
                     child: TextFormField(
                       controller: _navController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'سعر الوثيقة (NAV)'),
+                      decoration: InputDecoration(labelText: context.tr('navPriceLabel')),
                       validator: (val) {
                         final d = double.tryParse(val ?? '');
-                        if (d == null || d <= 0) return 'سعر غير صالح';
+                        if (d == null || d <= 0) return context.tr('invalidPriceOrNav');
                         return null;
                       },
                     ),
@@ -98,10 +101,10 @@ class _EditFundDialogState extends State<EditFundDialog> {
                     child: TextFormField(
                       controller: _ytdController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'العائد % (YTD)'),
+                      decoration: InputDecoration(labelText: context.tr('ytdReturnLabel')),
                       validator: (val) {
                         final d = double.tryParse(val ?? '');
-                        if (d == null) return 'نسبة غير صالحة';
+                        if (d == null) return context.tr('invalidReturnRate');
                         return null;
                       },
                     ),
@@ -111,7 +114,7 @@ class _EditFundDialogState extends State<EditFundDialog> {
               SizedBox(height: 12.h),
               DropdownButtonFormField<String>(
                 initialValue: _category,
-                decoration: const InputDecoration(labelText: 'الفئة (Category)'),
+                decoration: InputDecoration(labelText: context.tr('category')),
                 items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                 onChanged: (val) => setState(() => _category = val!),
               ),
@@ -121,7 +124,7 @@ class _EditFundDialogState extends State<EditFundDialog> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       initialValue: _riskLevel,
-                      decoration: const InputDecoration(labelText: 'المخاطرة'),
+                      decoration: InputDecoration(labelText: context.tr('risk')),
                       items: _riskLevels.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
                       onChanged: (val) => setState(() => _riskLevel = val!),
                     ),
@@ -130,7 +133,7 @@ class _EditFundDialogState extends State<EditFundDialog> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       initialValue: _currency,
-                      decoration: const InputDecoration(labelText: 'العملة'),
+                      decoration: InputDecoration(labelText: context.tr('currencyLabel')),
                       items: _currencies.map((curr) => DropdownMenuItem(value: curr, child: Text(curr))).toList(),
                       onChanged: (val) => setState(() => _currency = val!),
                     ),
@@ -140,14 +143,14 @@ class _EditFundDialogState extends State<EditFundDialog> {
               SizedBox(height: 8.h),
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('صندوق ترشيحي / سبونسر (Sponsored ⭐️)'),
-                subtitle: const Text('يظهر في التوصيات الرسمية والمستشار الذكي'),
+                title: Text(context.tr('sponsoredFundTag')),
+                subtitle: Text(context.tr('sponsoredFundSub')),
                 value: _isSponsored,
                 onChanged: (val) => setState(() => _isSponsored = val ?? false),
               ),
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('صندوق موصى به (Recommended)'),
+                title: Text(context.tr('recommendedFundTag')),
                 value: _isRecommended,
                 onChanged: (val) => setState(() => _isRecommended = val ?? false),
               ),
@@ -158,7 +161,7 @@ class _EditFundDialogState extends State<EditFundDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child: Text(context.tr('cancel')),
         ),
         ElevatedButton(
           onPressed: () {
@@ -180,16 +183,18 @@ class _EditFundDialogState extends State<EditFundDialog> {
 
               AppSnackBar.showSuccess(
                 context,
-                'تمت تحديث بيانات صندوق "${updatedFund.name}" بنجاح!',
+                isAr
+                    ? 'تمت تحديث بيانات صندوق "${updatedFund.name}" بنجاح!'
+                    : 'Fund "${updatedFund.name}" updated successfully!',
               );
             } else {
               AppSnackBar.showWarning(
                 context,
-                'يرجى التأكد من استكمال كافة بيانات الصندوق بشكل صحيح',
+                context.tr('fillAllDataWarning'),
               );
             }
           },
-          child: const Text('حفظ التعديلات'),
+          child: Text(context.tr('saveChanges')),
         ),
       ],
     );

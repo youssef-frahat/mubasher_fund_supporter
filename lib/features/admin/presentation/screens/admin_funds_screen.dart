@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../home/data/models/fund_model.dart';
 import '../../../funds/domain/models/fund_sort_option.dart';
@@ -29,13 +30,13 @@ class _AdminFundsScreenState extends State<AdminFundsScreen> {
       create: (context) => sl<AdminCubit>()..loadFunds(),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('إدارة الصناديق ومؤشرات النظام (CRUD Dashboard)'),
+          title: Text(context.tr('adminFundsDashboard')),
           actions: [
             Builder(
               builder: (context) {
                 return IconButton(
                   icon: const Icon(Icons.add_circle, color: Colors.green, size: 28),
-                  tooltip: 'إضافة صندوق جديد',
+                  tooltip: context.tr('addNewFund'),
                   onPressed: () {
                     showDialog(
                       context: context,
@@ -129,10 +130,10 @@ class _AdminFundsScreenState extends State<AdminFundsScreen> {
                                   return nameMatch || managerMatch || categoryMatch;
                                 }).toList();
 
-                                final sortedFunds = _sortOption.sort(filteredFunds, isArabic: true);
+                                final sortedFunds = _sortOption.sort(filteredFunds, isArabic: context.isArabic);
 
                                 if (sortedFunds.isEmpty) {
-                                  return const Center(child: Text('لا توجد صناديق مطابقة للبحث'));
+                                  return Center(child: Text(context.tr('noFundsMatchSearch')));
                                 }
 
                                 return Column(
@@ -235,8 +236,8 @@ class _AdminFundsScreenState extends State<AdminFundsScreen> {
                         },
                       )
                           : state is AdminError
-                              ? Center(child: Text('خطأ: ${state.message}'))
-                              : const Center(child: Text('جاري التحميل...')),
+                              ? Center(child: Text('${context.isArabic ? 'خطأ' : 'Error'}: ${state.message}'))
+                              : Center(child: Text(context.isArabic ? 'جاري التحميل...' : 'Loading...')),
                 ),
               ],
             );
@@ -265,15 +266,18 @@ class _AdminFundsScreenState extends State<AdminFundsScreen> {
 
   void _confirmDelete(BuildContext context, FundModel fund) {
     final cubit = context.read<AdminCubit>();
+    final isAr = context.isArabic;
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('تأكيد الحذف'),
-        content: Text('هل أنت تأكد من رغبتك في حذف "${fund.name}"؟'),
+        title: Text(context.tr('confirmDelete')),
+        content: Text(isAr
+            ? 'هل أنت متأكد من رغبتك في حذف "${fund.name}"؟'
+            : 'Are you sure you want to delete "${fund.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('إلغاء'),
+            child: Text(context.tr('cancel')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -282,10 +286,12 @@ class _AdminFundsScreenState extends State<AdminFundsScreen> {
               Navigator.pop(dialogContext);
               AppSnackBar.showSuccess(
                 context,
-                'تم حذف صندوق "${fund.name}" من الباك إند بنجاح!',
+                isAr
+                    ? 'تم حذف صندوق "${fund.name}" بنجاح!'
+                    : 'Fund "${fund.name}" deleted successfully!',
               );
             },
-            child: const Text('حذف', style: TextStyle(color: Colors.white)),
+            child: Text(context.tr('delete'), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),

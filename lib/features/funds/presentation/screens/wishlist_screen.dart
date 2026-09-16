@@ -156,7 +156,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                           ElevatedButton.icon(
                             onPressed: () => context.push(Routes.allFunds),
                             icon: const Icon(Icons.search),
-                            label: const Text('استكشف جميع الصناديق'),
+                            label: Text(context.tr('exploreFunds')),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.black,

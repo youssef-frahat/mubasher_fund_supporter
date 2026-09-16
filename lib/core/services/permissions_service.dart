@@ -1,6 +1,8 @@
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 
+import '../language/language_cubit.dart';
+
 class PermissionsService {
   /// Request notification permissions
   static Future<bool> requestNotificationPermission(BuildContext context) async {
@@ -9,7 +11,7 @@ class PermissionsService {
     if (status.isGranted) return true;
     
     if (status.isPermanentlyDenied) {
-      if (context.mounted) _showSettingsDialog(context, 'Notifications');
+      if (context.mounted) _showSettingsDialog(context, context.isArabic ? 'الإشعارات' : 'Notifications');
       return false;
     }
 
@@ -24,7 +26,7 @@ class PermissionsService {
     if (status.isGranted) return true;
     
     if (status.isPermanentlyDenied) {
-      if (context.mounted) _showSettingsDialog(context, 'Photos');
+      if (context.mounted) _showSettingsDialog(context, context.isArabic ? 'الصور' : 'Photos');
       return false;
     }
 
@@ -37,19 +39,23 @@ class PermissionsService {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('$permissionName Permission Required'),
-        content: Text('Please enable $permissionName in your device settings to use this feature.'),
+        title: Text('${context.tr('permissionRequired')} ($permissionName)'),
+        content: Text(
+          context.isArabic
+              ? 'يرجى تفعيل صلاحية $permissionName من إعدادات الجهاز للمتابعة.'
+              : 'Please enable $permissionName in your device settings to use this feature.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.tr('cancel')),
           ),
           TextButton(
             onPressed: () {
               openAppSettings();
               Navigator.pop(context);
             },
-            child: const Text('Open Settings'),
+            child: Text(context.tr('openSettings')),
           ),
         ],
       ),

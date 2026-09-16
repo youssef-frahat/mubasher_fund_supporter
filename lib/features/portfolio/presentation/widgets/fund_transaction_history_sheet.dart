@@ -81,7 +81,9 @@ class _FundTransactionHistorySheetState extends State<FundTransactionHistoryShee
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
       ),
-      builder: (ctx) => Padding(
+      builder: (ctx) {
+        final isAr = ctx.isArabic;
+        return Padding(
         padding: EdgeInsets.only(
           left: 20.r,
           right: 20.r,
@@ -121,14 +123,14 @@ class _FundTransactionHistorySheetState extends State<FundTransactionHistoryShee
                 style: TextStyle(color: AppColors.getTextPrimary(context)),
                 decoration: InputDecoration(
                   labelText: context.tr('units'),
-                  hintText: 'مثال: 10 أو 5',
+                  hintText: isAr ? 'مثال: 10 أو 5' : 'e.g. 10 or 5',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                 ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) return context.tr('invalidUnitsError');
                   final d = double.tryParse(val.trim());
                   if (d == null || d <= 0) return context.tr('invalidUnitsError');
-                  if (!isBuy && d > widget.item.units) return 'عدد الوثائق المطلوبة أكبر من الرصيد المتاح';
+                  if (!isBuy && d > widget.item.units) return context.tr('unitsExceedBalance');
                   return null;
                 },
               ),
@@ -201,14 +203,15 @@ class _FundTransactionHistorySheetState extends State<FundTransactionHistoryShee
                 ),
                 icon: const Icon(Icons.check, color: Colors.white),
                 label: Text(
-                  isBuy ? 'تأكيد أمر الشراء 🟢' : 'تأكيد أمر البيع 🔴',
+                  context.tr(isBuy ? 'confirmBuyOrder' : 'confirmSellOrder'),
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
         ),
-      ),
+      );
+      },
     );
   }
 

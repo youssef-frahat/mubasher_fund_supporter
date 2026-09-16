@@ -67,10 +67,10 @@ class CalculatorRepository {
           mix.add(PortfolioFundAllocation(
             fundName: name,
             categoryNameAr: data['fund${i}_category_ar']?.toString() ?? 'عام',
-            categoryNameEn: data['fund${i}_category_ar']?.toString() ?? 'General',
+            categoryNameEn: data['fund${i}_category_en']?.toString() ?? data['fund${i}_category_ar']?.toString() ?? 'General',
             percentage: (data['fund${i}_percentage'] as num?)?.toDouble() ?? 25.0,
             badgeLabelAr: data['fund${i}_badge_ar']?.toString() ?? 'صندوق موصى به',
-            badgeLabelEn: 'Recommended Fund',
+            badgeLabelEn: data['fund${i}_badge_en']?.toString() ?? 'Recommended Fund',
             categoryColor: slotColors[i - 1],
           ));
         }

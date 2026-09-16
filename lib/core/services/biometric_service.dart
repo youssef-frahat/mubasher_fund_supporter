@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 
+import '../language/language_cubit.dart';
+
 class BiometricService {
   static final LocalAuthentication _auth = LocalAuthentication();
   static bool isCurrentlyAuthenticating = false;
@@ -31,6 +33,8 @@ class BiometricService {
   /// Trigger Biometric Authentication Prompt
   static Future<bool> authenticateUser(BuildContext context, {String? localizedReason}) async {
     if (isCurrentlyAuthenticating) return false;
+    final fallbackReason = localizedReason ?? (context.mounted ? context.tr('biometricPromptReason') : 'Authentication required');
+    final notAvailableMsg = context.mounted ? context.tr('biometricNotAvailable') : 'Biometrics unavailable';
     isCurrentlyAuthenticating = true;
 
     try {
@@ -38,8 +42,8 @@ class BiometricService {
       if (!isAvailable) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('الجهاز لا يدعم البصمة أو لم يتم إعداد بصمة في إعدادات الهاتف.'),
+            SnackBar(
+              content: Text(notAvailableMsg),
               backgroundColor: Colors.orange,
             ),
           );
@@ -50,7 +54,7 @@ class BiometricService {
       await HapticFeedback.mediumImpact();
 
       final bool didAuthenticate = await _auth.authenticate(
-        localizedReason: localizedReason ?? 'يرجى تأكيد هوية جهازك (البصمة / الوجه / كلمة مرور الهاتف) لتأمين وثيقة',
+        localizedReason: fallbackReason,
         biometricOnly: false,
         persistAcrossBackgrounding: true,
       );
