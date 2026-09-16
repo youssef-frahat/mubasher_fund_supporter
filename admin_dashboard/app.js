@@ -10,10 +10,19 @@ let livePortfolios = [];
 let liveUsers = [];
 let liveTransactions = [];
 
-// Secondary Admins List (Managed by Super Admin)
-let secondaryAdmins = JSON.parse(localStorage.getItem('watheqa_secondary_admins') || '[]') || [
-  { id: 'a1', name: 'أدمن مساعد 1', username: 'Assistant_Admin', role: 'Fund & Price Manager', password: 'pass123', created: '2026-07-26' }
+// Secondary Admins List & Default System Admins
+const defaultAdmins = [
+  { id: 'sa1', name: 'Super Admin', username: 'admin', email: 'admin@watheqa.com', role: 'Super Admin', password: 'admin123!@#', created: '2026-09-16' },
+  { id: 'a1', name: 'أدمن مساعد 1', username: 'Assistant_Admin', email: 'assistant@watheqa.com', role: 'Fund & Price Manager', password: 'pass123', created: '2026-07-26' }
 ];
+
+let secondaryAdmins = [];
+try {
+  const stored = JSON.parse(localStorage.getItem('watheqa_secondary_admins') || '[]');
+  secondaryAdmins = (Array.isArray(stored) && stored.length > 0) ? stored : defaultAdmins;
+} catch (e) {
+  secondaryAdmins = defaultAdmins;
+}
 
 // Global Chart Instances for Dynamic Updates
 let categoryPieChartInstance = null;
