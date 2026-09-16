@@ -133,15 +133,21 @@ async def scrape_fund_prices() -> list:
 # Parser: تنظيف وتحويل البيانات المسحوبة
 # ---------------------------------------------------------------------------
 def parse_nav(raw: str):
-    """تحويل نص السعر إلى float"""
+    """تحويل نص السعر إلى float — يتجاهل القيم الفاضية أو النقطة المنفردة"""
     if not raw:
         return None
     cleaned = raw.replace(",", "").replace("\u066c", "").replace(" ", "").replace("EGP", "").strip()
     # أرقام عربية -> لاتينية
     arabic_digits = str.maketrans("\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669", "0123456789")
     cleaned = cleaned.translate(arabic_digits)
-    match = re.search(r"[\d.]+", cleaned)
-    return float(match.group()) if match else None
+    # يشترط وجود رقم واحد على الأقل قبل أي نقطة عشرية
+    match = re.search(r"\d+\.?\d*", cleaned)
+    if not match:
+        return None
+    try:
+        return float(match.group())
+    except ValueError:
+        return None
 
 
 def parse_ytd(raw: str):
