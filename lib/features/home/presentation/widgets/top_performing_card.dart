@@ -162,7 +162,7 @@ class TopPerformingCard extends StatelessWidget {
 
                   // Fund Name
                   Text(
-                    fund.name,
+                    fund.localizedName(context),
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
@@ -221,7 +221,7 @@ class TopPerformingCard extends StatelessWidget {
                       _buildStat(
                         context: context,
                         label: context.tr('risk'),
-                        value: fund.riskLevel,
+                        value: fund.localizedRisk(context),
                         valueColor: fund.riskLevel == 'Low'
                             ? AppColors.primary
                             : fund.riskLevel == 'Medium'

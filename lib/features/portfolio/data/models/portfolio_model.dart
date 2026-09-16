@@ -13,6 +13,12 @@ class PortfolioModel {
     required this.createdAt,
   });
 
+  double get totalCost => items.fold(0.0, (sum, item) => sum + item.totalCost);
+  double get totalCurrentValue => items.fold(0.0, (sum, item) => sum + item.currentValue);
+  double get totalProfitLoss => totalCurrentValue - totalCost;
+  double get totalProfitLossPercentage => totalCost > 0 ? (totalProfitLoss / totalCost) * 100 : 0.0;
+
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../../../home/data/models/platform_feature.dart';
 
 class FundModel {
@@ -68,6 +69,62 @@ class FundModel {
     if (basePrice <= 0) return ytdReturn;
     final calc = ((currentNav - basePrice) / basePrice) * 100;
     return double.parse(calc.toStringAsFixed(2));
+  }
+
+  bool _checkIsArabic(BuildContext context) {
+    try {
+      return context.isArabic;
+    } catch (_) {
+      try {
+        return Localizations.localeOf(context).languageCode == 'ar';
+      } catch (_) {
+        return true;
+      }
+    }
+  }
+
+  /// Returns localized name based on active app Locale
+  String localizedName(BuildContext context) {
+    final isAr = _checkIsArabic(context);
+    if (isAr) {
+      if (nameAr != null && nameAr!.trim().isNotEmpty) return nameAr!;
+      return name;
+    } else {
+      if (nameEn != null && nameEn!.trim().isNotEmpty) return nameEn!;
+      return name;
+    }
+  }
+
+  /// Returns localized category name based on active app Locale
+  String localizedCategory(BuildContext context) {
+    final isAr = _checkIsArabic(context);
+    final catLower = category.toLowerCase();
+    if (catLower.contains('equity') || catLower.contains('أسهم')) {
+      return isAr ? 'أسهم ونمو' : 'Equity & Growth';
+    } else if (catLower.contains('gold') || catLower.contains('ذهب') || catLower.contains('معادن')) {
+      return isAr ? 'معادن وذهب' : 'Precious Metals & Gold';
+    } else if (catLower.contains('islamic') || catLower.contains('شريعة') || catLower.contains('إسلام')) {
+      return isAr ? 'شريعة إسلامية' : 'Islamic Shariah';
+    } else if (catLower.contains('moneymarket') || catLower.contains('نقد') || catLower.contains('سيول')) {
+      return isAr ? 'نقدية وسيولة' : 'Money Market';
+    } else if (catLower.contains('fixed') || catLower.contains('سند') || catLower.contains('أذون')) {
+      return isAr ? 'أذون وسندات' : 'Fixed Income & Bonds';
+    } else if (catLower.contains('balanced') || catLower.contains('متوازن')) {
+      return isAr ? 'متوازن ومختلط' : 'Balanced';
+    }
+    return isAr ? (nameAr ?? category) : category;
+  }
+
+  /// Returns localized risk level
+  String localizedRisk(BuildContext context) {
+    final isAr = _checkIsArabic(context);
+    final rLower = riskLevel.toLowerCase();
+    if (rLower.contains('high') || rLower.contains('عالي') || rLower.contains('مرتفع')) {
+      return isAr ? 'مرتفع' : 'High';
+    } else if (rLower.contains('low') || rLower.contains('منخفض')) {
+      return isAr ? 'منخفض' : 'Low';
+    }
+    return isAr ? 'متوسط' : 'Medium';
   }
 
   /// Returns abbreviation/code inside parentheses e.g. "Gozoor" from "AAIB (Gozoor)"

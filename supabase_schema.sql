@@ -85,7 +85,19 @@ CREATE TABLE IF NOT EXISTS public.wishlist (
     fund_id TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     UNIQUE(user_id, fund_id)
+-- =====================================================================
+-- 5.1. CREATE FUND NAV HISTORY TABLE (Real Technical Financial Chart Prices)
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS public.fund_nav_history (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    fund_id TEXT NOT NULL,
+    nav NUMERIC(15, 4) NOT NULL,
+    recorded_date DATE NOT NULL,
+    daily_change NUMERIC(7, 4) DEFAULT 0.0000,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(fund_id, recorded_date)
 );
+CREATE INDEX IF NOT EXISTS idx_fund_nav_history_lookup ON public.fund_nav_history(fund_id, recorded_date DESC);
 
 -- =====================================================================
 -- 6. ROBO-ADVISOR CONFIGURATIONS TABLE (Custom Admin Recommendations per Goal)
@@ -113,42 +125,100 @@ CREATE TABLE IF NOT EXISTS public.robo_advisor_configs (
 );
 
 -- =====================================================================
--- 7. DISABLE STRICT RLS / ADD UNRESTRICTED PERMISSIONS FOR ADMIN & APP
+-- 7. PRODUCTION HARDENED ROW LEVEL SECURITY (RLS) POLICIES
 -- =====================================================================
 
 -- Profiles RLS Policies
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow_All_Profiles" ON public.profiles;
-CREATE POLICY "Allow_All_Profiles" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow_Read_Profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Users_Insert_Own_Profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users_Update_Own_Profile" ON public.profiles;
+
+CREATE POLICY "Allow_Read_Profiles" ON public.profiles
+FOR SELECT USING (true);
+
+CREATE POLICY "Users_Insert_Own_Profile" ON public.profiles
+FOR INSERT WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Users_Update_Own_Profile" ON public.profiles
+FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
 
 -- Portfolios RLS Policies
 ALTER TABLE public.portfolios ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow_All_Portfolios" ON public.portfolios;
-CREATE POLICY "Allow_All_Portfolios" ON public.portfolios FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Users_Manage_Own_Portfolios" ON public.portfolios;
+
+CREATE POLICY "Users_Manage_Own_Portfolios" ON public.portfolios
+FOR ALL USING (
+    auth.uid() = user_id OR
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+) WITH CHECK (
+    auth.uid() = user_id OR
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+);
 
 -- Portfolio Items RLS Policies
 ALTER TABLE public.portfolio_items ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow_All_Portfolio_Items" ON public.portfolio_items;
-CREATE POLICY "Allow_All_Portfolio_Items" ON public.portfolio_items FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Users_Manage_Own_Portfolio_Items" ON public.portfolio_items;
+
+CREATE POLICY "Users_Manage_Own_Portfolio_Items" ON public.portfolio_items
+FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM public.portfolios
+        WHERE portfolios.id = portfolio_items.portfolio_id
+        AND (portfolios.user_id = auth.uid() OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true))
+    )
+) WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.portfolios
+        WHERE portfolios.id = portfolio_items.portfolio_id
+        AND (portfolios.user_id = auth.uid() OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true))
+    )
+);
 
 -- Transactions RLS Policies
 ALTER TABLE public.portfolio_transactions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow_All_Transactions" ON public.portfolio_transactions;
-CREATE POLICY "Allow_All_Transactions" ON public.portfolio_transactions FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Users_Manage_Own_Transactions" ON public.portfolio_transactions;
+
+CREATE POLICY "Users_Manage_Own_Transactions" ON public.portfolio_transactions
+FOR ALL USING (
+    auth.uid() = user_id OR
+    EXISTS (
+        SELECT 1 FROM public.portfolios
+        WHERE portfolios.id = portfolio_transactions.portfolio_id
+        AND (portfolios.user_id = auth.uid() OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true))
+    )
+) WITH CHECK (
+    auth.uid() = user_id OR
+    EXISTS (
+        SELECT 1 FROM public.portfolios
+        WHERE portfolios.id = portfolio_transactions.portfolio_id
+        AND (portfolios.user_id = auth.uid() OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true))
+    )
+);
 
 -- Wishlist RLS Policies
 ALTER TABLE public.wishlist ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow_All_Wishlist" ON public.wishlist;
-CREATE POLICY "Allow_All_Wishlist" ON public.wishlist FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Users_Manage_Own_Wishlist" ON public.wishlist;
+
+CREATE POLICY "Users_Manage_Own_Wishlist" ON public.wishlist
+FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- Robo Advisor Configs RLS Policies
 ALTER TABLE public.robo_advisor_configs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow_All_Robo_Configs" ON public.robo_advisor_configs;
-CREATE POLICY "Allow_All_Robo_Configs" ON public.robo_advisor_configs FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow_Read_Robo_Configs" ON public.robo_advisor_configs;
+
+CREATE POLICY "Allow_Read_Robo_Configs" ON public.robo_advisor_configs
+FOR SELECT USING (true);
 
 -- Grant privileges to anon and authenticated roles
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
+GRANT ALL ON public.portfolios, public.portfolio_items, public.portfolio_transactions, public.wishlist, public.profiles TO authenticated;
 
 -- Seed Initial Default Recommendations into robo_advisor_configs
 INSERT INTO public.robo_advisor_configs (

@@ -119,12 +119,16 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
 
     final filteredFunds = _funds.where((fund) {
       final nameLower = fund.name.toLowerCase();
+      final nameArLower = (fund.nameAr ?? '').toLowerCase();
+      final nameEnLower = (fund.nameEn ?? '').toLowerCase();
       final mgrLower = fund.managerName.toLowerCase();
       final catLower = fund.category.toLowerCase();
       final queryLower = _searchQuery.toLowerCase();
 
       final matchesSearch = queryLower.isEmpty ||
           nameLower.contains(queryLower) ||
+          nameArLower.contains(queryLower) ||
+          nameEnLower.contains(queryLower) ||
           mgrLower.contains(queryLower) ||
           catLower.contains(queryLower);
 

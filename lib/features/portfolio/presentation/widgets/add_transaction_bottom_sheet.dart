@@ -206,7 +206,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                                 color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : surface,
                                 child: ListTile(
                                   title: Text(
-                                    fund.name,
+                                    fund.localizedName(context),
                                     style: TextStyle(
                                       color: textPrimary,
                                       fontWeight: FontWeight.bold,
@@ -214,7 +214,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                                     ),
                                   ),
                                   subtitle: Text(
-                                    '${fund.managerName} | ${fund.category}',
+                                    '${fund.managerName} | ${fund.localizedCategory(context)}',
                                     style: TextStyle(color: textSecondary, fontSize: 11.sp),
                                   ),
                                   trailing: Column(

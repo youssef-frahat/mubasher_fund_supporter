@@ -433,27 +433,35 @@ function initSuperAdminAuth() {
     if (mainApp) mainApp.style.display = 'none';
   }
 
-  loginForm?.addEventListener('submit', (e) => {
+  async function sha256Hash(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  loginForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const userVal = (document.getElementById('adminUsername')?.value || '').trim();
     const passVal = (document.getElementById('adminPassword')?.value || '').trim();
 
     const cleanUser = userVal.toLowerCase();
-    const cleanPass = passVal.toLowerCase();
+    const passHash = await sha256Hash(passVal);
+
+    // Secure SHA-256 cryptographic hashes
+    const validHashes = [
+      '87cb85b2e56d6576e8c83d97fb88fcba3b953017d8ce42762a154cd93f75dc39',
+      'cfe9e323470b1e959b1c1b84ce200292f5ef2b55c0eecda27dc92d221031b068',
+    ];
 
     const isSuperAdmin = (
       cleanUser === 'youssef_frahat' ||
       cleanUser === 'youssef' ||
       cleanUser === 'admin'
-    ) && (
-      cleanPass === 'y0u$$eff' ||
-      cleanPass === 'y0u$$eff' ||
-      cleanPass === 'y0u$$eff' ||
-      cleanPass === 'watheqaadmin2026!'
-    );
+    ) && validHashes.includes(passHash);
 
     const secondaryAdminMatch = secondaryAdmins.find(a => 
-      a.username.trim().toLowerCase() === cleanUser && a.password.trim().toLowerCase() === cleanPass
+      a.username.trim().toLowerCase() === cleanUser && (a.password === passVal || a.password?.trim().toLowerCase() === passVal.toLowerCase())
     );
 
     if (isSuperAdmin || secondaryAdminMatch) {

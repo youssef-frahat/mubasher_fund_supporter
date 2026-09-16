@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/app_config/font_styles.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/services/wishlist_service.dart';
 import '../../data/models/fund_model.dart';
@@ -63,7 +64,7 @@ class FundListTile extends StatelessWidget {
     final categoryColor = _getCategoryColor(fund.category, fund.name);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final nameText = fund.displayNameOnly;
+    final nameText = fund.localizedName(context);
     final abbrText = fund.abbreviation;
 
     return ValueListenableBuilder<Set<String>>(
@@ -159,7 +160,7 @@ class FundListTile extends StatelessWidget {
 
                       // Line 2: Manager & Category
                       Text(
-                        '${fund.managerName} | ${fund.category}',
+                        '${fund.managerName} | ${fund.localizedCategory(context)}',
                         style: FontStyles.bodySmall.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 11.sp,
@@ -229,9 +230,15 @@ class FundListTile extends StatelessWidget {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 duration: const Duration(seconds: 2),
-                                content: Text(
-                                  added ? 'تمت إضافة "${fund.name}" للمفضلة ⭐️' : 'تم مسح "${fund.name}" من المفضلة',
-                                ),
+                                  content: Text(
+                                    added
+                                        ? (context.isArabic
+                                            ? 'تمت إضافة "$nameText" للمفضلة ⭐️'
+                                            : 'Added "$nameText" to favorites ⭐️')
+                                        : (context.isArabic
+                                            ? 'تمت إزالة "$nameText" من المفضلة'
+                                            : 'Removed "$nameText" from favorites'),
+                                  ),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );

@@ -28,6 +28,9 @@ class FundDetailsScreen extends StatelessWidget {
     final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
 
+    final isAr = context.isArabic;
+    final displayTitle = fundModel?.localizedName(context) ?? fund.title;
+
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
@@ -39,7 +42,7 @@ class FundDetailsScreen extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          fund.title,
+          displayTitle,
           style: TextStyle(
             color: textPrimary,
             fontWeight: FontWeight.bold,
@@ -65,12 +68,12 @@ class FundDetailsScreen extends StatelessWidget {
                   if (added) {
                     AppSnackBar.showSuccess(
                       context,
-                      'تمت إضافة "${fund.title}" للمفضلة ⭐️',
+                      isAr ? 'تمت إضافة "$displayTitle" للمفضلة ⭐️' : 'Added "$displayTitle" to favorites ⭐️',
                     );
                   } else {
                     AppSnackBar.showInfo(
                       context,
-                      'تم إزالة "${fund.title}" من المفضلة',
+                      isAr ? 'تم إزالة "$displayTitle" من المفضلة' : 'Removed "$displayTitle" from favorites',
                     );
                   }
                 },
@@ -110,7 +113,7 @@ class FundDetailsScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              fund.title,
+                              displayTitle,
                               style: TextStyle(
                                 color: textPrimary,
                                 fontSize: 16.sp,
@@ -328,7 +331,9 @@ class FundDetailsScreen extends StatelessWidget {
                     } else {
                       AppSnackBar.showWarning(
                         context,
-                        'يرجى إدخال عدد وثائق وسعر شراء صحيح أكبر من صفر',
+                        context.isArabic
+                            ? 'يرجى إدخال عدد وثائق وسعر شراء صحيح أكبر من صفر'
+                            : 'Please enter valid units and purchase price greater than zero',
                       );
                     }
                   },

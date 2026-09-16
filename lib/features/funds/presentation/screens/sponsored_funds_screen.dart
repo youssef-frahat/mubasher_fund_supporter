@@ -188,7 +188,7 @@ class _SponsoredFundsScreenState extends State<SponsoredFundsScreen> {
                     itemCount: _sponsoredFunds.length,
                     itemBuilder: (context, index) {
                       final fund = _sponsoredFunds[index];
-                      final nameText = fund.displayNameOnly;
+                      final nameText = fund.localizedName(context);
                       final abbrText = fund.abbreviation;
 
                       return Container(
@@ -244,7 +244,7 @@ class _SponsoredFundsScreenState extends State<SponsoredFundsScreen> {
                             subtitle: Padding(
                               padding: EdgeInsets.only(top: 2.h),
                               child: Text(
-                                '${fund.managerName} | ${fund.category}',
+                                '${fund.managerName} | ${fund.localizedCategory(context)}',
                                 style: TextStyle(color: textSecondary, fontSize: 11.sp),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -299,15 +299,21 @@ class _SponsoredFundsScreenState extends State<SponsoredFundsScreen> {
                                       onPressed: () async {
                                         final added = await wishlistService.toggleWishlist(fund.id);
                                         if (!context.mounted) return;
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            duration: const Duration(seconds: 2),
-                                            content: Text(
-                                              added ? 'تمت إضافة "${fund.name}" للمفضلة ⭐️' : 'تم مسح "${fund.name}" من المفضلة',
-                                            ),
-                                            behavior: SnackBarBehavior.floating,
-                                          ),
-                                        );
+                                         ScaffoldMessenger.of(context).showSnackBar(
+                                           SnackBar(
+                                             duration: const Duration(seconds: 2),
+                                             content: Text(
+                                               added
+                                                   ? (context.isArabic
+                                                       ? 'تمت إضافة "$nameText" للمفضلة ⭐️'
+                                                       : 'Added "$nameText" to favorites ⭐️')
+                                                   : (context.isArabic
+                                                       ? 'تمت إزالة "$nameText" من المفضلة'
+                                                       : 'Removed "$nameText" from favorites'),
+                                             ),
+                                             behavior: SnackBarBehavior.floating,
+                                           ),
+                                         );
                                       },
                                     );
                                   },

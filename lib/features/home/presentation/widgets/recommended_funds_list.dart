@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/app_config/font_styles.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/language/language_cubit.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/services/wishlist_service.dart';
 import '../../data/models/fund_model.dart';
@@ -145,7 +146,13 @@ class RecommendedFundsList extends StatelessWidget {
                                     SnackBar(
                                       duration: const Duration(seconds: 2),
                                       content: Text(
-                                        added ? 'تمت إضافة "${fund.name}" للمفضلة ⭐️' : 'تم مسح "${fund.name}" من المفضلة',
+                                        added
+                                            ? (context.isArabic
+                                                ? 'تمت إضافة "${fund.localizedName(context)}" للمفضلة ⭐️'
+                                                : 'Added "${fund.localizedName(context)}" to favorites ⭐️')
+                                            : (context.isArabic
+                                                ? 'تمت إزالة "${fund.localizedName(context)}" من المفضلة'
+                                                : 'Removed "${fund.localizedName(context)}" from favorites'),
                                       ),
                                       behavior: SnackBarBehavior.floating,
                                     ),
@@ -166,7 +173,7 @@ class RecommendedFundsList extends StatelessWidget {
                       ),
                       const Spacer(),
                       Text(
-                        fund.name,
+                        fund.localizedName(context),
                         style: FontStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
