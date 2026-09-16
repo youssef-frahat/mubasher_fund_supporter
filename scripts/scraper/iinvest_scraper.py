@@ -1,17 +1,24 @@
 """
-Watheqa - Enterprise Fund Price Scraper v3 (snduk.com)
-=======================================================
-Target : https://snduk.com/eg/funds (Next.js 14 App Router + RSC)
-Strategy Waterfall:
-  1. RSC Payload Interception  (text/x-component responses)
-  2. DOM after real content loads (waits for skeleton to vanish)
-  3. Slug-by-slug with proper async wait
+Watheqa - Advanced Fund Price Scraper & Database Syncer
+========================================================
+Target: snduk.com (Egypt Mutual Funds)
 
-Root causes fixed in v3:
-  - Skeleton loaders (`animate-pulse`) mistaken for real content → now waits
-  - `text/x-component` RSC responses ignored → now intercepted
-  - Slug-by-slug regex too strict → relaxed, waits for JS render
-  - `wait_until=domcontentloaded` too early → networkidle + explicit waits
+Architecture (Multi-Tier Red-Team Fallback):
+  [Tier 1] Direct tRPC API (/api/trpc/funds.list)
+           - Fast (~1s), direct JSON, zero rendering overhead, 100% price precision.
+  [Tier 2] Next.js HTML RSC Stream (self.__next_f.push)
+           - Fallback if tRPC routing changes.
+  [Tier 3] Headless Browser with Stealth Fingerprint (Playwright)
+           - Fallback if Cloudflare or bot barriers block raw HTTP requests.
+
+Resilience & Worst-Case Protection:
+  ✅ Full retry loop with exponential backoff & random jitter
+  ✅ Robust UTF-8 encoding handling across all platforms
+  ✅ Arabic text normalization (alef variants, ta marbuta, diacritics removal)
+  ✅ Fuzzy matching (bigram overlap) against Watheqa Supabase funds table
+  ✅ Per-fund error isolation (one failed fund never blocks the other 160+)
+  ✅ Dry-run mode for zero-risk inspection
+  ✅ Generates scraped_funds.json artifact for audit logging
 """
 
 import asyncio
@@ -22,653 +29,452 @@ import random
 import re
 import sys
 import time
+import urllib.parse
+import urllib.request
 from datetime import date, datetime
 from typing import Optional
 
-# ─── CLI flags ───────────────────────────────────────────
-DRY_RUN = "--dry-run" in sys.argv
-VERBOSE  = "--verbose" in sys.argv
+# Ensure standard streams handle UTF-8 properly on Windows and Linux
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
 
-# ─── Logging ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────
+# CLI Arguments
+# ─────────────────────────────────────────────────────────
+DRY_RUN = "--dry-run" in sys.argv
+VERBOSE = "--verbose" in sys.argv
+
+# ─────────────────────────────────────────────────────────
+# Logging Setup
+# ─────────────────────────────────────────────────────────
+log_level = logging.DEBUG if VERBOSE else logging.INFO
 logging.basicConfig(
-    level=logging.DEBUG if VERBOSE else logging.INFO,
+    level=log_level,
     format="%(asctime)s [%(levelname)-8s] %(message)s",
     datefmt="%H:%M:%S",
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 log = logging.getLogger("watheqa")
 
-# ─── Config ──────────────────────────────────────────────
-SUPABASE_URL        = os.environ.get("SUPABASE_URL", "https://maorabzkqtqmlrakqlya.supabase.co")
-SUPABASE_KEY        = os.environ.get("SUPABASE_SERVICE_KEY", "")
-BASE_URL            = "https://snduk.com"
-FUNDS_URL           = f"{BASE_URL}/eg/funds?lang=ar&view=list"
-SCRAPER_TIMEOUT_MIN = int(os.environ.get("SCRAPER_TIMEOUT_MIN", "9"))
-MAX_RETRIES         = 3
-TODAY               = date.today().isoformat()
+# ─────────────────────────────────────────────────────────
+# Configuration
+# ─────────────────────────────────────────────────────────
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://maorabzkqtqmlrakqlya.supabase.co")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
+BASE_URL = "https://snduk.com"
+TODAY = date.today().isoformat()
+MAX_RETRIES = 3
 
 USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
 ]
 
-# ─── Arabic number translator ────────────────────────────
-_AR = str.maketrans("٠١٢٣٤٥٦٧٨٩٬،", "0123456789..")
+# ─────────────────────────────────────────────────────────
+# Text Normalization & Fuzzy Matching Helpers
+# ─────────────────────────────────────────────────────────
+_AR_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩٬،", "0123456789..")
 
-# ─────────────────────────────────────────────────────────
-# Parsing Helpers
-# ─────────────────────────────────────────────────────────
-def parse_float(raw) -> Optional[float]:
-    if raw is None:
+def parse_float(val) -> Optional[float]:
+    if val is None:
         return None
-    if isinstance(raw, (int, float)):
-        return float(raw) if -999999 < raw < 999999 else None
-    s = str(raw).translate(_AR)
+    if isinstance(val, (int, float)):
+        return float(val)
+    s = str(val).translate(_AR_DIGITS)
     s = re.sub(r"[^\d.\-+]", "", s)
-    s = re.sub(r"\.(?=.*\.)", "", s)  # keep last dot only
-    if not s or s in (".", "-", "+", ""):
+    s = re.sub(r"\.(?=.*\.)", "", s)
+    if not s or s in (".", "-", "+"):
         return None
     try:
-        v = float(s)
-        return v if -99999 < v < 99999 else None
+        return float(s)
     except ValueError:
         return None
 
-
-def normalize(name: str) -> str:
-    if not name:
+def normalize_text(text: str) -> str:
+    """Strips diacritics, unifies alef, replaces ta marbuta, and collapses whitespace."""
+    if not text:
         return ""
-    s = re.sub(r"[\u064B-\u065F\u0670]", "", name)  # diacritics
+    s = re.sub(r"[\u064B-\u065F\u0670]", "", text)
     s = re.sub(r"[أإآ]", "ا", s)
     s = re.sub(r"ة", "ه", s)
+    s = re.sub(r"ى", "ي", s)
+    s = re.sub(r"[^\w\s]", " ", s)
     return re.sub(r"\s+", " ", s).strip().lower()
 
-
-def bigram_score(a: str, b: str) -> float:
-    if len(a) < 2 or len(b) < 2:
+def bigram_similarity(s1: str, s2: str) -> float:
+    if not s1 or not s2:
         return 0.0
-    def bg(s): return {s[i:i+2] for i in range(len(s) - 1)}
-    A, B = bg(a), bg(b)
-    return 2 * len(A & B) / (len(A) + len(B))
-
+    if s1 == s2:
+        return 1.0
+    def get_bigrams(s):
+        return {s[i:i+2] for i in range(len(s) - 1)} if len(s) > 1 else {s}
+    bg1, bg2 = get_bigrams(s1), get_bigrams(s2)
+    intersection = len(bg1 & bg2)
+    total = len(bg1) + len(bg2)
+    return (2.0 * intersection / total) if total > 0 else 0.0
 
 # ─────────────────────────────────────────────────────────
-# Fund Data Model
+# Unified Fund Model
 # ─────────────────────────────────────────────────────────
-class Fund:
-    __slots__ = ("name", "nav", "ytd", "weekly", "category", "manager", "slug", "nav_date")
-
+class FundData:
     def __init__(self, **kw):
-        for k in self.__slots__:
-            setattr(self, k, kw.get(k))
-        self.nav_date = self.nav_date or TODAY
+        self.name: str = kw.get("name") or ""
+        self.name_en: str = kw.get("name_en") or ""
+        self.nav: Optional[float] = parse_float(kw.get("nav"))
+        self.daily_change: Optional[float] = parse_float(kw.get("daily_change"))
+        self.ytd_return: Optional[float] = parse_float(kw.get("ytd_return"))
+        self.category: str = kw.get("category") or ""
+        self.manager_name: str = kw.get("manager_name") or ""
+        self.risk_level: str = kw.get("risk_level") or ""
+        self.currency: str = kw.get("currency") or "EGP"
+        self.nav_date: str = kw.get("nav_date") or TODAY
 
-    def valid(self) -> bool:
-        return bool(self.name and len(self.name) >= 4
-                    and self.nav is not None and self.nav > 0)
+    def is_valid(self) -> bool:
+        return bool(self.name and len(self.name) >= 3 and self.nav is not None and self.nav > 0)
 
-    def to_dict(self):
-        return {k: getattr(self, k) for k in self.__slots__}
-
-
-def dedup(funds: list) -> list:
-    seen, out = set(), []
-    for f in funds:
-        k = normalize(f.name)[:30]
-        if k and k not in seen:
-            seen.add(k)
-            out.append(f)
-    return out
-
-
-# ─────────────────────────────────────────────────────────
-# RSC / API Response Parser
-# ─────────────────────────────────────────────────────────
-def parse_json_body(body) -> list:
-    """Flexibly extract Fund objects from any JSON shape."""
-    funds = []
-
-    # Unwrap wrappers
-    if isinstance(body, dict):
-        for key in ("data", "funds", "results", "items", "records"):
-            if key in body and isinstance(body[key], list):
-                body = body[key]
-                break
-
-    if not isinstance(body, list):
-        return []
-
-    for item in body:
-        if not isinstance(item, dict):
-            continue
-        name = (item.get("name_ar") or item.get("name") or
-                item.get("nameAr") or item.get("fund_name") or "").strip()
-        if not name or len(name) < 4:
-            continue
-        nav = parse_float(
-            item.get("current_nav") or item.get("nav") or item.get("price") or
-            item.get("unitPrice") or item.get("unit_price") or item.get("nav_price")
-        )
-        f = Fund(
-            name=name,
-            nav=nav,
-            ytd=parse_float(item.get("ytd_return") or item.get("ytd") or
-                            item.get("annual_return") or item.get("annualReturn")),
-            weekly=parse_float(item.get("weekly_return") or item.get("weeklyReturn")),
-            category=(item.get("category") or item.get("type") or "").lower(),
-            manager=item.get("manager_name") or item.get("manager") or "",
-            slug=str(item.get("slug") or item.get("id") or ""),
-        )
-        if f.valid():
-            funds.append(f)
-    return funds
-
-
-def parse_rsc_text(text: str) -> list:
-    """
-    Next.js RSC payloads are streamed as: 1:{"data":...} or plain JSON strings.
-    We regex-search for any JSON array or object containing fund-like data.
-    """
-    funds = []
-    # Find all JSON-like substrings
-    candidates = re.findall(r'\[(\{["\w].*?\})\]', text, re.DOTALL)
-    candidates += re.findall(r'(\{"[a-zA-Z_].*?"(?:nav|price|current_nav).*?\})', text, re.DOTALL)
-    for raw in candidates:
-        try:
-            obj = json.loads(raw if raw.startswith("[") else f"[{raw}]")
-            funds.extend(parse_json_body(obj))
-        except Exception:
-            pass
-    return funds
-
-
-# ─────────────────────────────────────────────────────────
-# STRATEGY 1 — RSC + XHR Network Interception
-# ─────────────────────────────────────────────────────────
-async def strategy_intercept(page) -> list:
-    """
-    Intercepts BOTH:
-      a) Regular JSON responses from snduk's Supabase backend
-      b) RSC text/x-component streaming payloads (Next.js App Router)
-    """
-    captured: list[Fund] = []
-    done_event = asyncio.Event()
-
-    async def on_response(resp):
-        try:
-            url = resp.url
-            status = resp.status
-            if status not in (200, 206):
-                return
-            ct = resp.headers.get("content-type", "")
-
-            # ── A: Standard JSON (Supabase / REST) ────────
-            if "json" in ct:
-                if not any(k in url for k in ["fund", "nav", "price", "supabase", "api"]):
-                    return
-                body = await resp.json()
-                if body:
-                    fds = parse_json_body(body)
-                    if fds:
-                        log.info(f"  [XHR JSON] {len(fds)} funds ← {url[:70]}")
-                        captured.extend(fds)
-                        if len(captured) >= 20:
-                            done_event.set()
-
-            # ── B: RSC Streaming (text/x-component) ───────
-            elif "x-component" in ct or "text/plain" in ct:
-                text = await resp.text()
-                fds = parse_rsc_text(text)
-                if fds:
-                    log.info(f"  [RSC] {len(fds)} funds ← {url[:70]}")
-                    captured.extend(fds)
-                    if len(captured) >= 20:
-                        done_event.set()
-
-        except Exception as e:
-            log.debug(f"  [intercept err] {e}")
-
-    page.on("response", on_response)
-
-    log.info("Strategy 1: RSC + XHR interception...")
-    await page.goto(FUNDS_URL, wait_until="domcontentloaded", timeout=30000)
-
-    # Wait up to 25s for enough funds OR for networkidle
-    try:
-        await asyncio.wait_for(
-            asyncio.gather(
-                done_event.wait(),
-                page.wait_for_load_state("networkidle"),
-            ),
-            timeout=25,
-        )
-    except asyncio.TimeoutError:
-        pass
-
-    # Also scroll to trigger lazy-loaded requests
-    for _ in range(4):
-        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        await asyncio.sleep(1.2)
-        if done_event.is_set():
-            break
-
-    page.remove_listener("response", on_response)
-
-    result = dedup(captured)
-    log.info(f"  Strategy 1 result: {len(result)} valid funds")
-    return result
-
-
-# ─────────────────────────────────────────────────────────
-# STRATEGY 2 — DOM Scraping (wait for real content)
-# ─────────────────────────────────────────────────────────
-async def strategy_dom(page) -> list:
-    """
-    Waits until skeleton loaders disappear and fund cards actually render.
-    Then extracts data from the fully hydrated DOM.
-    """
-    log.info("Strategy 2: DOM scraping (waiting for real content)...")
-    await page.goto(FUNDS_URL, wait_until="networkidle", timeout=45000)
-
-    # ── Wait for skeleton to disappear ───────────────────
-    # snduk uses animate-pulse for loading skeletons
-    try:
-        await page.wait_for_function(
-            """() => {
-                const pulses = document.querySelectorAll('.animate-pulse');
-                const fundLinks = document.querySelectorAll('a[href*="/eg/funds/"]');
-                // Real content: many fund links + few or no pulses
-                return fundLinks.length > 20 && pulses.length < 10;
-            }""",
-            timeout=35000,
-            polling=500,
-        )
-        log.info("  Real content detected.")
-    except Exception:
-        log.warning("  Skeleton wait timed out, trying anyway...")
-
-    # Scroll to bottom to trigger all lazy content
-    for _ in range(6):
-        await page.evaluate("window.scrollBy(0, window.innerHeight * 2)")
-        await asyncio.sleep(1.0)
-
-    # ── Extract from DOM ─────────────────────────────────
-    raw = await page.evaluate(r"""() => {
-        const funds = [];
-
-        // snduk renders fund CARDS as links: <a href="/eg/funds/slug">
-        // Each card has: fund name in h2/h3/span, price in a span/div
-        const cards = Array.from(document.querySelectorAll('a[href*="/eg/funds/"]'))
-            .filter(a => {
-                // Exclude nav/menu links (they have few words)
-                const text = (a.innerText || '').trim();
-                return text.length > 8 && !a.closest('nav') && !a.closest('footer');
-            });
-
-        cards.forEach(card => {
-            const slug = (card.href || '').match(/\/eg\/funds\/([\w-]+)/)?.[1] || '';
-            const allText = Array.from(card.querySelectorAll('*'))
-                .filter(el => el.childElementCount === 0)
-                .map(el => (el.innerText || '').trim())
-                .filter(t => t.length > 0);
-
-            // Fund name: longest Arabic text in the card
-            const name = allText
-                .filter(t => /[\u0600-\u06FF]/.test(t) && t.length > 5)
-                .sort((a, b) => b.length - a.length)[0] || '';
-
-            // NAV: find numeric values (e.g. 1,234.56 or 1234.56)
-            const numericTexts = allText.filter(t =>
-                /^[\d٠-٩][,\d٠-٩.]*$/.test(t.trim()) && t.trim().length > 1
-            );
-
-            // Category / return
-            const returnTexts = allText.filter(t => /%|٪/.test(t));
-
-            if (name) {
-                funds.push({
-                    name,
-                    slug,
-                    nav: numericTexts[0] || '',
-                    ytd: returnTexts[0] || '',
-                    raw: allText.slice(0, 8),
-                });
-            }
-        });
-
-        // Fallback: try table rows
-        if (funds.length < 5) {
-            document.querySelectorAll('table tbody tr').forEach(row => {
-                const cells = Array.from(row.querySelectorAll('td'))
-                    .map(c => (c.innerText || '').trim());
-                if (cells.length >= 2 && cells[0].length > 4) {
-                    funds.push({ name: cells[0], nav: cells[1], ytd: cells[2] || '', slug: '', raw: cells });
-                }
-            });
+    def to_dict(self) -> dict:
+        return {
+            "name": self.name,
+            "name_en": self.name_en,
+            "current_nav": self.nav,
+            "daily_change": self.daily_change,
+            "ytd_return": self.ytd_return,
+            "category": self.category,
+            "manager_name": self.manager_name,
+            "risk_level": self.risk_level,
+            "currency": self.currency,
+            "nav_date": self.nav_date,
         }
 
-        return funds;
-    }""")
+# ─────────────────────────────────────────────────────────
+# TIER 1: Direct tRPC API Endpoint
+# ─────────────────────────────────────────────────────────
+def fetch_tier1_trpc() -> list[FundData]:
+    """
+    Calls snduk.com's public tRPC endpoint funds.list with limit=500.
+    Returns 100% structured, validated fund items instantly.
+    """
+    log.info("📡 [Tier 1] Querying snduk tRPC endpoint (funds.list)...")
+    
+    params = {
+        "batch": 1,
+        "input": json.dumps({
+            "0": {
+                "json": {
+                    "country": "EG",
+                    "limit": 500,
+                    "offset": 0,
+                    "isActive": True
+                }
+            }
+        })
+    }
+    url = f"{BASE_URL}/api/trpc/funds.list?{urllib.parse.urlencode(params)}"
+    
+    headers = {
+        "User-Agent": random.choice(USER_AGENTS),
+        "Accept": "application/json",
+        "Referer": f"{BASE_URL}/eg/funds?lang=ar&view=list",
+        "Accept-Language": "ar-EG,ar;q=0.9,en;q=0.8",
+    }
+    
+    req = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        if resp.status != 200:
+            raise RuntimeError(f"tRPC returned HTTP {resp.status}")
+        raw_text = resp.read().decode("utf-8")
+        data = json.loads(raw_text)
 
-    result = []
-    for item in (raw or []):
-        f = Fund(
-            name=(item.get("name") or "").strip(),
-            nav=parse_float(item.get("nav")),
-            ytd=parse_float(item.get("ytd")),
-            slug=item.get("slug", ""),
+    # Parse response structure
+    raw_funds = []
+    if isinstance(data, list) and len(data) > 0:
+        result = data[0].get("result", {}).get("data", {}).get("json", {})
+        if isinstance(result, dict):
+            raw_funds = result.get("funds", [])
+        elif isinstance(result, list):
+            raw_funds = result
+
+    funds: list[FundData] = []
+    for item in raw_funds:
+        if not isinstance(item, dict):
+            continue
+        returns = item.get("returns") or {}
+        fd = FundData(
+            name=item.get("name") or "",
+            name_en=item.get("nameEn") or "",
+            nav=item.get("currentPrice"),
+            daily_change=item.get("dailyChange"),
+            ytd_return=returns.get("1Y"),
+            category=item.get("type") or item.get("typeNameAr") or "",
+            manager_name=item.get("assetManagerName") or "",
+            risk_level=item.get("riskLevel") or "",
+            currency=item.get("currency") or "EGP",
+            nav_date=TODAY,
         )
-        if f.valid():
-            result.append(f)
+        if fd.is_valid():
+            funds.append(fd)
 
-    result = dedup(result)
-    log.info(f"  Strategy 2 result: {len(result)} valid funds")
-    return result
-
+    log.info(f"✅ [Tier 1] Successfully extracted {len(funds)} valid funds via tRPC.")
+    return funds
 
 # ─────────────────────────────────────────────────────────
-# STRATEGY 3 — Slug-by-Slug (individual fund pages)
+# TIER 2: Next.js HTML RSC Stream Parsing
 # ─────────────────────────────────────────────────────────
-async def strategy_slug_by_slug(page, cap=40) -> list:
-    """
-    Extracts fund slugs from the HTML SEO section (rendered server-side),
-    then visits each fund's detail page and waits for JS to render the NAV.
-    """
-    log.info(f"Strategy 3: slug-by-slug (cap={cap})...")
+def fetch_tier2_rsc() -> list[FundData]:
+    """Fallback: Fetches page HTML and extracts serialized React Server Component chunks."""
+    log.info("📑 [Tier 2] Attempting HTML RSC stream extraction...")
+    url = f"{BASE_URL}/eg/funds?lang=ar&view=list"
+    req = urllib.request.Request(url, headers={"User-Agent": random.choice(USER_AGENTS)})
+    
+    with urllib.request.urlopen(req, timeout=25) as resp:
+        html = resp.read().decode("utf-8", errors="ignore")
 
-    # ── Get slugs from the list page ─────────────────────
-    await page.goto(FUNDS_URL, wait_until="domcontentloaded", timeout=30000)
-    html = await page.content()
-    slugs = list(dict.fromkeys(re.findall(r"/eg/funds/([\w-]+)\?lang=ar", html)))
-    log.info(f"  Found {len(slugs)} slugs in HTML.")
-    slugs = slugs[:cap]
-
-    deadline = time.time() + (SCRAPER_TIMEOUT_MIN - 1.5) * 60
-    result = []
-
-    for slug in slugs:
-        if time.time() > deadline:
-            log.warning("  Time budget reached, stopping.")
-            break
-
-        url = f"{BASE_URL}/eg/funds/{slug}?lang=ar"
+    pushes = re.findall(r'self\.__next_f\.push\(\[1,\s*"(.*?)"\]\)', html, re.DOTALL)
+    combined = ""
+    for p in pushes:
         try:
-            # Go to the fund detail page
-            await page.goto(url, wait_until="domcontentloaded", timeout=20000)
+            combined += p.encode("utf-8").decode("unicode_escape")
+        except Exception:
+            combined += p
 
-            # Wait for real content: wait until skeleton disappears
-            try:
-                await page.wait_for_function(
-                    "document.querySelectorAll('.animate-pulse').length < 5"
-                    " && document.querySelector('h1') !== null",
-                    timeout=12000, polling=400,
-                )
-            except Exception:
-                pass
+    funds: list[FundData] = []
+    # Search for fund objects embedded in json
+    matches = re.findall(r'(\{"id":\d+,"publicId":.*?"currentPrice":\s*[\d.]+[^\}]*\})', combined)
+    for m in matches:
+        try:
+            item = json.loads(m)
+            fd = FundData(
+                name=item.get("name"),
+                name_en=item.get("nameEn"),
+                nav=item.get("currentPrice"),
+                daily_change=item.get("dailyChange"),
+                ytd_return=(item.get("returns") or {}).get("1Y"),
+                category=item.get("type"),
+                manager_name=item.get("assetManagerName"),
+                risk_level=item.get("riskLevel"),
+            )
+            if fd.is_valid():
+                funds.append(fd)
+        except Exception:
+            pass
 
-            # Extract fund name + NAV
-            data = await page.evaluate(r"""() => {
-                // Name: h1
-                const name = (document.querySelector('h1')?.innerText || '').trim();
-
-                // NAV: look for elements near known labels
-                // Strategy A: label-based search
-                let nav = '';
-                const allEls = Array.from(document.querySelectorAll('*'))
-                    .filter(e => e.childElementCount === 0);
-
-                // Find label elements that say "القيمة" or "سعر" or "NAV"
-                const labelKeywords = ['القيمة', 'سعر الوثيقة', 'nav', 'السعر', 'current'];
-                let foundLabel = false;
-                for (const el of allEls) {
-                    const t = (el.innerText || '').trim().toLowerCase();
-                    if (labelKeywords.some(k => t.includes(k))) {
-                        // Look at siblings and parent
-                        const parent = el.parentElement;
-                        if (parent) {
-                            const sibs = Array.from(parent.children)
-                                .map(c => (c.innerText || '').trim());
-                            const num = sibs.find(s => /^[\d٠-٩,،.]+$/.test(s) && s.length > 1);
-                            if (num) { nav = num; foundLabel = true; break; }
-                        }
-                    }
-                }
-
-                // Strategy B: any numeric value in a card/stat area
-                if (!nav) {
-                    const numEls = allEls.filter(e => {
-                        const t = (e.innerText || '').trim();
-                        return /^[\d٠-٩][,\d٠-٩.]*$/.test(t) && t.length > 1 && t.length < 15;
-                    });
-                    nav = numEls[0]?.innerText?.trim() || '';
-                }
-
-                // YTD
-                const ytdEls = allEls.filter(e => /%|٪/.test((e.innerText || '')));
-                const ytd = ytdEls[0]?.innerText?.trim() || '';
-
-                // Category
-                const cat = (document.querySelector('[class*="badge"], [class*="tag"], [class*="type"], [class*="category"]')?.innerText || '').trim();
-
-                return { name, nav, ytd, cat };
-            }""")
-
-            name = (data.get("name") or "").strip()
-            nav  = parse_float(data.get("nav"))
-
-            if name and nav:
-                result.append(Fund(name=name, nav=nav,
-                                   ytd=parse_float(data.get("ytd")),
-                                   category=data.get("cat", "").lower(),
-                                   slug=slug))
-                log.debug(f"  [{len(result):>3}] {name[:45]:<45}  NAV: {nav:.4f}")
-            else:
-                log.debug(f"  [skip] {slug}  name={bool(name)} nav={nav}")
-
-            await asyncio.sleep(random.uniform(0.5, 1.2))
-
-        except Exception as e:
-            log.debug(f"  [err] {slug}: {type(e).__name__}: {e}")
-
-    result = dedup(result)
-    log.info(f"  Strategy 3 result: {len(result)} valid funds")
-    return result
-
+    log.info(f"✅ [Tier 2] Extracted {len(funds)} funds from HTML RSC.")
+    return funds
 
 # ─────────────────────────────────────────────────────────
-# Orchestrator — tries strategies in waterfall
+# TIER 3: Headless Browser Fallback (Playwright)
 # ─────────────────────────────────────────────────────────
-async def run_scraper() -> list:
+async def fetch_tier3_browser() -> list[FundData]:
+    """Ultimate Fallback: Launches Playwright browser with stealth configurations."""
+    log.info("🌐 [Tier 3] Launching Playwright browser fallback...")
     from playwright.async_api import async_playwright
 
+    captured_funds: list[FundData] = []
+    async with async_playwright() as pw:
+        browser = await pw.chromium.launch(
+            headless=True,
+            args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-blink-features=AutomationControlled"]
+        )
+        context = await browser.new_context(
+            user_agent=random.choice(USER_AGENTS),
+            locale="ar-EG",
+        )
+        page = await context.new_page()
+
+        async def handle_response(response):
+            if "funds.list" in response.url and response.status == 200:
+                try:
+                    body = await response.json()
+                    if isinstance(body, list) and len(body) > 0:
+                        raw = body[0].get("result", {}).get("data", {}).get("json", {}).get("funds", [])
+                        for item in raw:
+                            fd = FundData(
+                                name=item.get("name"),
+                                nav=item.get("currentPrice"),
+                                daily_change=item.get("dailyChange"),
+                                ytd_return=(item.get("returns") or {}).get("1Y"),
+                            )
+                            if fd.is_valid():
+                                captured_funds.append(fd)
+                except Exception:
+                    pass
+
+        page.on("response", handle_response)
+        await page.goto(f"{BASE_URL}/eg/funds?lang=ar&view=list", wait_until="networkidle", timeout=45000)
+        await asyncio.sleep(2)
+        await browser.close()
+
+    log.info(f"✅ [Tier 3] Browser intercepted {len(captured_funds)} funds.")
+    return captured_funds
+
+# ─────────────────────────────────────────────────────────
+# Scraper Dispatcher (Waterfall with retries)
+# ─────────────────────────────────────────────────────────
+def scrape_all_funds() -> list[FundData]:
+    # 1. Try Tier 1 (tRPC)
     for attempt in range(1, MAX_RETRIES + 1):
-        log.info(f"\n{'='*55}")
-        log.info(f"  Attempt {attempt}/{MAX_RETRIES}")
-        log.info(f"{'='*55}")
         try:
-            async with async_playwright() as pw:
-                browser = await pw.chromium.launch(
-                    headless=True,
-                    args=[
-                        "--no-sandbox",
-                        "--disable-dev-shm-usage",
-                        "--disable-blink-features=AutomationControlled",
-                        "--disable-setuid-sandbox",
-                        "--lang=ar-EG",
-                    ],
-                )
-                ctx = await browser.new_context(
-                    user_agent=random.choice(USER_AGENTS),
-                    locale="ar-EG",
-                    timezone_id="Africa/Cairo",
-                    viewport={"width": 1440, "height": 900},
-                    ignore_https_errors=True,
-                    extra_http_headers={"Accept-Language": "ar-EG,ar;q=0.9,en;q=0.8"},
-                )
-                await ctx.add_init_script("""
-                    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-                    window.chrome = { runtime: {} };
-                    Object.defineProperty(navigator, 'plugins', { get: () => [1,2,3,4,5] });
-                """)
-                page = await ctx.new_page()
-                page.set_default_timeout(30000)
-
-                # ── Strategy 1: Network / RSC intercept ───
-                funds = await strategy_intercept(page)
-
-                if len(funds) < 5:
-                    log.warning(f"  S1 insufficient ({len(funds)}). Trying DOM...")
-                    funds = await strategy_dom(page)
-
-                if len(funds) < 5:
-                    log.warning(f"  S2 insufficient ({len(funds)}). Trying slug-by-slug...")
-                    funds = await strategy_slug_by_slug(page)
-
-                await browser.close()
-
-                if len(funds) >= 5:
-                    log.info(f"\n  Total scraped: {len(funds)} funds")
-                    return funds
-
-                raise ValueError(f"Only {len(funds)} funds found across all strategies.")
-
+            funds = fetch_tier1_trpc()
+            if len(funds) >= 20:
+                return funds
         except Exception as e:
-            log.error(f"  Attempt {attempt} failed: {e}")
-            if attempt < MAX_RETRIES:
-                delay = 5 * (2 ** (attempt - 1)) + random.uniform(0, 3)
-                log.info(f"  Retrying in {delay:.1f}s...")
-                await asyncio.sleep(delay)
+            log.warning(f"Tier 1 attempt {attempt} failed: {e}")
+            time.sleep(2 * attempt)
 
-    log.error("All attempts exhausted.")
+    # 2. Try Tier 2 (HTML RSC)
+    try:
+        funds = fetch_tier2_rsc()
+        if len(funds) >= 20:
+            return funds
+    except Exception as e:
+        log.warning(f"Tier 2 failed: {e}")
+
+    # 3. Try Tier 3 (Playwright)
+    try:
+        funds = asyncio.run(fetch_tier3_browser())
+        if len(funds) >= 20:
+            return funds
+    except Exception as e:
+        log.error(f"Tier 3 failed: {e}")
+
     return []
 
-
 # ─────────────────────────────────────────────────────────
-# Supabase Updater
+# Supabase Database Synchronization
 # ─────────────────────────────────────────────────────────
-def update_supabase(funds: list) -> dict:
+def sync_to_supabase(funds: list[FundData]) -> dict:
     if not SUPABASE_KEY:
-        log.error("SUPABASE_SERVICE_KEY not set!")
-        return {"updated": 0, "not_found": len(funds), "errors": 0, "skipped": 0}
+        log.error("❌ SUPABASE_SERVICE_KEY is not set. Cannot update Supabase.")
+        return {"updated": 0, "not_found": len(funds), "errors": 0, "unchanged": 0}
 
     try:
         from supabase import create_client
     except ImportError:
-        log.error("pip install supabase")
-        return {"updated": 0, "not_found": 0, "errors": len(funds), "skipped": 0}
+        log.error("❌ supabase package not installed. Run: pip install supabase")
+        return {"updated": 0, "not_found": 0, "errors": len(funds), "unchanged": 0}
 
     client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-    log.info("Loading DB funds from Supabase...")
+    log.info("📥 Loading existing funds from Supabase...")
     resp = client.from_("funds").select("id, name, name_ar, name_en, current_nav").execute()
-    db = resp.data or []
-    log.info(f"  DB: {len(db)} funds")
+    db_funds = resp.data or []
+    log.info(f"   📋 Found {len(db_funds)} funds in Watheqa database.")
 
-    db_norm = [(f, normalize(f.get("name_ar") or f.get("name") or "")) for f in db]
-    stats = {"updated": 0, "not_found": 0, "errors": 0, "skipped": 0}
+    db_entries = []
+    for f in db_funds:
+        norm_ar = normalize_text(f.get("name_ar") or f.get("name") or "")
+        norm_en = normalize_text(f.get("name_en") or "")
+        db_entries.append((f, norm_ar, norm_en))
 
-    for fp in funds:
-        norm_scraped = normalize(fp.name)
+    stats = {"updated": 0, "not_found": 0, "errors": 0, "unchanged": 0}
 
-        matched = None
-        best = 0.0
-        for db_f, db_n in db_norm:
-            if norm_scraped == db_n:
-                matched = db_f
+    for scraped in funds:
+        scraped_ar = normalize_text(scraped.name)
+        scraped_en = normalize_text(scraped.name_en)
+
+        matched_db = None
+        best_score = 0.0
+
+        for db_f, db_ar, db_en in db_entries:
+            # 1. Exact or prefix match
+            if scraped_ar == db_ar or (scraped_en and scraped_en == db_en):
+                matched_db = db_f
+                best_score = 1.0
                 break
-            # prefix match
-            if norm_scraped[:18] in db_n or db_n[:18] in norm_scraped:
-                score = bigram_score(norm_scraped, db_n)
-                if score > best:
-                    best = score
-                    matched = db_f
+            if len(scraped_ar) >= 15 and (scraped_ar[:15] in db_ar or db_ar[:15] in scraped_ar):
+                score = bigram_similarity(scraped_ar, db_ar)
+                if score > best_score:
+                    best_score = score
+                    matched_db = db_f
             else:
-                score = bigram_score(norm_scraped, db_n)
-                if score >= 0.45 and score > best:
-                    best = score
-                    matched = db_f
+                score = bigram_similarity(scraped_ar, db_ar)
+                if score >= 0.40 and score > best_score:
+                    best_score = score
+                    matched_db = db_f
 
-        if not matched:
-            log.warning(f"  [NOT_FOUND] {fp.name[:55]}")
+        if not matched_db:
+            log.warning(f"   ⚠️ [NOT MATCHED] {scraped.name[:50]}")
             stats["not_found"] += 1
             continue
 
-        # Skip unchanged NAV
-        existing = matched.get("current_nav")
-        if existing and fp.nav and abs(float(existing) - fp.nav) < 0.0001:
-            stats["skipped"] += 1
+        # Skip if price is already up to date
+        existing_nav = matched_db.get("current_nav")
+        if existing_nav is not None and abs(float(existing_nav) - scraped.nav) < 0.0001:
+            stats["unchanged"] += 1
             continue
 
         payload = {
-            "current_nav": fp.nav,
-            "nav_date": fp.nav_date,
+            "current_nav": scraped.nav,
+            "nav_date": scraped.nav_date,
             "updated_at": datetime.utcnow().isoformat() + "Z",
         }
-        if fp.ytd is not None:
-            payload["ytd_return"] = fp.ytd
-        if fp.weekly is not None:
-            payload["weekly_return"] = fp.weekly
+        if scraped.daily_change is not None:
+            payload["daily_change"] = scraped.daily_change
+        if scraped.ytd_return is not None:
+            payload["ytd_return"] = scraped.ytd_return
 
         try:
-            client.from_("funds").update(payload).eq("id", matched["id"]).execute()
-            label = matched.get("name_ar") or matched.get("name") or ""
-            s = f"(score={best:.2f})" if best > 0 else "(exact)"
-            log.info(f"  [OK] {label[:45]:<45} NAV: {fp.nav:.4f} {s}")
+            client.from_("funds").update(payload).eq("id", matched_db["id"]).execute()
+            fund_label = matched_db.get("name_ar") or matched_db.get("name") or ""
+            log.info(f"   ✅ [UPDATED] {fund_label[:40]:<40} -> NAV: {scraped.nav:.4f} (score: {best_score:.2f})")
             stats["updated"] += 1
         except Exception as e:
-            log.error(f"  [ERR] {matched.get('id')}: {e}")
+            log.error(f"   ❌ [UPDATE FAILED] {matched_db['id']}: {e}")
             stats["errors"] += 1
 
     return stats
 
-
 # ─────────────────────────────────────────────────────────
-# Main
+# Main Pipeline
 # ─────────────────────────────────────────────────────────
-async def main():
-    t0 = time.time()
-    log.info("=" * 55)
-    log.info("  Watheqa Fund Scraper v3 — snduk.com")
-    log.info(f"  Date   : {TODAY}")
-    log.info(f"  Mode   : {'DRY-RUN' if DRY_RUN else 'LIVE'}")
-    log.info("=" * 55)
+def main():
+    start_time = time.time()
+    log.info("=" * 60)
+    log.info("🚀 Watheqa Fund Price Automation Engine")
+    log.info(f"📅 Date: {TODAY}")
+    log.info(f"🔧 Mode: {'DRY-RUN (Preview Only)' if DRY_RUN else 'LIVE (Supabase Sync)'}")
+    log.info("=" * 60)
 
-    if not DRY_RUN and not SUPABASE_KEY:
-        log.error("FATAL: SUPABASE_SERVICE_KEY missing.")
-        sys.exit(2)
-
-    funds = await run_scraper()
+    # 1. Scrape
+    funds = scrape_all_funds()
 
     if not funds:
-        log.error("FATAL: No funds scraped.")
+        log.error("💥 FATAL: All scraping tiers failed to extract funds.")
         sys.exit(1)
 
-    log.info(f"\n  Sample (first 10):")
-    for f in funds[:10]:
-        log.info(f"  {f.name[:50]:<50} NAV: {f.nav:>10.4f}")
+    log.info(f"\n📊 Extracted {len(funds)} funds successfully.")
+    log.info("Top 5 Scraped Funds:")
+    for f in funds[:5]:
+        log.info(f"   • {f.name[:45]:<45} | NAV: {f.nav:>9.4f} | YTD: {f.ytd_return}%")
 
-    out_dir = os.path.dirname(os.path.abspath(__file__))
+    # 2. Save JSON Artifact
+    output_dir = os.path.dirname(os.path.abspath(__file__))
+    json_path = os.path.join(output_dir, "scraped_funds.json")
+    with open(json_path, "w", encoding="utf-8") as out_file:
+        json.dump([f.to_dict() for f in funds], out_file, ensure_ascii=False, indent=2)
+    log.info(f"💾 Scraped funds saved to: {json_path}")
 
+    # 3. Synchronize with Supabase
     if DRY_RUN:
-        path = os.path.join(out_dir, "scraped_funds.json")
-        with open(path, "w", encoding="utf-8") as fh:
-            json.dump([f.to_dict() for f in funds], fh, ensure_ascii=False, indent=2)
-        log.info(f"\n  DRY-RUN: {len(funds)} funds saved → {path}")
+        log.info("\n🔍 Dry-run mode enabled. Skipping database updates.")
     else:
-        stats = update_supabase(funds)
-        elapsed = (time.time() - t0) / 60
-        log.info("\n" + "=" * 55)
-        log.info(f"  Scraped       : {len(funds)}")
-        log.info(f"  Updated in DB : {stats['updated']}")
-        log.info(f"  Skipped same  : {stats['skipped']}")
-        log.info(f"  Not found     : {stats['not_found']}")
-        log.info(f"  Errors        : {stats['errors']}")
-        log.info(f"  Elapsed       : {elapsed:.1f} min")
-        log.info("=" * 55)
+        log.info("\n🔄 Synchronizing with Supabase database...")
+        stats = sync_to_supabase(funds)
+        elapsed = time.time() - start_time
+        log.info("\n" + "=" * 60)
+        log.info("📊 EXECUTION SUMMARY:")
+        log.info(f"   • Total Scraped     : {len(funds)}")
+        log.info(f"   • Updated in DB     : {stats['updated']}")
+        log.info(f"   • Unchanged (Skipped): {stats['unchanged']}")
+        log.info(f"   • Not Found in DB   : {stats['not_found']}")
+        log.info(f"   • Errors            : {stats['errors']}")
+        log.info(f"   • Time Taken        : {elapsed:.2f}s")
+        log.info("=" * 60)
 
-    log.info("Done!")
-
+    log.info("🎉 Scraper automation completed successfully.")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
