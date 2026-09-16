@@ -1,0 +1,78 @@
+name: Watheqa Fund Prices Auto-Update
+
+on:
+  schedule:
+    # كل يوم الساعة 6:00 UTC = 8:00 صباحاً بتوقيت القاهرة (UTC+2)
+    - cron: '0 6 * * 1-5'   # الاثنين للجمعة (أيام عمل البورصة المصرية)
+  
+  # يسمح بالتشغيل اليدوي من GitHub UI في أي وقت
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry Run (no Supabase update)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+jobs:
+  scrape-and-update:
+    name: Scrape iinvest.org.eg & Update Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # 1. استنزال الكود
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. تثبيت Python 3.12
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: scripts/scraper/requirements.txt
+
+      # 3. تثبيت المكتبات
+      - name: Install Python Dependencies
+        run: pip install -r scripts/scraper/requirements.txt
+
+      # 4. تثبيت Chromium لـ Playwright
+      - name: Install Playwright Chromium
+        run: python -m playwright install chromium --with-deps
+
+      # 5. تشغيل السكربت
+      - name: Run Fund Price Scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "Running in DRY-RUN mode..."
+            python scripts/scraper/iinvest_scraper.py --dry-run
+          else
+            echo "Running in LIVE mode - will update Supabase..."
+            python scripts/scraper/iinvest_scraper.py
+          fi
+
+      # 6. رفع ملف debug_page.html كـ Artifact للتشخيص عند الحاجة
+      - name: Upload Debug HTML (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-page-html
+          path: scripts/scraper/debug_page.html
+          retention-days: 7
+
+      # 7. رفع scraped_funds.json عند التشغيل اليدوي
+      - name: Upload Scraped Funds JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraped-funds-${{ github.run_number }}
+          path: scripts/scraper/scraped_funds.json
+          retention-days: 30
+          if-no-files-found: ignore
