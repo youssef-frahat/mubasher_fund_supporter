@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/supabase/supabase_service.dart';
 import '../models/platform_feature.dart';
 import '../models/fund_model.dart';
+import '../sources/official_egyptian_funds_data.dart';
 
 abstract class FundsRepository {
   Future<List<FundModel>> getFunds();
@@ -22,7 +23,7 @@ class SupabaseFundsRepository implements FundsRepository {
   Future<List<FundModel>> getFunds() async {
     final client = SupabaseService.client;
     if (client == null) {
-      return _getMockFunds();
+      return OfficialEgyptianFundsData.allFunds;
     }
 
     try {
@@ -31,15 +32,15 @@ class SupabaseFundsRepository implements FundsRepository {
           .select()
           .order('name', ascending: true)
           .timeout(const Duration(seconds: 4));
-      if (response.isNotEmpty) {
+      if (response.isNotEmpty && response.length >= 10) {
         return response
             .map((item) => FundModel.fromMap(item))
             .toList();
       }
-      return _getMockFunds();
+      return OfficialEgyptianFundsData.allFunds;
     } catch (e) {
       debugPrint('Error fetching funds from Supabase: $e');
-      return _getMockFunds();
+      return OfficialEgyptianFundsData.allFunds;
     }
   }
 
@@ -158,110 +159,6 @@ class SupabaseFundsRepository implements FundsRepository {
   }
 
   List<FundModel> _getMockFunds() {
-    return [
-      FundModel(
-        id: '1',
-        name: 'صندوق مباشر للأسهم المصرية (نمو)',
-        nameAr: 'صندوق مباشر للأسهم المصرية (نمو)',
-        nameEn: 'Mubasher Egyptian Equity Fund (Growth)',
-        managerName: 'مباشر كابيتال',
-        currentNav: 185.50,
-        ytdReturn: 24.80,
-        dailyChange: 1.25,
-        riskLevel: 'High',
-        category: 'Equity',
-        isRecommended: true,
-        isTopPerforming: true,
-      ),
-      FundModel(
-        id: '2',
-        name: 'صندوق أزيموت النقدية اليومية',
-        nameAr: 'صندوق أزيموت النقدية اليومية',
-        nameEn: 'Azimut Daily Liquidity Fund',
-        managerName: 'أزيموت مصر',
-        currentNav: 12.34,
-        ytdReturn: 18.50,
-        dailyChange: 0.05,
-        riskLevel: 'Low',
-        category: 'MoneyMarket',
-        isRecommended: true,
-      ),
-      FundModel(
-        id: '3',
-        name: 'صندوق أزيموت الذهب (AZG)',
-        nameAr: 'صندوق أزيموت الذهب (AZG)',
-        nameEn: 'Azimut Gold Fund (AZG)',
-        managerName: 'أزيموت مصر',
-        currentNav: 48.75,
-        ytdReturn: 32.10,
-        dailyChange: -0.40,
-        riskLevel: 'Medium',
-        category: 'Gold',
-        isRecommended: true,
-      ),
-      FundModel(
-        id: '4',
-        name: 'صندوق سي آي كابيتال للأسهم (CI Capital Equity)',
-        nameAr: 'صندوق سي آي كابيتال للأسهم',
-        nameEn: 'CI Capital Equity Fund',
-        managerName: 'سي آي كابيتال',
-        currentNav: 210.00,
-        ytdReturn: 21.40,
-        dailyChange: 0.80,
-        riskLevel: 'Medium',
-        category: 'Equity',
-        isSponsored: true,
-      ),
-      FundModel(
-        id: '5',
-        name: 'صندوق البنك التجاري الدولي (CIB ثواقب)',
-        nameAr: 'صندوق البنك التجاري الدولي (CIB)',
-        nameEn: 'CIB Thawaqeb Fund',
-        managerName: 'CIB مصر',
-        currentNav: 145.20,
-        ytdReturn: 19.80,
-        dailyChange: 0.35,
-        riskLevel: 'Medium',
-        category: 'Equity',
-      ),
-      FundModel(
-        id: '6',
-        name: 'صندوق فيصل الإسلامي للأسهم',
-        nameAr: 'صندوق فيصل الإسلامي للأسهم',
-        nameEn: 'Faisal Islamic Equity Fund',
-        managerName: 'بنك فيصل',
-        currentNav: 98.40,
-        ytdReturn: 22.10,
-        dailyChange: 0.60,
-        riskLevel: 'Medium',
-        category: 'Islamic',
-        isRecommended: true,
-      ),
-      FundModel(
-        id: '7',
-        name: 'صندوق بلتون للادخار بالجنيه (Beltone)',
-        nameAr: 'صندوق بلتون للادخار بالجنيه',
-        nameEn: 'Beltone EGP Savings Fund',
-        managerName: 'بلتون المالية',
-        currentNav: 15.80,
-        ytdReturn: 17.90,
-        dailyChange: 0.02,
-        riskLevel: 'Low',
-        category: 'MoneyMarket',
-      ),
-      FundModel(
-        id: '8',
-        name: 'صندوق هيرميس للنمو والتوزيع (EFG Hermes)',
-        nameAr: 'صندوق هيرميس للنمو والتوزيع',
-        nameEn: 'EFG Hermes Growth Fund',
-        managerName: 'إي إف جي هيرميس',
-        currentNav: 310.50,
-        ytdReturn: 26.50,
-        dailyChange: 1.10,
-        riskLevel: 'High',
-        category: 'Equity',
-        isSponsored: true,
-      ),
-    ];
+    return OfficialEgyptianFundsData.allFunds;
   }
 }

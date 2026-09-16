@@ -10,6 +10,7 @@ import '../../../../core/services/wishlist_service.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../home/data/models/platform_feature.dart';
 import '../../../home/data/models/fund_model.dart';
+import '../../../home/data/sources/official_egyptian_funds_data.dart';
 import '../../../portfolio/data/models/portfolio_item_model.dart';
 import '../../../portfolio/presentation/cubit/portfolio_cubit.dart';
 import '../widgets/nav_chart_widget.dart';
@@ -28,8 +29,27 @@ class FundDetailsScreen extends StatelessWidget {
     final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
 
+    final resolvedFund = fundModel ??
+        OfficialEgyptianFundsData.allFunds.firstWhere(
+          (f) => f.id == fund.id || f.name == fund.title || (f.nameEn != null && f.nameEn == fund.title),
+          orElse: () => FundModel(
+            id: fund.id ?? 'unknown',
+            name: fund.title,
+            managerName: fund.subtitle.split('|').first.trim(),
+            currentNav: 135.0,
+            ytdReturn: 24.5,
+            weeklyReturn: 0.48,
+            fourWeeksReturn: 1.9,
+            last12mReturn: 22.8,
+            dailyChange: 0.07,
+            riskLevel: 'Low',
+            category: 'MoneyMarket',
+            initialValue: 100.0,
+          ),
+        );
+
     final isAr = context.isArabic;
-    final displayTitle = fundModel?.localizedName(context) ?? fund.title;
+    final displayTitle = resolvedFund.localizedName(context);
 
     return Scaffold(
       backgroundColor: bg,
@@ -53,7 +73,7 @@ class FundDetailsScreen extends StatelessWidget {
           ValueListenableBuilder<Set<String>>(
             valueListenable: sl<WishlistService>().savedFundIds,
             builder: (context, savedIds, _) {
-              final fundId = fund.id ?? '';
+              final fundId = resolvedFund.id;
               final isSaved = savedIds.contains(fundId);
               return IconButton(
                 tooltip: context.tr('addToWishlist'),
@@ -88,7 +108,11 @@ class FundDetailsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Fund Header Card with NAV Date Badge
+            // 1. Shariah Compliance Prominent Status Card
+            _buildShariahStatusCard(context, resolvedFund, surface, border),
+            SizedBox(height: 14.h),
+
+            // 2. Fund Header Card with NAV Date & Category
             Container(
               padding: EdgeInsets.all(16.r),
               decoration: BoxDecoration(
@@ -116,17 +140,41 @@ class FundDetailsScreen extends StatelessWidget {
                               displayTitle,
                               style: TextStyle(
                                 color: textPrimary,
-                                fontSize: 16.sp,
+                                fontSize: 15.sp,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(height: 2.h),
-                            Text(
-                              fund.subtitle,
-                              style: TextStyle(
-                                color: textSecondary,
-                                fontSize: 12.sp,
-                              ),
+                            SizedBox(height: 4.h),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(6.r),
+                                  ),
+                                  child: Text(
+                                    resolvedFund.localizedCategory(context),
+                                    style: TextStyle(
+                                      color: AppColors.primary,
+                                      fontSize: 10.5.sp,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 8.w),
+                                Expanded(
+                                  child: Text(
+                                    resolvedFund.managerName,
+                                    style: TextStyle(
+                                      color: textSecondary,
+                                      fontSize: 11.sp,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -137,7 +185,7 @@ class FundDetailsScreen extends StatelessWidget {
                   Divider(color: border),
                   SizedBox(height: 8.h),
 
-                  // NAV Last Updated Date Badge
+                  // NAV Last Updated Date Badge & Return
                   Wrap(
                     alignment: WrapAlignment.spaceBetween,
                     crossAxisAlignment: WrapCrossAlignment.center,
@@ -174,10 +222,10 @@ class FundDetailsScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: Text(
-                          context.tr('expectedAnnualReturn'),
+                          '${context.tr('expectedYield')}: ${resolvedFund.ytdReturn.toStringAsFixed(1)}%',
                           style: TextStyle(
                             color: AppColors.gold,
-                            fontSize: 10.sp,
+                            fontSize: 10.5.sp,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -187,28 +235,17 @@ class FundDetailsScreen extends StatelessWidget {
                 ],
               ),
             ),
+            SizedBox(height: 18.h),
+
+            // 3. Interactive NAV Chart
+            NavChartWidget(fund: resolvedFund),
             SizedBox(height: 20.h),
 
-            // NAV Chart — real data or fallback mock
-            NavChartWidget(
-              fund: fundModel ?? FundModel(
-                id: fund.id ?? 'unknown',
-                name: fund.title,
-                managerName: fund.subtitle.split('|').first.trim(),
-                currentNav: 135.0,
-                ytdReturn: 24.5,
-                weeklyReturn: 0.48,
-                fourWeeksReturn: 1.9,
-                last12mReturn: 22.8,
-                dailyChange: 0.07,
-                riskLevel: 'Low',
-                category: 'MoneyMarket',
-                initialValue: 100.0,
-              ),
-            ),
+            // 4. Institutional Deep Details Card (Bank, Inception, Custodian, Auditor)
+            _buildInstitutionalCard(context, resolvedFund, surface, border, textPrimary, textSecondary),
             SizedBox(height: 24.h),
 
-            // Simulation Action Button
+            // 5. Simulation Investment Action Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -227,8 +264,243 @@ class FundDetailsScreen extends StatelessWidget {
                 ),
               ),
             ),
+            SizedBox(height: 12.h),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildShariahStatusCard(BuildContext context, FundModel fund, Color surface, Color border) {
+    final isShariah = fund.isShariahCompliant;
+    final isAr = context.isArabic;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(14.r),
+      decoration: BoxDecoration(
+        color: isShariah ? const Color(0xFF06331E) : surface,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(
+          color: isShariah ? const Color(0xFF10B981).withValues(alpha: 0.5) : border,
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.all(10.r),
+            decoration: BoxDecoration(
+              color: isShariah ? const Color(0xFF10B981).withValues(alpha: 0.2) : Colors.blueGrey.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: Icon(
+              isShariah ? Icons.nightlight_round : Icons.account_balance_outlined,
+              color: isShariah ? const Color(0xFF34D399) : Colors.blueGrey,
+              size: 22.r,
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      isShariah ? context.tr('shariahCompliant') : context.tr('conventionalFund'),
+                      style: TextStyle(
+                        color: isShariah ? const Color(0xFF34D399) : AppColors.getTextPrimary(context),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13.sp,
+                      ),
+                    ),
+                    SizedBox(width: 6.w),
+                    Icon(
+                      isShariah ? Icons.check_circle : Icons.info_outline,
+                      size: 14.r,
+                      color: isShariah ? const Color(0xFF34D399) : Colors.grey,
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  isShariah
+                      ? (fund.shariahBoard ?? context.tr('shariahSupervisoryBoardSub'))
+                      : (isAr ? 'خاضع لتعليمات ومعايير الهيئة العامة للرقابة المالية (FRA)' : 'Regulated by Financial Regulatory Authority (FRA) standards'),
+                  style: TextStyle(
+                    color: isShariah ? const Color(0xFFA7F3D0) : AppColors.getTextSecondary(context),
+                    fontSize: 10.5.sp,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInstitutionalCard(
+    BuildContext context,
+    FundModel fund,
+    Color surface,
+    Color border,
+    Color textPrimary,
+    Color textSecondary,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.account_balance, color: AppColors.primary, size: 20.r),
+              SizedBox(width: 8.w),
+              Text(
+                context.tr('institutionalDetails'),
+                style: TextStyle(
+                  color: textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13.5.sp,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 14.h),
+          Divider(color: border, height: 1),
+          SizedBox(height: 10.h),
+
+          // 1. Issuing Entity
+          _buildInfoRow(
+            icon: Icons.domain_rounded,
+            label: context.tr('foundingEntity'),
+            value: fund.localizedIssuingEntity(context),
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+          ),
+
+          // 2. Inception Year
+          _buildInfoRow(
+            icon: Icons.calendar_month_outlined,
+            label: context.tr('inceptionYearLabel'),
+            value: fund.inceptionYear != null ? '${fund.inceptionYear}' : '1995',
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+          ),
+
+          // 3. Fund Manager
+          _buildInfoRow(
+            icon: Icons.badge_outlined,
+            label: context.tr('fundManagerLabel'),
+            value: fund.managerName,
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+          ),
+
+          // 4. Custodian Bank
+          _buildInfoRow(
+            icon: Icons.shield_outlined,
+            label: context.tr('custodianLabel'),
+            value: fund.localizedCustodian(context),
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+          ),
+
+          // 5. Fund Administration
+          _buildInfoRow(
+            icon: Icons.storefront_outlined,
+            label: context.tr('fundAdminLabel'),
+            value: fund.fundAdministrator ?? 'فروع البنك وتطبيق مباشر كابيتال',
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+          ),
+
+          // 6. Independent Auditor
+          _buildInfoRow(
+            icon: Icons.verified_user_outlined,
+            label: context.tr('independentAuditor'),
+            value: fund.auditor ?? 'حازم حسن (KPMG) ومراقبون مستقلون',
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+          ),
+
+          // 7. Trading Currency
+          _buildInfoRow(
+            icon: Icons.monetization_on_outlined,
+            label: context.tr('nominalCurrency'),
+            value: fund.currency == 'USD' ? 'دولار أمريكي (USD)' : 'الجنيه المصري (EGP)',
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+          ),
+
+          // 8. Valuation Frequency
+          _buildInfoRow(
+            icon: Icons.update_rounded,
+            label: context.tr('tradingFrequency'),
+            value: context.tr('dailyValuation'),
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+          ),
+
+          // 9. Dividend Policy
+          _buildInfoRow(
+            icon: Icons.pie_chart_outline,
+            label: context.tr('dividendPolicyLabel'),
+            value: fund.dividendPolicy ?? 'إعادة استثمار العوائد تلقائياً (Growth)',
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+            isLast: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color textPrimary,
+    required Color textSecondary,
+    bool isLast = false,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 10.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16.r, color: textSecondary),
+          SizedBox(width: 8.w),
+          Expanded(
+            flex: 4,
+            child: Text(
+              label,
+              style: TextStyle(color: textSecondary, fontSize: 11.sp),
+            ),
+          ),
+          SizedBox(width: 6.w),
+          Expanded(
+            flex: 5,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                color: textPrimary,
+                fontWeight: FontWeight.w600,
+                fontSize: 11.sp,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

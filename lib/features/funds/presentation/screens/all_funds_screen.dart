@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -9,6 +8,8 @@ import '../../../../core/language/language_cubit.dart';
 import '../../../home/data/models/fund_model.dart';
 import '../../../home/data/repositories/funds_repository.dart';
 import '../../../home/presentation/widgets/fund_list_tile.dart';
+import '../../domain/models/fund_sort_option.dart';
+import '../widgets/fund_sort_bar.dart';
 
 class AllFundsScreen extends StatefulWidget {
   const AllFundsScreen({super.key});
@@ -26,6 +27,7 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
   List<FundModel> _funds = [];
   List<String> _searchHistory = [];
   bool _isLoading = true;
+  FundSortOption _sortOption = FundSortOption.highestReturn;
 
   final List<String> _categoryKeys = [
     'catAll',
@@ -113,10 +115,6 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
     final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
 
-    final hasActiveQuery = _searchQuery.trim().isNotEmpty;
-    final hasCategoryFilter = _selectedCategoryKey != 'catAll';
-    final bool showResults = hasActiveQuery || hasCategoryFilter;
-
     final filteredFunds = _funds.where((fund) {
       final nameLower = fund.name.toLowerCase();
       final nameArLower = (fund.nameAr ?? '').toLowerCase();
@@ -158,6 +156,8 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
       return true;
     }).toList();
 
+    final sortedFunds = _sortOption.sort(filteredFunds, isArabic: context.isArabic);
+
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
@@ -181,10 +181,10 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
         children: [
           // Search Input Bar (with clear & submit)
           Padding(
-            padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 12.h),
+            padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 10.h),
             child: TextField(
               controller: _searchController,
-              autofocus: true,
+              autofocus: false,
               textInputAction: TextInputAction.search,
               onSubmitted: _onSearchSubmitted,
               onChanged: (val) {
@@ -264,197 +264,107 @@ class _AllFundsScreenState extends State<AllFundsScreen> {
               },
             ),
           ),
-          SizedBox(height: 14.h),
+          SizedBox(height: 6.h),
 
-          // Main Search Body
+          // Recent search history quick chips (if available and no active search)
+          if (_searchHistory.isNotEmpty && _searchQuery.isEmpty && _selectedCategoryKey == 'catAll')
+            Container(
+              height: 32.h,
+              margin: EdgeInsets.symmetric(vertical: 4.h),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                itemCount: _searchHistory.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == _searchHistory.length) {
+                    return TextButton(
+                      onPressed: _clearSearchHistory,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        context.tr('clearSearchHistory'),
+                        style: TextStyle(color: AppColors.error, fontSize: 10.5.sp),
+                      ),
+                    );
+                  }
+                  final item = _searchHistory[index];
+                  return Container(
+                    margin: EdgeInsets.only(left: 6.w),
+                    child: ActionChip(
+                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 0),
+                      avatar: Icon(Icons.history, size: 12.r, color: AppColors.primary),
+                      label: Text(
+                        item,
+                        style: TextStyle(color: textPrimary, fontSize: 10.5.sp),
+                      ),
+                      backgroundColor: surface,
+                      side: BorderSide(color: border),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+                      onPressed: () {
+                        _searchController.text = item;
+                        _onSearchSubmitted(item);
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+
+          // Interactive Sort Bar with Count & Sort Selector Pill
+          FundSortBar(
+            currentSort: _sortOption,
+            onSortChanged: (newSort) {
+              setState(() => _sortOption = newSort);
+            },
+            totalCount: sortedFunds.length,
+          ),
+
+          // Main Funds List
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : showResults
-                    // ---------------- RESULTS STATE (Active Query / Category Filter) ----------------
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '${context.tr('filterResults')} (${filteredFunds.length})',
-                                  style: TextStyle(
-                                    color: textSecondary,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  context.tr('lastNavUpdate'),
-                                  style: TextStyle(
-                                    color: textSecondary,
-                                    fontSize: 11.sp,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 8.h),
-
-                          Expanded(
-                            child: filteredFunds.isEmpty
-                                ? Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(24.r),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.search_off, size: 48.r, color: textSecondary.withValues(alpha: 0.5)),
-                                          SizedBox(height: 12.h),
-                                          Text(
-                                            context.tr('noFundsMatchSearch'),
-                                            style: TextStyle(
-                                              color: textPrimary,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14.sp,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  )
-                                : ListView.builder(
-                                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                                    itemCount: filteredFunds.length,
-                                    itemBuilder: (context, index) {
-                                      final fund = filteredFunds[index];
-                                      return GestureDetector(
-                                        onTap: () {
-                                          if (_searchQuery.isNotEmpty) {
-                                            _saveSearchQuery(_searchQuery);
-                                          }
-                                        },
-                                        child: FundListTile(
-                                          fund: fund,
-                                          rank: index + 1,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                          ),
-                        ],
-                      )
-                    // ---------------- SEARCH HISTORY & POPULAR PROMPT STATE ----------------
-                    : SingleChildScrollView(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 1. Recent Search History (If available)
-                            if (_searchHistory.isNotEmpty) ...[
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    context.tr('recentSearchHistory'),
-                                    style: TextStyle(
-                                      color: textPrimary,
-                                      fontSize: 13.sp,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: _clearSearchHistory,
-                                    style: TextButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      minimumSize: Size.zero,
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    ),
-                                    child: Text(
-                                      context.tr('clearSearchHistory'),
-                                      style: TextStyle(
-                                        color: AppColors.error,
-                                        fontSize: 11.sp,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 10.h),
-                              Wrap(
-                                spacing: 8.w,
-                                runSpacing: 8.h,
-                                children: _searchHistory.map((item) {
-                                  return ActionChip(
-                                    avatar: Icon(Icons.history, size: 14.r, color: AppColors.primary),
-                                    label: Text(
-                                      item,
-                                      style: TextStyle(
-                                        color: textPrimary,
-                                        fontSize: 11.5.sp,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    backgroundColor: surface,
-                                    side: BorderSide(color: border),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-                                    onPressed: () {
-                                      _searchController.text = item;
-                                      _onSearchSubmitted(item);
-                                    },
-                                  );
-                                }).toList(),
-                              ),
+                : sortedFunds.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24.r),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.search_off, size: 48.r, color: textSecondary.withValues(alpha: 0.5)),
                               SizedBox(height: 12.h),
-                            ],
-
-                            // 2. Elegant Search Placeholder Illustration & Prompt
-                            Center(
-                              child: Container(
-                                padding: EdgeInsets.all(20.r),
-                                decoration: BoxDecoration(
-                                  color: surface,
-                                  borderRadius: BorderRadius.circular(20.r),
-                                  border: Border.all(color: border),
+                              Text(
+                                context.tr('noFundsMatchSearch'),
+                                style: TextStyle(
+                                  color: textPrimary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14.sp,
                                 ),
-                                child: Column(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 28.r,
-                                      backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-                                      child: FaIcon(
-                                        FontAwesomeIcons.magnifyingGlassChart,
-                                        color: AppColors.primary,
-                                        size: 24.r,
-                                      ),
-                                    ),
-                                    SizedBox(height: 12.h),
-                                    Text(
-                                      context.tr('searchStartPrompt'),
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: textPrimary,
-                                        fontSize: 13.sp,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    SizedBox(height: 6.h),
-                                    Text(
-                                      context.tr('searchStartSub'),
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: textSecondary,
-                                        fontSize: 11.sp,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                textAlign: TextAlign.center,
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                      )
+                    : ListView.builder(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+                        itemCount: sortedFunds.length,
+                        itemBuilder: (context, index) {
+                          final fund = sortedFunds[index];
+                          return GestureDetector(
+                            onTap: () {
+                              if (_searchQuery.isNotEmpty) {
+                                _saveSearchQuery(_searchQuery);
+                              }
+                            },
+                            child: FundListTile(
+                              fund: fund,
+                              rank: index + 1,
+                            ),
+                          );
+                        },
                       ),
           ),
         ],

@@ -92,6 +92,12 @@ function applyLanguage(lang) {
     langLabel.innerText = isEn ? '🌐 English (US)' : '🌐 العربية (مصر)';
   }
 
+  // Brand Subtitle
+  const brandSubText = document.getElementById('brandSubText');
+  if (brandSubText) {
+    brandSubText.innerText = isEn ? 'Super Admin Portal 🔐' : 'بوابة السوبر أدمن 🔐';
+  }
+
   // Update search placeholders
   const globalSearch = document.getElementById('globalSearch');
   if (globalSearch) {
@@ -120,16 +126,23 @@ function applyLanguage(lang) {
       case 'quick-price': span.innerText = isEn ? 'Quick NAV Price Updater ⚡' : 'تعديل الأسعار السريع ⚡'; break;
       case 'funds': span.innerText = isEn ? 'All Mutual Funds (CRUD)' : 'إدارة كافة الصناديق (CRUD)'; break;
       case 'sponsored': span.innerText = isEn ? 'Sponsored & Recommended' : 'الصناديق الرعائية والموصى بها'; break;
+      case 'robo-config': span.innerText = isEn ? 'Robo-Advisor Recommendations 🤖' : 'توصيات المستشار الذكي 🤖'; break;
       case 'portfolios': span.innerText = isEn ? 'Portfolios & Trading Orders' : 'محافظ العملاء وطلبات التداول'; break;
       case 'users': span.innerText = isEn ? 'Users & Verification' : 'المستخدمين وتفعيل التوثيق'; break;
-      case 'robo-config': span.innerText = isEn ? 'Robo-Advisor Recommendations 🤖' : 'توصيات المستشار الذكي 🤖'; break;
       case 'admins': span.innerText = isEn ? 'Admin Team Management 🔑' : 'إدارة فريق الأدمن والمساعدين 🔑'; break;
       case 'insights': span.innerText = isEn ? 'Analytics & Usage Insights' : 'تحليلات الاستخدام والربط'; break;
       case 'logs': span.innerText = isEn ? 'Live System Audit Logs' : 'سجلات النظام Live Logs'; break;
     }
   });
 
-  // Update Section Headers
+  // Sidebar Status
+  const sidebarStatusHeader = document.getElementById('sidebarStatusHeader');
+  if (sidebarStatusHeader) sidebarStatusHeader.innerText = isEn ? 'Connected to Supabase DB 🟢' : 'مربوط بـ Supabase DB 🟢';
+
+  const supabaseConnectionText = document.getElementById('supabaseConnectionText');
+  if (supabaseConnectionText) supabaseConnectionText.innerText = isEn ? 'maorabzkqtqmlrakqlya (Active)' : 'maorabzkqtqmlrakqlya (نشط)';
+
+  // Section Headers
   const devopsTitle = document.querySelector('#tab-devops .section-title h2');
   if (devopsTitle) devopsTitle.innerHTML = isEn ? '<i class="fa-solid fa-network-wired"></i> Infrastructure Status & Server Connection' : '<i class="fa-solid fa-network-wired"></i> حالة البنية التحتية واتصال الخوادم';
 
@@ -142,6 +155,12 @@ function applyLanguage(lang) {
   const sponsoredTitle = document.querySelector('#tab-sponsored .section-title h2');
   if (sponsoredTitle) sponsoredTitle.innerHTML = isEn ? '<i class="fa-solid fa-star"></i> Sponsored & Recommended Funds' : '<i class="fa-solid fa-star"></i> إدارة الصناديق الرعائية والموصى بها ⭐';
 
+  const roboConfigTitleText = document.getElementById('roboConfigTitleText');
+  if (roboConfigTitleText) roboConfigTitleText.innerText = isEn ? 'Robo-Advisor Allocations Management (15 Blends) 🤖' : 'إدارة التوليفات والتوزيعات الذكية (Robo-Advisor 15 Blends) 🤖';
+
+  const btnRefreshRoboText = document.getElementById('btnRefreshRoboText');
+  if (btnRefreshRoboText) btnRefreshRoboText.innerText = isEn ? 'Refresh from Server' : 'تحديث من السيرفر';
+
   const portfoliosTitle = document.querySelector('#tab-portfolios .section-title h2');
   if (portfoliosTitle) portfoliosTitle.innerHTML = isEn ? '<i class="fa-solid fa-wallet"></i> Client Portfolios & Trading Orders' : '<i class="fa-solid fa-wallet"></i> إدارة محافظ العملاء وطلبات التداول 💼';
 
@@ -151,69 +170,114 @@ function applyLanguage(lang) {
   const btnAddUserBtnText = document.getElementById('btnAddUserBtnText');
   if (btnAddUserBtnText) btnAddUserBtnText.innerText = isEn ? 'Add New Investor / Client 👤' : 'إضافة مستثمر / عميل جديد 👤';
 
-  const addUserModalTitle = document.getElementById('addUserModalTitle');
-  if (addUserModalTitle) addUserModalTitle.innerText = isEn ? 'Add New Investor / Client to Backend 👤' : 'إضافة مستثمر / عميل جديد في الباك إند 👤';
-
-  const lblNewUserName = document.getElementById('lblNewUserName');
-  if (lblNewUserName) lblNewUserName.innerText = isEn ? 'Investor Full Name' : 'اسم المستثمر الثلاثي';
-
-  const lblNewUserPhone = document.getElementById('lblNewUserPhone');
-  if (lblNewUserPhone) lblNewUserPhone.innerText = isEn ? 'Phone Number / Email' : 'رقم الهاتف / البريد الإلكتروني';
-
-  const lblNewUserPassword = document.getElementById('lblNewUserPassword');
-  if (lblNewUserPassword) lblNewUserPassword.innerText = isEn ? 'Password' : 'كلمة المرور (Password)';
-
-  const lblChkUserVerified = document.getElementById('lblChkUserVerified');
-  if (lblChkUserVerified) lblChkUserVerified.innerHTML = isEn ? 'Grant <strong>Verified Badge Immediately (Verified Investor 🟢)</strong>' : 'تفعيل كـ <strong>حساب موثّق مباشرة (Verified Investor 🟢)</strong>';
-
-  const btnSubmitUserModal = document.getElementById('btnSubmitUserModal');
-  if (btnSubmitUserModal) btnSubmitUserModal.innerText = isEn ? 'Add & Save to Database 🚀' : 'إضافة وحفظ في الداتا بيز 🚀';
-
-  const btnCancelUserModal = document.getElementById('btnCancelUserModal');
-  if (btnCancelUserModal) btnCancelUserModal.innerText = isEn ? 'Cancel' : 'إلغاء';
-
   const adminsTitle = document.querySelector('#tab-admins .section-title h2');
   if (adminsTitle) adminsTitle.innerHTML = isEn ? '<i class="fa-solid fa-user-plus"></i> Admin Team & Assistant Credentials' : '<i class="fa-solid fa-user-plus"></i> إدارة مديري النظام والمساعدين 🔑';
 
   const insightsTitle = document.querySelector('#tab-insights .section-title h2');
   if (insightsTitle) insightsTitle.innerHTML = isEn ? '<i class="fa-solid fa-chart-pie"></i> Usage Analytics & Performance 📊' : '<i class="fa-solid fa-chart-pie"></i> تحليلات استخدام العملاء وأداء التطبيق 📊';
 
-  // Update Section Descriptions
+  // Section Descriptions
   const quickDesc = document.querySelector('#tab-quick-price .section-desc');
   if (quickDesc) quickDesc.innerText = isEn ? 'Dedicated interface for instantly updating NAV prices and YTD returns in one click.' : 'شاشة مخصصة لتغيير سعر الوثيقة والعائد السنوي فوراً بضغطة زر واحدة بدون الحاجة لفتح شاشات CRUD المعقدة.';
 
-  const sponsoredDesc = document.querySelector('#tab-sponsored .section-desc');
-  if (sponsoredDesc) sponsoredDesc.innerText = isEn ? 'Full control over Sponsored and Recommended funds. Add or remove any fund anytime.' : 'تحكم كامل في الصناديق المحددة كـ رعائية أو موصى بها مع إمكانية إضافة أي صندوق أو إزالته بحرية.';
+  const sponsoredDesc = document.getElementById('sponsoredSectionDesc') || document.querySelector('#tab-sponsored .section-desc');
+  if (sponsoredDesc) sponsoredDesc.innerText = isEn ? 'Full control over Sponsored ⭐, Recommended 💡, and Top Performing 🏆 funds. Add or remove any fund anytime.' : 'تحكم كامل في الصناديق المحددة كـ (رعائية ⭐ / موصى بها 💡 / الأعلى أداءً 🏆). قم باختيار أي صندوق وإعطائه التميز الذي تريده أو إزالته بحرية.';
+
+  const roboConfigSectionDesc = document.getElementById('roboConfigSectionDesc');
+  if (roboConfigSectionDesc) roboConfigSectionDesc.innerText = isEn ? 'Full server-side control over the 15 Robo-Advisor blends (5 investment goals x 3 durations). Any change here appears instantly in the mobile app without code updates!' : 'تحكم كامل من السيرفر في التوليفات الـ 15 للمستشار الذكي (5 أهداف استثمارية × 3 مدد زمنية). أي تعديل هنا يظهر مباشرة في تطبيق الموبايل دون الحاجة لتحديث الكود!';
 
   const adminsDesc = document.querySelector('#tab-admins .section-desc');
-  if (adminsDesc) adminsDesc.innerText = isEn ? 'Manage secondary assistant admin credentials to update prices and portfolios.' : 'يمكنك بفتحتك كـ Super Admin إضافة حسابات أدمن فرعية للمساعدين لتحديث أسعار الصناديق والمحفظة.';
+  if (adminsDesc) adminsDesc.innerText = isEn ? 'Manage secondary assistant admin credentials to update prices and portfolios.' : 'يمكنك بصفتك Super Admin إضافة حسابات أدمن فرعية للمساعدين لتحديث أسعار الصناديق والمحفظة.';
 
-  // Update Category Filter Select Options
-  const fundCategoryFilter = document.getElementById('fundCategoryFilter');
-  if (fundCategoryFilter && fundCategoryFilter.options.length >= 6) {
-    fundCategoryFilter.options[0].text = isEn ? 'All Categories' : 'جميع الفئات';
-    fundCategoryFilter.options[1].text = isEn ? 'Equity Funds' : 'أسهم (Equity)';
-    fundCategoryFilter.options[2].text = isEn ? 'Money Market' : 'أدوات نقدية (Money Market)';
-    fundCategoryFilter.options[3].text = isEn ? 'Treasury Bills' : 'أذون وسندات خزينة (Treasury Bills)';
-    fundCategoryFilter.options[4].text = isEn ? 'Gold & Silver' : 'ذهب (Gold)';
-    fundCategoryFilter.options[5].text = isEn ? 'Islamic Funds' : 'إسلامية (Islamic)';
-  }
+  // DevOps Metric Cards
+  const lblDbStatusHeader = document.getElementById('lblDbStatusHeader');
+  if (lblDbStatusHeader) lblDbStatusHeader.innerText = isEn ? 'Supabase DB Status' : 'حالة اتصال Supabase DB';
 
-  // Update DevOps Interval Select Options
+  const lblDbStatusSub = document.getElementById('lblDbStatusSub');
+  if (lblDbStatusSub) lblDbStatusSub.innerText = isEn ? 'Response 14ms (PostgreSQL 15)' : 'استجابة 14ms (PostgreSQL 15)';
+
+  const lblDbFundsHeader = document.getElementById('lblDbFundsHeader');
+  if (lblDbFundsHeader) lblDbFundsHeader.innerText = isEn ? 'Total Funds in Database' : 'إجمالي الصناديق في الداتا بيز';
+
+  const lblDbFundsSub = document.getElementById('lblDbFundsSub');
+  if (lblDbFundsSub) lblDbFundsSub.innerText = isEn ? 'Official EIMA Report' : 'تقرير EIMA الرسمي';
+
+  const dbFundsCount = document.getElementById('dbFundsCount');
+  if (dbFundsCount) dbFundsCount.innerText = isEn ? `${liveFunds.length} Funds` : `${liveFunds.length} صندوق`;
+
+  const lblDbPortfoliosHeader = document.getElementById('lblDbPortfoliosHeader');
+  if (lblDbPortfoliosHeader) lblDbPortfoliosHeader.innerText = isEn ? 'Total Registered Portfolios' : 'إجمالي المحافظ المسجلة';
+
+  const lblDbPortfoliosSub = document.getElementById('lblDbPortfoliosSub');
+  if (lblDbPortfoliosSub) lblDbPortfoliosSub.innerText = isEn ? 'Active Client Portfolios' : 'محافظ العملاء الفعلية';
+
+  const dbPortfoliosCount = document.getElementById('dbPortfoliosCount');
+  if (dbPortfoliosCount) dbPortfoliosCount.innerText = isEn ? `${livePortfolios.length} Portfolios` : `${livePortfolios.length} محفظة`;
+
+  const lblSecurityHeader = document.getElementById('lblSecurityHeader');
+  if (lblSecurityHeader) lblSecurityHeader.innerText = isEn ? 'Security & Uptime Rate' : 'معدل الأمان والـ Uptime';
+
+  const lblSecuritySub = document.getElementById('lblSecuritySub');
+  if (lblSecuritySub) lblSecuritySub.innerText = isEn ? 'Super Admin Authenticated' : 'مصادق عليه كـ Super Admin';
+
+  // DevOps Pipeline Title & Steps
+  const pipelineTitle = document.getElementById('pipelineTitle');
+  if (pipelineTitle) pipelineTitle.innerHTML = isEn ? '<i class="fa-solid fa-diagram-project"></i> Automated DevOps Deployment Pipeline' : '<i class="fa-solid fa-diagram-project"></i> مسار التشغيل والنشر التلقائي';
+
+  const step1Label = document.getElementById('step1Label');
+  if (step1Label) step1Label.innerText = isEn ? 'Flutter & Web Code' : 'كود الموبايل والويب';
+  const step1Status = document.getElementById('step1Status');
+  if (step1Status) step1Status.innerText = isEn ? 'Clean & Verified ✅' : 'سليم ومفحوص ✅';
+
+  const step2Label = document.getElementById('step2Label');
+  if (step2Label) step2Label.innerText = isEn ? 'Supabase Database' : 'قاعدة بيانات سوبابيز';
+  const step2Status = document.getElementById('step2Status');
+  if (step2Status) step2Status.innerText = isEn ? 'Fully Seeded ✅' : 'محدثة بالكامل ✅';
+
+  const step3Label = document.getElementById('step3Label');
+  if (step3Label) step3Label.innerText = isEn ? 'Super Admin Gate' : 'بوابة السوبر أدمن';
+  const step3Status = document.getElementById('step3Status');
+  if (step3Status) step3Status.innerText = isEn ? 'Authenticated 🔑' : 'مصادق عليه 🔑';
+
+  const step4Label = document.getElementById('step4Label');
+  if (step4Label) step4Label.innerText = isEn ? 'Web Portal Sync' : 'مزامنة لوحة الويب';
+  const step4Status = document.getElementById('step4Status');
+  if (step4Status) step4Status.innerText = isEn ? 'Active 🟢' : 'نشط ومباشر 🟢';
+
+  // DevOps Latency Chart Card
+  const devopsLatencyChartTitle = document.getElementById('devopsLatencyChartTitle');
+  if (devopsLatencyChartTitle) devopsLatencyChartTitle.innerText = isEn ? 'Server Performance & Latency (Auto-ping every 5 mins)' : 'أداء واستجابة الخوادم (قياس تلقائي كل 5 دقائق)';
+
   const devopsPingIntervalSelect = document.getElementById('devopsPingIntervalSelect');
   if (devopsPingIntervalSelect && devopsPingIntervalSelect.options.length >= 3) {
-    devopsPingIntervalSelect.options[0].text = isEn ? '⏱️ Ping Every 5 Mins (Recommended)' : '⏱️ قياس كل 5 دقائق (5 Mins - Recommended)';
-    devopsPingIntervalSelect.options[1].text = isEn ? '⏱️ Ping Every 1 Min' : '⏱️ قياس كل 1 دقيقة (1 Min)';
-    devopsPingIntervalSelect.options[2].text = isEn ? '⏱️ Ping Every 3 Secs (Realtime)' : '⏱️ قياس كل 3 ثواني (3 Secs)';
+    devopsPingIntervalSelect.options[0].text = isEn ? '⏱️ Ping Every 5 Mins (Recommended)' : '⏱️ قياس كل 5 دقائق (موصى به)';
+    devopsPingIntervalSelect.options[1].text = isEn ? '⏱️ Ping Every 1 Min' : '⏱️ قياس كل 1 دقيقة';
+    devopsPingIntervalSelect.options[2].text = isEn ? '⏱️ Ping Every 3 Secs (Realtime)' : '⏱️ قياس كل 3 ثواني (لحظي)';
   }
 
-  // Update DevOps Chart Action Buttons
   const btnMaximizeChartModal = document.getElementById('btnMaximizeChartModal');
   if (btnMaximizeChartModal) {
     btnMaximizeChartModal.innerHTML = isEn ? '<i class="fa-solid fa-expand"></i> Maximize & Archive' : '<i class="fa-solid fa-expand"></i> تكبير والأرشيف';
   }
 
-  // Update Action Buttons
+  // Maximize Modal Elements
+  const maxModalTableHead = document.getElementById('maxModalTableHead');
+  if (maxModalTableHead) {
+    maxModalTableHead.innerHTML = isEn
+      ? '<th>Timestamp</th><th>Date</th><th>Latency</th><th>Server Status</th><th>Diagnostic Result</th>'
+      : '<th>الوقت (Timestamp)</th><th>التاريخ (Date)</th><th>زمن الاستجابة (Latency)</th><th>حالة السيرفر (Server Status)</th><th>تفاصيل الفحص (Diagnostic Result)</th>';
+  }
+
+  const btnCancelMaxChartModal = document.getElementById('btnCancelMaxChartModal');
+  if (btnCancelMaxChartModal) {
+    btnCancelMaxChartModal.innerHTML = isEn ? '<i class="fa-solid fa-times"></i> Close Window' : '<i class="fa-solid fa-times"></i> إغلاق النافذة';
+  }
+
+  // Terminal Header
+  const terminalHeader = document.getElementById('terminalHeader');
+  if (terminalHeader) terminalHeader.innerHTML = isEn ? '<i class="fa-solid fa-terminal" style="color:#00E676;"></i> Live System & Supabase Audit Logs' : '<i class="fa-solid fa-terminal" style="color:#00E676;"></i> سجل الاتصال بـ Supabase Live Logs';
+
+  // Action Buttons
   const btnToggleAllSponsored = document.getElementById('btnToggleAllSponsored');
   if (btnToggleAllSponsored) btnToggleAllSponsored.innerHTML = isEn ? '<i class="fa-solid fa-star"></i> Select / Deselect All Sponsored ⭐' : '<i class="fa-solid fa-star"></i> تحديد/إلغاء الكل رعائي ⭐';
 
@@ -231,6 +295,35 @@ function applyLanguage(lang) {
 
   const btnOpenAddSponsoredModal = document.getElementById('btnOpenAddSponsoredModal');
   if (btnOpenAddSponsoredModal) btnOpenAddSponsoredModal.innerHTML = isEn ? '<i class="fa-solid fa-plus"></i> Add Fund to Sponsored List' : '<i class="fa-solid fa-plus"></i> إضافة صندوق للقائمة الرعائية والموصى بها';
+
+  // Select Filters Localization
+  const fundCategoryFilter = document.getElementById('fundCategoryFilter');
+  if (fundCategoryFilter && fundCategoryFilter.options.length >= 6) {
+    fundCategoryFilter.options[0].text = isEn ? 'All Categories' : 'جميع الفئات';
+    fundCategoryFilter.options[1].text = isEn ? 'Equity Funds' : 'أسهم (Equity)';
+    fundCategoryFilter.options[2].text = isEn ? 'Money Market' : 'أدوات نقدية (Money Market)';
+    fundCategoryFilter.options[3].text = isEn ? 'Treasury Bills' : 'أذون وسندات خزينة (Treasury Bills)';
+    fundCategoryFilter.options[4].text = isEn ? 'Gold & Silver' : 'ذهب (Gold)';
+    fundCategoryFilter.options[5].text = isEn ? 'Islamic Funds' : 'إسلامية (Islamic)';
+  }
+
+  const roboGoalFilter = document.getElementById('roboGoalFilter');
+  if (roboGoalFilter && roboGoalFilter.options.length >= 6) {
+    roboGoalFilter.options[0].text = isEn ? 'All Investment Goals' : 'جميع الأهداف الاستثمارية (All Goals)';
+    roboGoalFilter.options[1].text = isEn ? '🪙 Gold & Silver Hedging' : '🪙 التحوط بالذهب والفضة (Gold & Silver)';
+    roboGoalFilter.options[2].text = isEn ? '🛡️ Capital Preservation & Low Risk' : '🛡️ حفظ رأس المال وأمان مرتفع (Capital Preservation)';
+    roboGoalFilter.options[3].text = isEn ? '🚀 High Yield & Growth (Equities)' : '🚀 أقصى نمو وأرباح - أسهم (High Yield)';
+    roboGoalFilter.options[4].text = isEn ? '🌙 100% Shariah Compliant' : '🌙 استثمار إسلامي 100% (Islamic Sharia)';
+    roboGoalFilter.options[5].text = isEn ? '⚖️ Balanced Growth' : '⚖️ نمو متوازن (Balanced Growth)';
+  }
+
+  const roboDurationFilter = document.getElementById('roboDurationFilter');
+  if (roboDurationFilter && roboDurationFilter.options.length >= 4) {
+    roboDurationFilter.options[0].text = isEn ? 'All Durations / Horizons' : 'جميع المدد الزمنية (All Durations)';
+    roboDurationFilter.options[1].text = isEn ? '⏱️ Short Term (< 1 Year)' : '⏱️ قصير الأجل (<1 سنة)';
+    roboDurationFilter.options[2].text = isEn ? '🗓️ Medium Term (1-3 Years)' : '🗓️ متوسط الأجل (1-3 سنوات)';
+    roboDurationFilter.options[3].text = isEn ? '🚀 Long Term (> 3 Years)' : '🚀 طويل الأجل (>3 سنوات)';
+  }
 
   // Update Table Headers
   const quickPriceHead = document.querySelector('#quickPriceTableHead tr');
@@ -250,56 +343,37 @@ function applyLanguage(lang) {
   const sponsoredHead = document.querySelector('#sponsoredTableHead tr');
   if (sponsoredHead) {
     sponsoredHead.innerHTML = isEn
-      ? '<th>Fund Name</th><th>Official Manager</th><th>NAV Price</th><th>Sponsored ⭐</th><th>Recommended 💡</th><th>Actions</th>'
-      : '<th>اسم الصندوق</th><th>المدير الرسمي</th><th>سعر الوثيقة (NAV)</th><th>صندوق رعائي ⭐</th><th>موصى به لك 💡</th><th>الإجراءات</th>';
+      ? '<th>Fund Name</th><th>Official Manager</th><th>NAV Price</th><th>Sponsored ⭐</th><th>Recommended 💡</th><th>Robo Target Goal 🎯</th><th>Actions</th>'
+      : '<th>اسم الصندوق</th><th>المدير الرسمي</th><th>سعر الوثيقة (NAV)</th><th>صندوق رعائي ⭐</th><th>موصى به لك 💡</th><th>هدف المستشار الذكي 🎯</th><th>الإجراءات</th>';
+  }
+
+  const roboConfigsHead = document.querySelector('#roboConfigsTableHead tr');
+  if (roboConfigsHead) {
+    roboConfigsHead.innerHTML = isEn
+      ? '<th>Investment Goal</th><th>Duration / Horizon</th><th>Expected Return %</th><th>Fund Mix Allocation</th><th>Control & Edit ⚡</th>'
+      : '<th>الهدف الاستثماري</th><th>المدة الزمنية</th><th>العائد المتوقع %</th><th>توزيع الصناديق والمكونات (Mix Allocation)</th><th>التحكم والتعديل ⚡</th>';
   }
 
   const portfoliosHead = document.querySelector('#portfoliosTableHead tr');
   if (portfoliosHead) {
     portfoliosHead.innerHTML = isEn
-      ? '<th>Portfolio Name</th><th>User ID</th><th>Created Date</th><th>Updated Date</th><th>Control</th>'
-      : '<th>اسم المحفظة</th><th>معرف المستخدم</th><th>تاريخ الإنشاء</th><th>تاريخ التحديث</th><th>التحكم</th>';
+      ? '<th>Portfolio Name</th><th>Investor / Contact 👤</th><th>Assets / Units</th><th>Total Value (EGP)</th><th>Created Date</th><th>Control</th>'
+      : '<th>اسم المحفظة</th><th>اسم المستثمر والبريد 👤</th><th>عدد الأصول / الوثائق</th><th>القيمة الإجمالية (EGP)</th><th>تاريخ الإنشاء</th><th>التحكم</th>';
   }
 
   const usersHead = document.querySelector('#usersTableHead tr');
   if (usersHead) {
     usersHead.innerHTML = isEn
       ? '<th>Investor Name</th><th>Phone / Identifier</th><th>Verification Status</th><th>Updated Date</th><th>Control</th>'
-      : '<th>اسم المستثمر</th><th>رقم الهاتف / المعرف</th><th>حالة التوثيق</th><th>تاريخ التحديث</th><th>التحكم</th>';
+      : '<th>اسم المستثمر</th><th>رقم الهاتف / المعرف</th><th>حالة التوثيق (Verified Badge)</th><th>تاريخ التحديث</th><th>التحكم</th>';
   }
 
   const adminsHead = document.querySelector('#adminsTableHead tr');
   if (adminsHead) {
     adminsHead.innerHTML = isEn
       ? '<th>Admin Name</th><th>Username</th><th>Role & Position</th><th>Permissions</th><th>Control</th>'
-      : '<th>اسم الأدمن</th><th>اسم المستخدم</th><th>الرتبة والدور</th><th>الصلاحيات</th><th>التحكم</th>';
+      : '<th>اسم الأدمن</th><th>اسم المستخدم (Username)</th><th>الرتبة والدور</th><th>الصلاحيات</th><th>التحكم</th>';
   }
-
-  // Update Sidebar Status
-  const sidebarStatusHeader = document.getElementById('sidebarStatusHeader');
-  if (sidebarStatusHeader) sidebarStatusHeader.innerText = isEn ? 'Connected to Supabase DB 🟢' : 'مربوط بـ Supabase DB 🟢';
-
-  // Update DevOps Metric Cards
-  const lblDbStatusHeader = document.getElementById('lblDbStatusHeader');
-  if (lblDbStatusHeader) lblDbStatusHeader.innerText = isEn ? 'Supabase DB Status' : 'حالة اتصال Supabase DB';
-
-  const lblDbStatusSub = document.getElementById('lblDbStatusSub');
-  if (lblDbStatusSub) lblDbStatusSub.innerText = isEn ? 'Response 14ms (PostgreSQL 15)' : 'استجابة 14ms (PostgreSQL 15)';
-
-  const lblDbFundsHeader = document.getElementById('lblDbFundsHeader');
-  if (lblDbFundsHeader) lblDbFundsHeader.innerText = isEn ? 'Total Funds in Database' : 'إجمالي الصناديق في الداتا بيز';
-
-  const lblDbFundsSub = document.getElementById('lblDbFundsSub');
-  if (lblDbFundsSub) lblDbFundsSub.innerText = isEn ? 'Official EIMA Report' : 'تقرير EIMA الرسمي';
-
-  const lblDbPortfoliosHeader = document.getElementById('lblDbPortfoliosHeader');
-  if (lblDbPortfoliosHeader) lblDbPortfoliosHeader.innerText = isEn ? 'Total Registered Portfolios' : 'إجمالي المحافظ المسجلة';
-
-  const lblDbPortfoliosSub = document.getElementById('lblDbPortfoliosSub');
-  if (lblDbPortfoliosSub) lblDbPortfoliosSub.innerText = isEn ? 'Active Client Portfolios' : 'محافظ العملاء الفعلية';
-
-  const lblSecurityHeader = document.getElementById('lblSecurityHeader');
-  if (lblSecurityHeader) lblSecurityHeader.innerText = isEn ? 'Security & Uptime Rate' : 'معدل الأمان والـ Uptime';
 
   // Update Insights Metric Cards
   const lblInsightTotalUsersHeader = document.getElementById('lblInsightTotalUsersHeader');
@@ -340,8 +414,14 @@ function applyLanguage(lang) {
   const lblNewAdminName = document.getElementById('lblNewAdminName');
   if (lblNewAdminName) lblNewAdminName.innerText = isEn ? 'Admin Full Name' : 'اسم الأدمن الكامل';
 
+  const newAdminName = document.getElementById('newAdminName');
+  if (newAdminName) newAdminName.placeholder = isEn ? 'e.g. Mostafa Mahmoud' : 'مثال: مصطفى محمود';
+
   const lblNewAdminUsername = document.getElementById('lblNewAdminUsername');
   if (lblNewAdminUsername) lblNewAdminUsername.innerText = isEn ? 'Username' : 'اسم المستخدم (Username)';
+
+  const newAdminUsername = document.getElementById('newAdminUsername');
+  if (newAdminUsername) newAdminUsername.placeholder = isEn ? 'e.g. Mostafa_Admin' : 'مثال: Mostafa_Admin';
 
   const lblNewAdminPassword = document.getElementById('lblNewAdminPassword');
   if (lblNewAdminPassword) lblNewAdminPassword.innerText = isEn ? 'Password' : 'كلمة المرور (Password)';
@@ -349,22 +429,24 @@ function applyLanguage(lang) {
   const lblNewAdminRole = document.getElementById('lblNewAdminRole');
   if (lblNewAdminRole) lblNewAdminRole.innerText = isEn ? 'Role & Permissions' : 'الصلاحية والرتبة';
 
+  const newAdminRole = document.getElementById('newAdminRole');
+  if (newAdminRole && newAdminRole.options.length >= 2) {
+    newAdminRole.options[0].text = isEn ? 'Fund & Price Manager' : 'أدمن أسعار وصناديق';
+    newAdminRole.options[1].text = isEn ? 'Support & Client Verification Admin' : 'أدمن توثيق ودعم عملاء';
+  }
+
   const btnSubmitAdminModal = document.getElementById('btnSubmitAdminModal');
   if (btnSubmitAdminModal) btnSubmitAdminModal.innerText = isEn ? 'Add Admin Instantly 🚀' : 'إضافة الأدمن فوراً 🚀';
 
   const btnCancelAdminModal = document.getElementById('btnCancelAdminModal');
   if (btnCancelAdminModal) btnCancelAdminModal.innerText = isEn ? 'Cancel' : 'إلغاء';
 
-  // Update Pipeline Title & Terminal Header
-  const pipelineTitle = document.getElementById('pipelineTitle');
-  if (pipelineTitle) pipelineTitle.innerHTML = isEn ? '<i class="fa-solid fa-diagram-project"></i> Automated DevOps Deployment Pipeline' : '<i class="fa-solid fa-diagram-project"></i> مسار التشغيل والنشر التلقائي';
-
-  const terminalHeader = document.getElementById('terminalHeader');
-  if (terminalHeader) terminalHeader.innerHTML = isEn ? '<i class="fa-solid fa-terminal" style="color:#00E676;"></i> Live System & Supabase Audit Logs' : '<i class="fa-solid fa-terminal" style="color:#00E676;"></i> سجل الاتصال بـ Supabase Live Logs';
-
   // Update Add Sponsored Modal Elements
   const addSponsoredModalTitle = document.getElementById('addSponsoredModalTitle');
   if (addSponsoredModalTitle) addSponsoredModalTitle.innerText = isEn ? 'Add Fund to Sponsored & Recommended List' : 'إضافة صندوق للقائمة الرعائية والموصى بها';
+
+  const sponsoredModalFundCountLabel = document.getElementById('sponsoredModalFundCountLabel');
+  if (sponsoredModalFundCountLabel) sponsoredModalFundCountLabel.innerText = isEn ? `Select Fund from Database (${liveFunds.length || 167} Official Funds)` : `اختر الصندوق من قاعدة البيانات (${liveFunds.length || 167} صندوق من تقرير EIMA الرسمي)`;
 
   const lblSponsoredSelectTitle = document.getElementById('lblSponsoredSelectTitle');
   if (lblSponsoredSelectTitle) lblSponsoredSelectTitle.innerText = isEn ? 'Select Admin Designation for Fund:' : 'حدد التمييز الإداري للصندوق:';
@@ -375,19 +457,52 @@ function applyLanguage(lang) {
   const lblChkRecommended = document.getElementById('lblChkRecommended');
   if (lblChkRecommended) lblChkRecommended.innerHTML = isEn ? 'Set as <strong>Recommended 💡</strong>' : 'تفعيل كـ <strong>موصى به لك (Recommended 💡)</strong>';
 
+  const sponsoredTargetGoalSelect = document.getElementById('sponsoredTargetGoalSelect');
+  if (sponsoredTargetGoalSelect && sponsoredTargetGoalSelect.options.length >= 5) {
+    sponsoredTargetGoalSelect.options[0].text = isEn ? '🪙 Gold & Silver Hedging' : '🪙 التحوط وحماية رأس المال (الذهب والفضة)';
+    sponsoredTargetGoalSelect.options[1].text = isEn ? '🌙 Shariah Compliant Investment' : '🌙 استثمار متوافق مع الشريعة الإسلامية';
+    sponsoredTargetGoalSelect.options[2].text = isEn ? '🛡️ Capital Preservation & Low Risk' : '🛡️ أمان مرتفع وحفظ رأس المال';
+    sponsoredTargetGoalSelect.options[3].text = isEn ? '⚖️ Balanced Growth Portfolio' : '⚖️ نمو متوازن (المحفظة الذكية النموذجية)';
+    sponsoredTargetGoalSelect.options[4].text = isEn ? '🚀 High Yield & Growth (Equities)' : '🚀 أقصى نمو وأرباح (أسهم)';
+  }
+
   const btnSubmitSponsoredModal = document.getElementById('btnSubmitSponsoredModal');
   if (btnSubmitSponsoredModal) btnSubmitSponsoredModal.innerText = isEn ? 'Save & Add to List 🚀' : 'حفظ وإضافة للقائمة 🚀';
 
   const btnCancelSponsoredModal = document.getElementById('btnCancelSponsoredModal');
   if (btnCancelSponsoredModal) btnCancelSponsoredModal.innerText = isEn ? 'Cancel' : 'إلغاء';
 
-  // Refresh tables with updated language labels
+  // Update Add User Modal Elements
+  const addUserModalTitle = document.getElementById('addUserModalTitle');
+  if (addUserModalTitle) addUserModalTitle.innerText = isEn ? 'Add New Investor / Client to Backend 👤' : 'إضافة مستثمر / عميل جديد في الباك إند 👤';
+
+  const lblNewUserName = document.getElementById('lblNewUserName');
+  if (lblNewUserName) lblNewUserName.innerText = isEn ? 'Investor Full Name' : 'اسم المستثمر الثلاثي';
+
+  const lblNewUserPhone = document.getElementById('lblNewUserPhone');
+  if (lblNewUserPhone) lblNewUserPhone.innerText = isEn ? 'Phone Number / Email' : 'رقم الهاتف / البريد الإلكتروني';
+
+  const lblNewUserPassword = document.getElementById('lblNewUserPassword');
+  if (lblNewUserPassword) lblNewUserPassword.innerText = isEn ? 'Password' : 'كلمة المرور (Password)';
+
+  const lblChkUserVerified = document.getElementById('lblChkUserVerified');
+  if (lblChkUserVerified) lblChkUserVerified.innerHTML = isEn ? 'Grant <strong>Verified Badge Immediately (Verified Investor 🟢)</strong>' : 'تفعيل كـ <strong>حساب موثّق مباشرة (Verified Investor 🟢)</strong>';
+
+  const btnSubmitUserModal = document.getElementById('btnSubmitUserModal');
+  if (btnSubmitUserModal) btnSubmitUserModal.innerText = isEn ? 'Add & Save to Database 🚀' : 'إضافة وحفظ في الداتا بيز 🚀';
+
+  const btnCancelUserModal = document.getElementById('btnCancelUserModal');
+  if (btnCancelUserModal) btnCancelUserModal.innerText = isEn ? 'Cancel' : 'إلغاء';
+
+  // Refresh tables and metrics with updated language labels
   renderQuickPriceTable();
   renderFundsTable();
   renderSponsoredTable();
+  renderRoboConfigsTable();
   renderPortfoliosTable();
   renderUsersTable();
   renderAdminsTable();
+  updateMetricsAndInsights();
   updateDynamicCharts();
 }
 
@@ -546,7 +661,7 @@ function initSuperAdminAuth() {
 }
 
 function logoutSuperAdmin() {
-  if (confirm('هل ترغب في تسجيل الخروج والعودة لشاشة الدخول؟')) {
+  if (confirm(currentLang === 'en' ? 'Are you sure you want to log out?' : 'هل ترغب في تسجيل الخروج والعودة لشاشة الدخول؟')) {
     sessionStorage.removeItem('watheqa_super_admin_user');
     localStorage.removeItem('watheqa_super_admin_user');
 
@@ -600,7 +715,8 @@ async function fetchFunds() {
         if (f.is_sponsored || f.is_recommended) f._inSponsoredList = true;
       });
       computeTopPerformingFundsDynamically();
-      document.getElementById('dbFundsCount').innerText = `${liveFunds.length} صندوق`;
+      const fundsCountEl = document.getElementById('dbFundsCount');
+      if (fundsCountEl) fundsCountEl.innerText = currentLang === 'en' ? `${liveFunds.length} Funds` : `${liveFunds.length} صندوق`;
       logMessage(`[DB] Loaded ${liveFunds.length} funds from 'funds' table.`, 'success');
     }
   } catch (err) {
@@ -617,7 +733,8 @@ async function fetchPortfolios() {
     if (error) throw error;
     if (data) {
       livePortfolios = data.filter(p => !deletedPortIds.has(p.id.toString()));
-      document.getElementById('dbPortfoliosCount').innerText = `${livePortfolios.length} محفظة`;
+      const portCountEl = document.getElementById('dbPortfoliosCount');
+      if (portCountEl) portCountEl.innerText = currentLang === 'en' ? `${livePortfolios.length} Portfolios` : `${livePortfolios.length} محفظة`;
       logMessage(`[DB] Loaded ${livePortfolios.length} portfolios with live items & investor profiles from Supabase.`, 'success');
     }
   } catch (err) {
@@ -884,7 +1001,7 @@ function initAdminModalEvents() {
 }
 
 function deleteAdmin(id) {
-  if (confirm('هل أنت تأكد من إزالة هذا الأدمن المساعد من النظام؟')) {
+  if (confirm(currentLang === 'en' ? 'Are you sure you want to remove this assistant admin from the system?' : 'هل أنت متأكد من إزالة هذا الأدمن المساعد من النظام؟')) {
     secondaryAdmins = secondaryAdmins.filter(a => a.id !== id);
     localStorage.setItem('watheqa_secondary_admins', JSON.stringify(secondaryAdmins));
     renderAdminsTable();
@@ -893,19 +1010,26 @@ function deleteAdmin(id) {
 
 // 📊 100% Dynamic Insights Cards Calculation from Supabase DB
 function updateMetricsAndInsights() {
+  const isEn = currentLang === 'en';
   const totalUsersCount = liveUsers.length;
   const verifiedCount = liveUsers.filter(u => u.is_verified || u.email_confirmed_at).length;
   
-  document.getElementById('insightTotalUsers').innerText = totalUsersCount.toLocaleString();
-  document.getElementById('insightVerifiedUsers').innerText = `${verifiedCount} عميل`;
+  const insightTotalUsers = document.getElementById('insightTotalUsers');
+  if (insightTotalUsers) insightTotalUsers.innerText = totalUsersCount.toLocaleString();
+
+  const insightVerifiedUsers = document.getElementById('insightVerifiedUsers');
+  if (insightVerifiedUsers) insightVerifiedUsers.innerText = isEn ? `${verifiedCount} Clients` : `${verifiedCount} عميل`;
 
   let totalValuation = 0;
   liveTransactions.forEach(t => {
     totalValuation += (parseFloat(t.units) || 0) * (parseFloat(t.current_nav) || 0);
   });
 
-  document.getElementById('insightTotalValuation').innerText = `${totalValuation.toLocaleString(undefined, { maximumFractionDigits: 0 })} EGP`;
-  document.getElementById('insightTotalTransactions').innerText = `${liveTransactions.length} طلب`;
+  const insightTotalValuation = document.getElementById('insightTotalValuation');
+  if (insightTotalValuation) insightTotalValuation.innerText = `${totalValuation.toLocaleString(undefined, { maximumFractionDigits: 0 })} EGP`;
+
+  const insightTotalTransactions = document.getElementById('insightTotalTransactions');
+  if (insightTotalTransactions) insightTotalTransactions.innerText = isEn ? `${liveTransactions.length} Orders` : `${liveTransactions.length} طلب`;
 }
 
 // 🥧 100% Dynamic Chart.js Updates from Live Funds DB
@@ -1093,11 +1217,11 @@ function renderSponsoredTable() {
     const goalKey = fund.recommended_goal_key || 'balancedGrowth';
     const goalSelectHtml = `
       <select onchange="updateFundTargetGoal('${fund.id}', this.value)" class="form-control" style="font-size:12px; font-weight:bold; color:#00E5FF; background:rgba(15,23,42,0.9); padding:4px 8px; border-radius:6px; border:1px solid rgba(0,229,255,0.3);">
-        <option value="goldHedging" ${goalKey === 'goldHedging' ? 'selected' : ''}>🪙 تحوط وحماية الذهب</option>
-        <option value="islamicSharia" ${goalKey === 'islamicSharia' ? 'selected' : ''}>🌙 استثمار إسلامي</option>
-        <option value="capitalPreservation" ${goalKey === 'capitalPreservation' ? 'selected' : ''}>🛡️ حفظ رأس المال</option>
-        <option value="balancedGrowth" ${goalKey === 'balancedGrowth' ? 'selected' : ''}>⚖️ نمو متوازن</option>
-        <option value="highYield" ${goalKey === 'highYield' ? 'selected' : ''}>🚀 أقصى نمو وأرباح (أسهم)</option>
+        <option value="goldHedging" ${goalKey === 'goldHedging' ? 'selected' : ''}>${isEn ? '🪙 Gold & Silver' : '🪙 تحوط وحماية الذهب'}</option>
+        <option value="islamicSharia" ${goalKey === 'islamicSharia' ? 'selected' : ''}>${isEn ? '🌙 Shariah Compliant' : '🌙 استثمار إسلامي'}</option>
+        <option value="capitalPreservation" ${goalKey === 'capitalPreservation' ? 'selected' : ''}>${isEn ? '🛡️ Capital Preservation' : '🛡️ حفظ رأس المال'}</option>
+        <option value="balancedGrowth" ${goalKey === 'balancedGrowth' ? 'selected' : ''}>${isEn ? '⚖️ Balanced Growth' : '⚖️ نمو متوازن'}</option>
+        <option value="highYield" ${goalKey === 'highYield' ? 'selected' : ''}>${isEn ? '🚀 High Yield' : '🚀 أقصى نمو وأرباح (أسهم)'}</option>
       </select>
     `;
 
@@ -1152,7 +1276,8 @@ async function updateFundTargetGoal(fundId, newGoalKey) {
 // Remove fund from active sponsored list completely
 async function removeFundFromSponsored(fundId) {
   const fund = liveFunds.find(f => f.id.toString() === fundId.toString());
-  if (fund && confirm(`هل أنت تأكد من إزالة (${fund.name_ar || fund.name}) من القائمة الرعائية والموصى بها؟`)) {
+  const fundDispName = currentLang === 'en' ? (fund?.name_en || fund?.name || fund?.name_ar) : (fund?.name_ar || fund?.name);
+  if (fund && confirm(currentLang === 'en' ? `Are you sure you want to remove (${fundDispName}) from sponsored list?` : `هل أنت متأكد من إزالة (${fundDispName}) من القائمة الرعائية والموصى بها؟`)) {
     fund.is_sponsored = false;
     fund.is_recommended = false;
     fund._inSponsoredList = false;
@@ -1337,7 +1462,7 @@ function initSponsoredModalEvents() {
   });
 
   document.getElementById('btnClearAllSponsoredFlags')?.addEventListener('click', async () => {
-    if (confirm('هل أنت تأكد من إلغاء وتفريغ القائمة الرعائية والموصى بها بالكامل؟')) {
+    if (confirm(currentLang === 'en' ? 'Are you sure you want to clear all sponsored and recommended flags?' : 'هل أنت متأكد من إلغاء وتفريغ القائمة الرعائية والموصى بها بالكامل؟')) {
       liveFunds.forEach(f => {
         f.is_sponsored = false;
         f.is_recommended = false;
@@ -1556,7 +1681,7 @@ function renderUsersTable() {
 async function deleteUserAccount(userId) {
   const user = liveUsers.find(u => u.id === userId);
   const name = user ? (user.full_name || user.name || userId) : userId;
-  if (confirm(`هل أنت تأكد من مسح حساب المستثمر (${name}) نهائياً من قاعدة بيانات Supabase؟`)) {
+  if (confirm(currentLang === 'en' ? `Are you sure you want to permanently delete investor (${name}) from database?` : `هل أنت متأكد من مسح حساب المستثمر (${name}) نهائياً من قاعدة بيانات Supabase؟`)) {
     // 1. Cascade Delete from Supabase Database
     if (db) {
       try {
@@ -1694,8 +1819,8 @@ function editFund(id) {
 
 async function deleteFund(id) {
   const fund = liveFunds.find(f => f.id.toString() === id.toString());
-  const name = fund ? (fund.name_ar || fund.name || id) : id;
-  if (confirm(`هل أنت تأكد من مسح صندوق (${name}) نهائياً من قاعدة بيانات Supabase؟`)) {
+  const name = fund ? (currentLang === 'en' ? (fund.name_en || fund.name || fund.name_ar) : (fund.name_ar || fund.name || id)) : id;
+  if (confirm(currentLang === 'en' ? `Are you sure you want to permanently delete fund (${name}) from database?` : `هل أنت متأكد من مسح صندوق (${name}) نهائياً من قاعدة بيانات Supabase؟`)) {
     // 1. Persist in deleted funds blacklist
     const deletedFundIds = JSON.parse(localStorage.getItem('watheqa_deleted_fund_ids') || '[]');
     if (!deletedFundIds.includes(id.toString())) {
@@ -1723,7 +1848,7 @@ async function deleteFund(id) {
 }
 
 async function deletePortfolio(id) {
-  if (confirm('هل أنت تأكد من حذف محفظة المستخدم من الباك إند؟')) {
+  if (confirm(currentLang === 'en' ? 'Are you sure you want to delete this portfolio from backend?' : 'هل أنت متأكد من حذف محفظة المستخدم من الباك إند؟')) {
     // 1. Save to deleted portfolio blacklist
     const deletedPortIds = JSON.parse(localStorage.getItem('watheqa_deleted_portfolio_ids') || '[]');
     if (!deletedPortIds.includes(id.toString())) {
@@ -2073,27 +2198,27 @@ async function fetchRoboConfigs() {
   }
 }
 
-function getGoalLabel(goalKey) {
+function getGoalLabel(goalKey, isEn = (currentLang === 'en')) {
   switch (goalKey) {
-    case 'goldHedging': return '🪙 التحوط بالذهب والفضة (Gold & Silver)';
-    case 'capitalPreservation': return '🛡️ حفظ رأس المال (Capital Preservation)';
-    case 'highYield': return '🚀 أقصى نمو وأرباح (High Yield)';
-    case 'islamicSharia': return '🌙 استثمار إسلامي 100% (Islamic Sharia)';
-    case 'balancedGrowth': return '⚖️ نمو متوازن (Balanced Growth)';
+    case 'goldHedging': return isEn ? '🪙 Gold & Silver Hedging' : '🪙 التحوط بالذهب والفضة (Gold & Silver)';
+    case 'capitalPreservation': return isEn ? '🛡️ Capital Preservation & Low Risk' : '🛡️ حفظ رأس المال وأمان مرتفع (Capital Preservation)';
+    case 'highYield': return isEn ? '🚀 High Yield & Growth (Equities)' : '🚀 أقصى نمو وأرباح - أسهم (High Yield)';
+    case 'islamicSharia': return isEn ? '🌙 100% Shariah Compliant' : '🌙 استثمار إسلامي 100% (Islamic Sharia)';
+    case 'balancedGrowth': return isEn ? '⚖️ Balanced Growth' : '⚖️ نمو متوازن (Balanced Growth)';
     default: return goalKey;
   }
 }
 
-function getDurationBadge(durationKey) {
+function getDurationBadge(durationKey, isEn = (currentLang === 'en')) {
   switch (durationKey) {
     case 'shortTerm':
-      return '<span class="badge" style="background:#312e81; color:#a5b4fc; border:1px solid #4338ca; padding:4px 8px; border-radius:6px;">⏱️ قصير الأجل (<1 سنة)</span>';
+      return `<span class="badge" style="background:#312e81; color:#a5b4fc; border:1px solid #4338ca; padding:4px 8px; border-radius:6px;">⏱️ ${isEn ? 'Short Term (<1 Year)' : 'قصير الأجل (<1 سنة)'}</span>`;
     case 'mediumTerm':
-      return '<span class="badge" style="background:#065f46; color:#6ee7b7; border:1px solid #047857; padding:4px 8px; border-radius:6px;">🗓️ متوسط الأجل (1-3 سنوات)</span>';
+      return `<span class="badge" style="background:#065f46; color:#6ee7b7; border:1px solid #047857; padding:4px 8px; border-radius:6px;">🗓️ ${isEn ? 'Medium Term (1-3 Years)' : 'متوسط الأجل (1-3 سنوات)'}</span>`;
     case 'longTerm':
-      return '<span class="badge" style="background:#581c87; color:#d8b4fe; border:1px solid #6b21a8; padding:4px 8px; border-radius:6px;">🚀 طويل الأجل (>3 سنوات)</span>';
+      return `<span class="badge" style="background:#581c87; color:#d8b4fe; border:1px solid #6b21a8; padding:4px 8px; border-radius:6px;">🚀 ${isEn ? 'Long Term (>3 Years)' : 'طويل الأجل (>3 سنوات)'}</span>`;
     default:
-      return durationKey || 'متوسط الأجل';
+      return durationKey || (isEn ? 'Medium Term' : 'متوسط الأجل');
   }
 }
 
@@ -2101,13 +2226,14 @@ function renderRoboConfigsTable() {
   const tbody = document.getElementById('roboConfigsTableBody');
   if (!tbody) return;
 
+  const isEn = currentLang === 'en';
   const goalFilter = document.getElementById('roboGoalFilter')?.value || 'ALL';
   const durationFilter = document.getElementById('roboDurationFilter')?.value || 'ALL';
 
   tbody.innerHTML = '';
 
   if (liveRoboConfigsList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af; padding:20px;">جاري تحميل التوليفة الـ 15 من السيرفر أو لم يتم تطبيق سكربت SQL بعد...</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#9ca3af; padding:20px;">${isEn ? 'Loading 15 Robo-Advisor blends from server or SQL script not yet applied...' : 'جاري تحميل التوليفة الـ 15 من السيرفر أو لم يتم تطبيق سكربت SQL بعد...'}</td></tr>`;
     return;
   }
 
@@ -2118,7 +2244,7 @@ function renderRoboConfigsTable() {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af; padding:20px;">لا توجد نتائج تطابق الفلتر المSelected.</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#9ca3af; padding:20px;">${isEn ? 'No results matching selected filters.' : 'لا توجد نتائج تطابق الفلتر المحدد.'}</td></tr>`;
     return;
   }
 
@@ -2130,9 +2256,9 @@ function renderRoboConfigsTable() {
     for (let i = 1; i <= 4; i++) {
       const fundName = cfg[`fund${i}_name`];
       if (!fundName) continue;
-      const cat = cfg[`fund${i}_category_ar`] || 'عام';
+      const cat = isEn ? (cfg[`fund${i}_category_en`] || cfg[`fund${i}_category_ar`] || 'General') : (cfg[`fund${i}_category_ar`] || 'عام');
       const pct = cfg[`fund${i}_percentage`] || 0;
-      const badge = cfg[`fund${i}_badge_ar`] || '';
+      const badge = isEn ? (cfg[`fund${i}_badge_en`] || cfg[`fund${i}_badge_ar`] || '') : (cfg[`fund${i}_badge_ar`] || '');
 
       fundsHtml += `
         <div style="font-size:12px; background:rgba(255,255,255,0.04); padding:6px 10px; border-radius:6px; border-right:3px solid ${i===1?'#F59E0B':i===2?'#3B82F6':i===3?'#10B981':'#8B5CF6'}">
@@ -2145,13 +2271,13 @@ function renderRoboConfigsTable() {
     fundsHtml += '</div>';
 
     tr.innerHTML = `
-      <td><strong>${getGoalLabel(cfg.goal_key)}</strong></td>
-      <td>${getDurationBadge(cfg.duration_key || 'mediumTerm')}</td>
+      <td><strong>${getGoalLabel(cfg.goal_key, isEn)}</strong></td>
+      <td>${getDurationBadge(cfg.duration_key || 'mediumTerm', isEn)}</td>
       <td><span style="color:#00E676; font-weight:900; font-size:16px;">+${cfg.expected_roi || 25}%</span></td>
       <td>${fundsHtml}</td>
       <td>
         <button class="btn btn-primary" onclick="openEditRoboModal('${cfg.id}')" style="padding:6px 12px; font-size:13px;">
-          <i class="fa-solid fa-pen-to-square"></i> تعديل التوليفة ⚡
+          <i class="fa-solid fa-pen-to-square"></i> ${isEn ? 'Edit Mix ⚡' : 'تعديل التوليفة ⚡'}
         </button>
       </td>
     `;

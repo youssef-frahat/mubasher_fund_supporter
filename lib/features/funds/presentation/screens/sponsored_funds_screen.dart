@@ -10,6 +10,8 @@ import '../../../../core/di/service_locator.dart';
 import '../../../../core/services/wishlist_service.dart';
 import '../../../calculator/data/repositories/calculator_repository.dart';
 import '../../../home/data/models/fund_model.dart';
+import '../../domain/models/fund_sort_option.dart';
+import '../widgets/fund_sort_bar.dart';
 
 class SponsoredFundsScreen extends StatefulWidget {
   const SponsoredFundsScreen({super.key});
@@ -21,6 +23,7 @@ class SponsoredFundsScreen extends StatefulWidget {
 class _SponsoredFundsScreenState extends State<SponsoredFundsScreen> {
   List<FundModel> _sponsoredFunds = [];
   bool _isLoading = true;
+  FundSortOption _sortOption = FundSortOption.highestReturn;
 
   @override
   void initState() {
@@ -50,6 +53,8 @@ class _SponsoredFundsScreenState extends State<SponsoredFundsScreen> {
     final textSecondary = AppColors.getTextSecondary(context);
     final border = AppColors.getBorder(context);
     final wishlistService = sl<WishlistService>();
+
+    final sortedFunds = _sortOption.sort(_sponsoredFunds, isArabic: context.isArabic);
 
     return Scaffold(
       backgroundColor: bg,
@@ -155,9 +160,9 @@ class _SponsoredFundsScreenState extends State<SponsoredFundsScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 20.h),
+                  SizedBox(height: 18.h),
 
-                  // Header Title
+                  // Header Title & Actions
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -169,25 +174,31 @@ class _SponsoredFundsScreenState extends State<SponsoredFundsScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      TextButton.icon(
+                      IconButton(
                         onPressed: _loadSponsoredFunds,
-                        icon: const Icon(Icons.cleaning_services_outlined, size: 16, color: AppColors.primary),
-                        label: Text(
-                          'تفريغ للصفحة',
-                          style: TextStyle(color: AppColors.primary, fontSize: 11.sp, fontWeight: FontWeight.bold),
-                        ),
+                        icon: const Icon(Icons.refresh, size: 20, color: AppColors.primary),
+                        tooltip: 'تحديث',
                       ),
                     ],
                   ),
-                  SizedBox(height: 10.h),
+
+                  // Interactive Sort Bar
+                  FundSortBar(
+                    currentSort: _sortOption,
+                    onSortChanged: (newSort) {
+                      setState(() => _sortOption = newSort);
+                    },
+                    totalCount: sortedFunds.length,
+                  ),
+                  SizedBox(height: 8.h),
 
                   // List of Sponsored Funds
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _sponsoredFunds.length,
+                    itemCount: sortedFunds.length,
                     itemBuilder: (context, index) {
-                      final fund = _sponsoredFunds[index];
+                      final fund = sortedFunds[index];
                       final nameText = fund.localizedName(context);
                       final abbrText = fund.abbreviation;
 

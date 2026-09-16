@@ -4,6 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../home/data/models/fund_model.dart';
+import '../../../funds/domain/models/fund_sort_option.dart';
+import '../../../funds/presentation/widgets/fund_sort_bar.dart';
 import '../cubit/admin_cubit.dart';
 import '../cubit/admin_state.dart';
 import '../widgets/add_fund_dialog.dart';
@@ -19,6 +21,7 @@ class AdminFundsScreen extends StatefulWidget {
 class _AdminFundsScreenState extends State<AdminFundsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  FundSortOption _sortOption = FundSortOption.highestReturn;
 
   @override
   Widget build(BuildContext context) {
@@ -126,15 +129,27 @@ class _AdminFundsScreenState extends State<AdminFundsScreen> {
                                   return nameMatch || managerMatch || categoryMatch;
                                 }).toList();
 
-                                if (filteredFunds.isEmpty) {
+                                final sortedFunds = _sortOption.sort(filteredFunds, isArabic: true);
+
+                                if (sortedFunds.isEmpty) {
                                   return const Center(child: Text('لا توجد صناديق مطابقة للبحث'));
                                 }
 
-                                return ListView.builder(
-                                  itemCount: filteredFunds.length,
-                                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                                  itemBuilder: (context, index) {
-                                    final fund = filteredFunds[index];
+                                return Column(
+                                  children: [
+                                    FundSortBar(
+                                      currentSort: _sortOption,
+                                      onSortChanged: (newSort) {
+                                        setState(() => _sortOption = newSort);
+                                      },
+                                      totalCount: sortedFunds.length,
+                                    ),
+                                    Expanded(
+                                      child: ListView.builder(
+                                        itemCount: sortedFunds.length,
+                                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                                        itemBuilder: (context, index) {
+                                          final fund = sortedFunds[index];
                                     return Card(
                                       margin: EdgeInsets.only(bottom: 12.h),
                                       shape: RoundedRectangleBorder(
@@ -213,9 +228,12 @@ class _AdminFundsScreenState extends State<AdminFundsScreen> {
                                       ),
                                     );
                                   },
-                                );
-                              },
-                            )
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      )
                           : state is AdminError
                               ? Center(child: Text('خطأ: ${state.message}'))
                               : const Center(child: Text('جاري التحميل...')),

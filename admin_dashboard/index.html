@@ -60,7 +60,7 @@
         <div class="logo-icon">W</div>
         <div class="brand-text">
           <h2>وثيقة | Watheqa</h2>
-          <span class="sub-text">Super Admin Portal</span>
+          <span class="sub-text" id="brandSubText">Super Admin Portal 🔐</span>
         </div>
       </div>
 
@@ -198,29 +198,29 @@
           <div class="pipeline-steps">
             <div class="step completed">
               <div class="step-icon"><i class="fa-solid fa-code"></i></div>
-              <div class="step-label">Flutter & Web Code</div>
-              <div class="step-status">Clean ✅</div>
+              <div class="step-label" id="step1Label">كود الموبايل والويب</div>
+              <div class="step-status" id="step1Status">سليم ومفحوص ✅</div>
             </div>
             <div class="line active"></div>
 
             <div class="step completed">
               <div class="step-icon"><i class="fa-solid fa-database"></i></div>
-              <div class="step-label">Supabase Seed SQL</div>
-              <div class="step-status">Seeded ✅</div>
+              <div class="step-label" id="step2Label">قاعدة بيانات سوبابيز</div>
+              <div class="step-status" id="step2Status">محدثة بالكامل ✅</div>
             </div>
             <div class="line active"></div>
 
             <div class="step completed">
               <div class="step-icon"><i class="fa-solid fa-shield-cat"></i></div>
-              <div class="step-label">Super Admin Gate</div>
-              <div class="step-status" id="gateStatusBadge">Authenticated 🔑</div>
+              <div class="step-label" id="step3Label">بوابة السوبر أدمن</div>
+              <div class="step-status" id="step3Status">مصادق عليه 🔑</div>
             </div>
             <div class="line active"></div>
 
             <div class="step active">
               <div class="step-icon"><i class="fa-solid fa-chart-line"></i></div>
-              <div class="step-label">Web Portal Sync</div>
-              <div class="step-status">Active 🟢</div>
+              <div class="step-label" id="step4Label">مزامنة لوحة الويب</div>
+              <div class="step-status" id="step4Status">نشط ومباشر 🟢</div>
             </div>
           </div>
         </div>
@@ -230,7 +230,7 @@
             <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
               <h3 style="margin:0; display:flex; align-items:center; gap:6px; font-size:15px;">
                 <i class="fa-solid fa-chart-area" style="color:#00E676;"></i> 
-                <span>أداء واستجابة الخوادم (قياس تلقائي كل 5 دقائق)</span>
+                <span id="devopsLatencyChartTitle">أداء واستجابة الخوادم (قياس تلقائي كل 5 دقائق)</span>
                 <span id="liveDevopsLatencyBadge" class="badge live" style="font-size:11px;">12 ms 🟢</span>
               </h3>
               <div style="display:flex; align-items:center; gap:6px;">
@@ -445,7 +445,7 @@
         </div>
 
         <div class="card glass-card">
-          <p class="section-desc">تحكم كامل في الصناديق المحددة كـ (رعائية ⭐ / موصى بها 💡 / الأعلى أداءً 🏆). قم باختيار أي صندوق وإعطائه التميز الذي تريده أو إزالته بحرية.</p>
+          <p class="section-desc" id="sponsoredSectionDesc">تحكم كامل في الصناديق المحددة كـ (رعائية ⭐ / موصى بها 💡 / الأعلى أداءً 🏆). قم باختيار أي صندوق وإعطائه التميز الذي تريده أو إزالته بحرية.</p>
           
           <div class="table-controls" style="margin-top:14px; margin-bottom:14px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
             <button class="btn btn-secondary" id="btnToggleAllSponsored">
@@ -468,6 +468,7 @@
                   <th>سعر الوثيقة (NAV)</th>
                   <th>صندوق رعائي (Sponsored ⭐)</th>
                   <th>موصى به / مخصص لك (Recommended 💡)</th>
+                  <th>هدف المستشار الذكي 🎯</th>
                   <th>الإجراءات (CRUD)</th>
                 </tr>
               </thead>
@@ -483,15 +484,15 @@
       <section id="tab-robo-config" class="tab-content">
         <div class="section-header">
           <div class="section-title">
-            <h2><i class="fa-solid fa-robot" style="color:#00E5FF"></i> إدارة التوليفات والتوزيعات الذكية (Robo-Advisor 15 Blends) 🤖</h2>
+            <h2><i class="fa-solid fa-robot" style="color:#00E5FF"></i> <span id="roboConfigTitleText">إدارة التوليفات والتوزيعات الذكية (Robo-Advisor 15 Blends) 🤖</span></h2>
           </div>
           <button class="btn btn-primary" id="btnRefreshRoboConfigs">
-            <i class="fa-solid fa-rotate"></i> تحديث من السيرفر
+            <i class="fa-solid fa-rotate"></i> <span id="btnRefreshRoboText">تحديث من السيرفر</span>
           </button>
         </div>
 
         <div class="card glass-card">
-          <p class="section-desc">تحكم كامل من السيرفر في التوليفات الـ 15 للمستشار الذكي (5 أهداف استثمارية × 3 مدد زمنية). أي تعديل هنا يظهر مباشرة في تطبيق الموبايل دون الحاجة لتحديث الكود!</p>
+          <p class="section-desc" id="roboConfigSectionDesc">تحكم كامل من السيرفر في التوليفات الـ 15 للمستشار الذكي (5 أهداف استثمارية × 3 مدد زمنية). أي تعديل هنا يظهر مباشرة في تطبيق الموبايل دون الحاجة لتحديث الكود!</p>
           
           <div class="table-controls" style="margin-top:14px; margin-bottom:14px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
             <select id="roboGoalFilter" class="form-select" style="min-width:220px;">

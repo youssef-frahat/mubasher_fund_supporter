@@ -27,6 +27,21 @@ class FundModel {
   final int? rank;
   final DateTime? updatedAt;
 
+  // Deep Fund Metadata Attributes
+  final bool isShariahCompliant;
+  final String? shariahBoard;
+  final String? issuingEntity;
+  final String? issuingEntityAr;
+  final String? issuingEntityEn;
+  final int? inceptionYear;
+  final String? custodian;
+  final String? custodianAr;
+  final String? custodianEn;
+  final String? fundAdministrator;
+  final String? auditor;
+  final String? managerLogo;
+  final String? dividendPolicy;
+
   FundModel({
     required this.id,
     required this.name,
@@ -51,6 +66,19 @@ class FundModel {
     this.isTopPerforming = false,
     this.rank,
     this.updatedAt,
+    this.isShariahCompliant = false,
+    this.shariahBoard,
+    this.issuingEntity,
+    this.issuingEntityAr,
+    this.issuingEntityEn,
+    this.inceptionYear,
+    this.custodian,
+    this.custodianAr,
+    this.custodianEn,
+    this.fundAdministrator,
+    this.auditor,
+    this.managerLogo,
+    this.dividendPolicy,
   });
 
   /// Returns main name without parentheses e.g. "AAIB" from "AAIB (Gozoor)"
@@ -140,7 +168,54 @@ class FundModel {
     return null;
   }
 
+  /// Returns localized issuing entity / founding bank
+  String localizedIssuingEntity(BuildContext context) {
+    final isAr = _checkIsArabic(context);
+    if (isAr) {
+      if (issuingEntityAr != null && issuingEntityAr!.trim().isNotEmpty) return issuingEntityAr!;
+      return issuingEntity ?? (isAr ? 'البنك المؤسس' : 'Issuing Bank');
+    } else {
+      if (issuingEntityEn != null && issuingEntityEn!.trim().isNotEmpty) return issuingEntityEn!;
+      return issuingEntity ?? 'Issuing Bank';
+    }
+  }
+
+  /// Returns localized custodian bank
+  String localizedCustodian(BuildContext context) {
+    final isAr = _checkIsArabic(context);
+    if (isAr) {
+      if (custodianAr != null && custodianAr!.trim().isNotEmpty) return custodianAr!;
+      return custodian ?? 'البنك التجاري الدولي (CIB)';
+    } else {
+      if (custodianEn != null && custodianEn!.trim().isNotEmpty) return custodianEn!;
+      return custodian ?? 'Commercial International Bank (CIB)';
+    }
+  }
+
+  /// Returns localized Shariah status badge text
+  String localizedShariahStatus(BuildContext context) {
+    final isAr = _checkIsArabic(context);
+    if (isShariahCompliant) {
+      return isAr ? 'مطابق للشريعة الإسلامية 🌙' : 'Shariah Compliant 🌙';
+    } else {
+      return isAr ? 'صندوق استثماري تقليدي 🏛️' : 'Conventional Mutual Fund 🏛️';
+    }
+  }
+
   factory FundModel.fromMap(Map<String, dynamic> map) {
+    final cat = (map['category'] ?? 'Equity').toString().toLowerCase();
+    final nameStr = (map['name'] ?? '').toString().toLowerCase();
+    final bool shariah = map['is_shariah_compliant'] == true ||
+        cat.contains('islamic') ||
+        cat.contains('sharia') ||
+        nameStr.contains('إسلامي') ||
+        nameStr.contains('شريعة') ||
+        nameStr.contains('وفاق') ||
+        nameStr.contains('سنابل') ||
+        nameStr.contains('أمان') ||
+        nameStr.contains('هلال') ||
+        nameStr.contains('بشائر');
+
     return FundModel(
       id: map['id']?.toString() ?? '',
       name: map['name'] ?? map['name_ar'] ?? map['name_en'] ?? '',
@@ -165,6 +240,19 @@ class FundModel {
       isTopPerforming: map['is_top_performing'] ?? false,
       rank: map['rank'] as int?,
       updatedAt: map['updated_at'] != null ? DateTime.tryParse(map['updated_at'].toString()) : null,
+      isShariahCompliant: shariah,
+      shariahBoard: map['shariah_board'] ?? (shariah ? 'الهيئة الشرعية الموحدة والرقابة المالية' : null),
+      issuingEntity: map['issuing_entity'] ?? map['issuing_entity_ar'],
+      issuingEntityAr: map['issuing_entity_ar'] ?? map['issuing_entity'],
+      issuingEntityEn: map['issuing_entity_en'],
+      inceptionYear: (map['inception_year'] as num?)?.toInt(),
+      custodian: map['custodian'],
+      custodianAr: map['custodian_ar'] ?? map['custodian'],
+      custodianEn: map['custodian_en'],
+      fundAdministrator: map['fund_administrator'] ?? 'الفروع الرسمية والمنصات المرخصة',
+      auditor: map['auditor'] ?? 'حازم حسن (KPMG) ومراقبون مستقلون',
+      managerLogo: map['manager_logo'] ?? map['logo_url'],
+      dividendPolicy: map['dividend_policy'] ?? 'إعادة استثمار العوائد تلقائياً (Reinvestment / Growth)',
     );
   }
 
@@ -194,6 +282,19 @@ class FundModel {
       'is_top_performing': isTopPerforming,
       'rank': rank,
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
+      'is_shariah_compliant': isShariahCompliant,
+      if (shariahBoard != null) 'shariah_board': shariahBoard,
+      if (issuingEntity != null) 'issuing_entity': issuingEntity,
+      if (issuingEntityAr != null) 'issuing_entity_ar': issuingEntityAr,
+      if (issuingEntityEn != null) 'issuing_entity_en': issuingEntityEn,
+      if (inceptionYear != null) 'inception_year': inceptionYear,
+      if (custodian != null) 'custodian': custodian,
+      if (custodianAr != null) 'custodian_ar': custodianAr,
+      if (custodianEn != null) 'custodian_en': custodianEn,
+      if (fundAdministrator != null) 'fund_administrator': fundAdministrator,
+      if (auditor != null) 'auditor': auditor,
+      if (managerLogo != null) 'manager_logo': managerLogo,
+      if (dividendPolicy != null) 'dividend_policy': dividendPolicy,
     };
   }
 
