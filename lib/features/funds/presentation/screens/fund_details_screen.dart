@@ -15,27 +15,42 @@ import '../../../portfolio/data/models/portfolio_item_model.dart';
 import '../../../portfolio/presentation/cubit/portfolio_cubit.dart';
 import '../widgets/nav_chart_widget.dart';
 
-class FundDetailsScreen extends StatelessWidget {
+import '../../../../core/supabase/supabase_service.dart';
+import '../../../home/data/repositories/funds_repository.dart';
+
+class FundDetailsScreen extends StatefulWidget {
   final PlatformFeature fund;
   final FundModel? fundModel;
 
   const FundDetailsScreen({super.key, required this.fund, this.fundModel});
 
   @override
-  Widget build(BuildContext context) {
-    final bg = AppColors.getBackground(context);
-    final surface = AppColors.getSurface(context);
-    final textPrimary = AppColors.getTextPrimary(context);
-    final textSecondary = AppColors.getTextSecondary(context);
-    final border = AppColors.getBorder(context);
+  State<FundDetailsScreen> createState() => _FundDetailsScreenState();
+}
 
-    final resolvedFund = fundModel ??
+class _FundDetailsScreenState extends State<FundDetailsScreen> {
+  late FundModel _resolvedFund;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolvedFund = _resolveInitialFund();
+    _fetchFreshFundData();
+  }
+
+  FundModel _resolveInitialFund() {
+    return widget.fundModel ??
+        SupabaseFundsRepository.getCachedFund(widget.fund.id ?? '') ??
+        SupabaseFundsRepository.getCachedFund(widget.fund.title) ??
         OfficialEgyptianFundsData.allFunds.firstWhere(
-          (f) => f.id == fund.id || f.name == fund.title || (f.nameEn != null && f.nameEn == fund.title),
+          (f) =>
+              f.id == widget.fund.id ||
+              f.name == widget.fund.title ||
+              (f.nameEn != null && f.nameEn == widget.fund.title),
           orElse: () => FundModel(
-            id: fund.id ?? 'unknown',
-            name: fund.title,
-            managerName: fund.subtitle.split('|').first.trim(),
+            id: widget.fund.id ?? 'unknown',
+            name: widget.fund.title,
+            managerName: widget.fund.subtitle.split('|').first.trim(),
             currentNav: 135.0,
             ytdReturn: 24.5,
             weeklyReturn: 0.48,
@@ -47,7 +62,44 @@ class FundDetailsScreen extends StatelessWidget {
             initialValue: 100.0,
           ),
         );
+  }
 
+  Future<void> _fetchFreshFundData() async {
+    final client = SupabaseService.client;
+    final fundId = _resolvedFund.id.isNotEmpty ? _resolvedFund.id : widget.fund.id;
+    if (client == null || fundId == null) return;
+    try {
+      final res = await client
+          .from('funds')
+          .select()
+          .or('id.eq.$fundId,name.eq.${widget.fund.title},name_ar.eq.${widget.fund.title}')
+          .maybeSingle();
+      if (res != null && mounted) {
+        final remote = FundModel.fromMap(res);
+        setState(() {
+          _resolvedFund = _resolvedFund.copyWith(
+            currentNav: remote.currentNav,
+            ytdReturn: remote.ytdReturn,
+            dailyChange: remote.dailyChange != 0 ? remote.dailyChange : _resolvedFund.dailyChange,
+            updatedAt: remote.updatedAt ?? DateTime.now(),
+            isSponsored: remote.isSponsored,
+            isRecommended: remote.isRecommended,
+            isTopPerforming: remote.isTopPerforming,
+          );
+        });
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = AppColors.getBackground(context);
+    final surface = AppColors.getSurface(context);
+    final textPrimary = AppColors.getTextPrimary(context);
+    final textSecondary = AppColors.getTextSecondary(context);
+    final border = AppColors.getBorder(context);
+
+    final resolvedFund = _resolvedFund;
     final isAr = context.isArabic;
     final displayTitle = resolvedFund.localizedName(context);
 
@@ -270,7 +322,7 @@ class FundDetailsScreen extends StatelessWidget {
                   padding: EdgeInsets.symmetric(vertical: 14.h),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
                 ),
-                onPressed: () => _showAddTransactionDialog(context, fund),
+                onPressed: () => _showAddTransactionDialog(context, resolvedFund),
                 icon: const FaIcon(FontAwesomeIcons.circlePlus, color: Colors.black, size: 16),
                 label: Text(
                   context.tr('addToPortfolioBtn'),
@@ -541,9 +593,9 @@ class FundDetailsScreen extends StatelessWidget {
     );
   }
 
-  void _showAddTransactionDialog(BuildContext context, PlatformFeature fund) {
+  void _showAddTransactionDialog(BuildContext context, FundModel fund) {
     final unitsController = TextEditingController(text: '10');
-    final priceController = TextEditingController(text: '100');
+    final priceController = TextEditingController(text: fund.currentNav.toStringAsFixed(4));
 
     showModalBottomSheet(
       context: context,
@@ -573,7 +625,7 @@ class FundDetailsScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${context.tr('newTransactionTitle')} ${fund.title}',
+                    '${context.tr('newTransactionTitle')} ${fund.localizedName(context)}',
                     style: TextStyle(
                       color: textPrimary,
                       fontSize: 15.sp,
@@ -625,11 +677,12 @@ class FundDetailsScreen extends StatelessWidget {
                     final price = double.tryParse(priceController.text) ?? 0;
                     if (units > 0 && price > 0) {
                       context.read<PortfolioCubit>().addTransaction(
-                        fundName: fund.title,
+                        fundId: fund.id,
+                        fundName: fund.localizedName(context),
                         category: FundCategory.moneyMarket,
                         units: units,
                         purchasePrice: price,
-                        currentNav: price * 1.06,
+                        currentNav: fund.currentNav,
                       );
                       Navigator.pop(ctx);
                       AppSnackBar.showSuccess(

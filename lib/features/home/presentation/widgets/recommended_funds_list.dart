@@ -102,7 +102,7 @@ class RecommendedFundsList extends StatelessWidget {
               final isDark = Theme.of(context).brightness == Brightness.dark;
 
               return GestureDetector(
-                onTap: () => context.push(Routes.fundDetails, extra: fund.toPlatformFeature()),
+                onTap: () => context.push(Routes.fundDetails, extra: fund),
                 child: Container(
                   width: 240.w,
                   margin: EdgeInsets.symmetric(horizontal: 8.w),

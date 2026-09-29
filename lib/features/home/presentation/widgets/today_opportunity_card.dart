@@ -346,7 +346,7 @@ class _AiMarketSignalsSheetState extends State<_AiMarketSignalsSheet> {
                             actionLabel: context.tr('buyActionLabel'),
                             onTap: () {
                               Navigator.pop(context);
-                              context.push(Routes.fundDetails, extra: topGainer!.toPlatformFeature());
+                              context.push(Routes.fundDetails, extra: topGainer);
                             },
                           ),
                         SizedBox(height: 14.h),
@@ -362,7 +362,7 @@ class _AiMarketSignalsSheetState extends State<_AiMarketSignalsSheet> {
                             actionLabel: context.tr('sellActionLabel'),
                             onTap: () {
                               Navigator.pop(context);
-                              context.push(Routes.fundDetails, extra: topDip!.toPlatformFeature());
+                              context.push(Routes.fundDetails, extra: topDip);
                             },
                           ),
                         SizedBox(height: 14.h),
@@ -382,7 +382,7 @@ class _AiMarketSignalsSheetState extends State<_AiMarketSignalsSheet> {
                             actionLabel: context.tr('hedgeActionLabel'),
                             onTap: () {
                               Navigator.pop(context);
-                              context.push(Routes.fundDetails, extra: topGoldLiquidity!.toPlatformFeature());
+                              context.push(Routes.fundDetails, extra: topGoldLiquidity);
                             },
                           ),
                         SizedBox(height: 20.h),

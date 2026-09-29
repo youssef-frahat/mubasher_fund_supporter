@@ -8,6 +8,8 @@ import '../../features/admin/presentation/screens/admin_layout.dart';
 import '../../features/main_layout/presentation/screens/main_layout.dart';
 import '../../features/funds/presentation/screens/fund_details_screen.dart';
 import '../../features/home/data/models/platform_feature.dart';
+import '../../features/home/data/models/fund_model.dart';
+import '../../features/home/data/repositories/funds_repository.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/profile_screen.dart';
 import '../../features/portfolio/presentation/screens/portfolio_screen.dart';
@@ -146,8 +148,21 @@ class AppRouter {
         path: Routes.fundDetails,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final fund = state.extra as PlatformFeature;
-          return FundDetailsScreen(fund: fund);
+          if (state.extra is FundModel) {
+            final model = state.extra as FundModel;
+            return FundDetailsScreen(
+              fund: model.toPlatformFeature(),
+              fundModel: model,
+            );
+          } else if (state.extra is PlatformFeature) {
+            final feature = state.extra as PlatformFeature;
+            final cached = SupabaseFundsRepository.getCachedFund(feature.id ?? '');
+            return FundDetailsScreen(
+              fund: feature,
+              fundModel: cached,
+            );
+          }
+          return const AllFundsScreen();
         },
       ),
       GoRoute(

@@ -332,7 +332,7 @@ class _SponsoredFundsScreenState extends State<SponsoredFundsScreen> {
                               ],
                             ),
                             onTap: () {
-                              context.push(Routes.fundDetails, extra: fund.toPlatformFeature());
+                              context.push(Routes.fundDetails, extra: fund);
                             },
                           ),
                         ),

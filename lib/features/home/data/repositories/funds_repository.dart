@@ -16,9 +16,24 @@ abstract class FundsRepository {
   Future<List<FundModel>> getSponsoredFunds();
   Future<FundModel> getTopPerformingFund();
   Future<List<FundModel>> getRankedFunds();
+  Future<FundModel?> getFundById(String id);
 }
 
 class SupabaseFundsRepository implements FundsRepository {
+  static final Map<String, FundModel> _liveFundsCache = {};
+
+  static FundModel? getCachedFund(String idOrName) {
+    if (idOrName.isEmpty) return null;
+    return _liveFundsCache[idOrName] ??
+        _liveFundsCache[_normalizeKey(idOrName)] ??
+        _liveFundsCache.values.cast<FundModel?>().firstWhere(
+          (f) => f?.id == idOrName || f?.name == idOrName || (f?.nameEn != null && f?.nameEn == idOrName),
+          orElse: () => null,
+        );
+  }
+
+  static List<FundModel> get cachedFunds => _liveFundsCache.values.toList();
+
   static String _normalizeKey(String input) {
     if (input.isEmpty) return '';
     var s = input.toLowerCase();
@@ -144,6 +159,15 @@ class SupabaseFundsRepository implements FundsRepository {
                 isTopPerforming: remoteFund.isTopPerforming,
               );
               fundsMap[baseFund.id] = merged;
+              _liveFundsCache[baseFund.id] = merged;
+              _liveFundsCache[remoteFund.id] = merged;
+              _liveFundsCache[baseFund.name] = merged;
+              if (baseFund.nameEn != null) _liveFundsCache[baseFund.nameEn!] = merged;
+
+              final offIdx = officialFunds.indexWhere((f) => f.id == baseFund.id);
+              if (offIdx != -1) {
+                officialFunds[offIdx] = merged;
+              }
             } else {
               // Deduplicate: avoid adding old English seed duplicates of Egyptian funds
               final isDuplicate = fundsMap.values.any((f) =>
@@ -155,6 +179,9 @@ class SupabaseFundsRepository implements FundsRepository {
               if (!isDuplicate && remoteFund.name.trim().isNotEmpty) {
                 // Legitimate custom fund created via admin dashboard
                 fundsMap[remoteFund.id] = remoteFund;
+                _liveFundsCache[remoteFund.id] = remoteFund;
+                _liveFundsCache[remoteFund.name] = remoteFund;
+                if (remoteFund.nameEn != null) _liveFundsCache[remoteFund.nameEn!] = remoteFund;
               }
             }
           } catch (e) {
@@ -169,6 +196,43 @@ class SupabaseFundsRepository implements FundsRepository {
       debugPrint('Error fetching funds from Supabase: $e');
       return officialFunds;
     }
+  }
+
+  @override
+  Future<FundModel?> getFundById(String id) async {
+    final cached = getCachedFund(id);
+    if (cached != null) return cached;
+
+    final client = SupabaseService.client;
+    if (client != null) {
+      try {
+        final res = await client.from('funds').select().eq('id', id).maybeSingle();
+        if (res != null) {
+          final remoteFund = FundModel.fromMap(res);
+          final baseFund = _findMatchingOfficialFund(remoteFund, OfficialEgyptianFundsData.allFunds, _liveFundsCache);
+          final resolved = baseFund != null
+              ? baseFund.copyWith(
+                  currentNav: remoteFund.currentNav,
+                  ytdReturn: remoteFund.ytdReturn,
+                  dailyChange: remoteFund.dailyChange != 0 ? remoteFund.dailyChange : baseFund.dailyChange,
+                  updatedAt: remoteFund.updatedAt ?? DateTime.now(),
+                  isSponsored: remoteFund.isSponsored,
+                  isRecommended: remoteFund.isRecommended,
+                  isTopPerforming: remoteFund.isTopPerforming,
+                )
+              : remoteFund;
+          _liveFundsCache[id] = resolved;
+          _liveFundsCache[resolved.id] = resolved;
+          return resolved;
+        }
+      } catch (e) {
+        debugPrint('Error fetching fund by id $id: $e');
+      }
+    }
+    return OfficialEgyptianFundsData.allFunds.cast<FundModel?>().firstWhere(
+          (f) => f?.id == id || f?.name == id,
+          orElse: () => null,
+        );
   }
 
   @override

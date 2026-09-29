@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/app_config/app_colors.dart';
 import '../../../../core/language/language_cubit.dart';
+import '../../../../core/supabase/supabase_service.dart';
 import '../../../home/data/models/fund_model.dart';
 
 enum NavChartPeriod { day, month, threeMonths, sixMonths, year, allTime }
@@ -22,6 +23,7 @@ class _NavChartWidgetState extends State<NavChartWidget>
   NavChartPeriod _selectedPeriod = NavChartPeriod.year;
   late AnimationController _animationController;
   late Animation<double> _animation;
+  List<Map<String, dynamic>> _dbNavHistory = [];
 
   @override
   void initState() {
@@ -35,6 +37,34 @@ class _NavChartWidgetState extends State<NavChartWidget>
       curve: Curves.easeOutCubic,
     );
     _animationController.forward();
+    _fetchNavHistory();
+  }
+
+  @override
+  void didUpdateWidget(covariant NavChartWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.fund.id != widget.fund.id || oldWidget.fund.currentNav != widget.fund.currentNav) {
+      _fetchNavHistory();
+      _animationController.reset();
+      _animationController.forward();
+    }
+  }
+
+  Future<void> _fetchNavHistory() async {
+    final client = SupabaseService.client;
+    if (client == null || widget.fund.id.isEmpty) return;
+    try {
+      final res = await client
+          .from('nav_history')
+          .select('date, nav_value')
+          .eq('fund_id', widget.fund.id)
+          .order('date', ascending: true);
+      if (res.isNotEmpty && mounted) {
+        setState(() {
+          _dbNavHistory = List<Map<String, dynamic>>.from(res);
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -89,6 +119,19 @@ class _NavChartWidgetState extends State<NavChartWidget>
   List<FlSpot> _buildRealFinancialSpots() {
     final nav = widget.fund.currentNav;
     final initialVal = widget.fund.effectiveInitialNav;
+
+    // If real database history points exist from scraper automation, use them
+    if (_dbNavHistory.length >= 3 && _selectedPeriod != NavChartPeriod.day) {
+      final spots = <FlSpot>[];
+      for (int i = 0; i < _dbNavHistory.length; i++) {
+        final val = (_dbNavHistory[i]['nav_value'] as num).toDouble();
+        spots.add(FlSpot(i.toDouble(), val));
+      }
+      if (spots.isNotEmpty && (spots.last.y - nav).abs() > 0.0001) {
+        spots.add(FlSpot(spots.length.toDouble(), nav));
+      }
+      return spots;
+    }
 
     final List<FlSpot> spots = [];
 

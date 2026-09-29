@@ -338,7 +338,7 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
 
     return GestureDetector(
       onTap: () {
-        context.push(Routes.fundDetails, extra: fund.toPlatformFeature());
+        context.push(Routes.fundDetails, extra: fund);
       },
       child: Container(
         height: height,
@@ -556,7 +556,7 @@ class _Top10LeagueScreenState extends State<Top10LeagueScreen> {
             ),
           ),
           onTap: () {
-            context.push(Routes.fundDetails, extra: fund.toPlatformFeature());
+            context.push(Routes.fundDetails, extra: fund);
           },
         ),
       ),

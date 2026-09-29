@@ -73,7 +73,7 @@ class FundListTile extends StatelessWidget {
         final isSaved = savedIds.contains(fund.id);
 
         return GestureDetector(
-          onTap: () => context.push(Routes.fundDetails, extra: fund.toPlatformFeature()),
+          onTap: () => context.push(Routes.fundDetails, extra: fund),
           child: Container(
             margin: EdgeInsets.only(bottom: 12.h),
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),

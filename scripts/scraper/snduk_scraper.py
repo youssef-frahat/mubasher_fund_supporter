@@ -400,6 +400,16 @@ def sync_to_supabase(funds: list[FundData]) -> dict:
             stats["not_found"] += 1
             continue
 
+        # Always archive into nav_history for historical charts
+        try:
+            client.from_("nav_history").upsert({
+                "fund_id": matched_db["id"],
+                "date": scraped.nav_date,
+                "nav_value": scraped.nav,
+            }, on_conflict="fund_id,date").execute()
+        except Exception as nh_err:
+            log.debug(f"nav_history upsert skipped for {matched_db['id']}: {nh_err}")
+
         # Skip if price is already up to date
         existing_nav = matched_db.get("current_nav")
         if existing_nav is not None and abs(float(existing_nav) - scraped.nav) < 0.0001:
