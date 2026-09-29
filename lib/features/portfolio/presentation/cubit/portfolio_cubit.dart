@@ -54,6 +54,7 @@ class PortfolioCubit extends Cubit<PortfolioState> {
   }
 
   Future<void> addTransaction({
+    String? fundId,
     required String fundName,
     required FundCategory category,
     required double units,
@@ -62,7 +63,7 @@ class PortfolioCubit extends Cubit<PortfolioState> {
   }) async {
     final newItem = PortfolioItem(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      fundId: 'fund-${DateTime.now().millisecondsSinceEpoch}',
+      fundId: fundId ?? 'fund-${DateTime.now().millisecondsSinceEpoch}',
       fundName: fundName,
       category: category,
       units: units,

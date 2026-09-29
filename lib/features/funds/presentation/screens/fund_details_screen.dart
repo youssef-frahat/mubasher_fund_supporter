@@ -179,9 +179,9 @@ class _FundDetailsScreenState extends State<FundDetailsScreen> {
                   Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: fund.accentColor.withValues(alpha: 0.18),
+                        backgroundColor: widget.fund.accentColor.withValues(alpha: 0.18),
                         radius: 26.r,
-                        child: Icon(fund.icon, color: fund.accentColor, size: 24.r),
+                        child: Icon(widget.fund.icon, color: widget.fund.accentColor, size: 24.r),
                       ),
                       SizedBox(width: 12.w),
                       Expanded(
